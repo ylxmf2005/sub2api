@@ -1,0 +1,12 @@
+services:
+  sub2api:
+    image: ${SUB2API_IMAGE:?SUB2API_IMAGE is required}
+    pull_policy: never
+    environment:
+      - SUB2API_RELEASE_TAG=${SUB2API_RELEASE_TAG:-manual}
+    labels:
+      io.sub2api.deployment=private-fork
+      io.sub2api.release=${SUB2API_RELEASE_TAG:-manual}
+    # Optional host integrations stay private-only. Uncomment when needed:
+    # volumes:
+    #   - /tmp/sub2api-datamanagement.sock:/tmp/sub2api-datamanagement.sock

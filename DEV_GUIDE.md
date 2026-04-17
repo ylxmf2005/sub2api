@@ -7,10 +7,19 @@
 | 项目 | 说明 |
 |------|------|
 | **上游仓库** | Wei-Shaw/sub2api |
-| **Fork 仓库** | bayma888/sub2api-bmai |
+| **私有仓库** | 私有 GitHub 仓库（创建后设为 `origin`） |
 | **技术栈** | Go 后端 (Ent ORM + Gin) + Vue3 前端 (pnpm) |
 | **数据库** | PostgreSQL 16 + Redis |
 | **包管理** | 后端: go modules, 前端: **pnpm**（不是 npm） |
+
+## 私有 Fork 工作流
+
+- 本地仓库长期保留两个远端角色：
+  - `upstream`: 官方 `Wei-Shaw/sub2api`
+  - `origin`: 你自己的私有仓库
+- 日常更新顺序固定为：先从 `upstream` 拉最新，再合并到私有长期分支，然后本地构建、验证、打部署包。
+- 生产环境不承担源码编译职责，只接收本地构建好的镜像和部署材料。
+- 部署相关私有差异优先收敛到 `deploy/docker-compose.private.yml`、`deploy/scripts/`、`deploy/migration/`、`deploy/runbooks/` 和 `docs/operations/`，尽量少直接改上游核心部署文件。
 
 ## 二、本地环境配置
 

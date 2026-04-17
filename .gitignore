@@ -130,6 +130,16 @@ docs/*
 !docs/PAYMENT.md
 !docs/PAYMENT_CN.md
 !docs/ADMIN_PAYMENT_INTEGRATION_API.md
+!docs/brainstorms/
+!docs/brainstorms/**
+!docs/plans/
+!docs/plans/**
+!docs/operations/
+!docs/operations/**
+!deploy/scripts/
+!deploy/scripts/**
+!deploy/tests/
+!deploy/tests/**
 .serena/
 .codex/
 frontend/coverage/
