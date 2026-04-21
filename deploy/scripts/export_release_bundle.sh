@@ -73,10 +73,12 @@ cp "${REPO_ROOT}/deploy/scripts/load_release_bundle.sh" "${BUNDLE_DIR}/compose/"
 GIT_COMMIT="$(git -C "${REPO_ROOT}" rev-parse HEAD)"
 GIT_BRANCH="$(git -C "${REPO_ROOT}" branch --show-current)"
 CREATED_AT="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+IMAGE_PLATFORM="$(docker image inspect "${IMAGE_REF}" --format '{{.Os}}/{{.Architecture}}')"
 
 cat > "${BUNDLE_DIR}/manifest.env" <<EOF
 RELEASE_NAME=${RELEASE_NAME}
 IMAGE_REF=${IMAGE_REF}
+IMAGE_PLATFORM=${IMAGE_PLATFORM}
 CREATED_AT_UTC=${CREATED_AT}
 GIT_COMMIT=${GIT_COMMIT}
 GIT_BRANCH=${GIT_BRANCH}

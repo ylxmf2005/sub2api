@@ -49,6 +49,12 @@ git push -u origin feat/private-fork-cutover
 5. 导出发布包
 6. 服务器做预检、备份、切换、烟测
 
+当前生产机 `154.26.179.199` 是 `linux/amd64`，本地发版时要显式构建：
+
+```bash
+./deploy/build_image.sh --platform linux/amd64 ...
+```
+
 ## 服务器职责边界
 
 服务器只做这些事：

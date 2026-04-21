@@ -13,7 +13,10 @@
 构建私有镜像：
 
 ```bash
-./deploy/build_image.sh --image-name local/sub2api-private --image-tag 2026-04-17
+./deploy/build_image.sh \
+  --image-name local/sub2api-private \
+  --image-tag 2026-04-17 \
+  --platform linux/amd64
 ```
 
 导出发布包：
@@ -37,6 +40,7 @@
 - release bundle 里不放真实生产密钥
 - 真实 `.env` 只在服务器上维护
 - 每个 release bundle 都要带清晰版本号，便于回滚
+- 给生产包显式指定平台；当前 `154.26.179.199` 这台服务器是 `linux/amd64`
 
 ## 推荐命名
 

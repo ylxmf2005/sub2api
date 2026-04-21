@@ -20,6 +20,8 @@ sha256_file() {
 BUNDLE_PATH=""
 DEPLOY_DIR=""
 FORCE=false
+IMAGE_REF=""
+IMAGE_PLATFORM=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -83,7 +85,25 @@ if [[ -f "${BUNDLE_DIR}/image.tar.sha256" ]]; then
     fi
 fi
 
+if [[ -f "${BUNDLE_DIR}/manifest.env" ]]; then
+    # shellcheck disable=SC1090
+    source "${BUNDLE_DIR}/manifest.env"
+fi
+
 docker load -i "${BUNDLE_DIR}/image.tar" >/dev/null
+
+if [[ -n "${IMAGE_REF}" && -n "${IMAGE_PLATFORM}" ]]; then
+    loaded_platform="$(docker image inspect "${IMAGE_REF}" --format '{{.Os}}/{{.Architecture}}')"
+    host_platform="$(docker version --format '{{.Server.Os}}/{{.Server.Arch}}')"
+    if [[ "${loaded_platform}" != "${IMAGE_PLATFORM}" ]]; then
+        echo "Loaded image platform ${loaded_platform} does not match bundle manifest ${IMAGE_PLATFORM}" >&2
+        exit 1
+    fi
+    if [[ "${loaded_platform}" != "${host_platform}" ]]; then
+        echo "Image platform ${loaded_platform} does not match Docker host platform ${host_platform}" >&2
+        exit 1
+    fi
+fi
 
 if [[ -n "${DEPLOY_DIR}" ]]; then
     mkdir -p "${DEPLOY_DIR}"
