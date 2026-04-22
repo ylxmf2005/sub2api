@@ -14,12 +14,18 @@
 
 ## 私有 Fork 工作流
 
-- 本地仓库长期保留两个远端角色：
-  - `upstream`: 官方 `Wei-Shaw/sub2api`
-  - `origin`: 你自己的私有仓库
-- 日常更新顺序固定为：先从 `upstream` 拉最新，再合并到私有长期分支，然后本地构建、验证、打部署包。
-- 生产环境不承担源码编译职责，只接收本地构建好的镜像和部署材料。
-- 部署相关私有差异优先收敛到 `deploy/docker-compose.private.yml`、`deploy/scripts/`、`deploy/migration/`、`deploy/runbooks/` 和 `docs/operations/`，尽量少直接改上游核心部署文件。
+我们维护一个私有 fork 用于承载本地定制、私有部署配置和不便公开的功能。
+
+- **核心原则**：保持与上游尽量接近，通过“增量覆盖”而非“大规模修改”来降低维护成本。
+- **角色设定**：
+  - `upstream`: 官方 `Wei-Shaw/sub2api` (只读)
+  - `origin`: 你的私有仓库 (读写)
+- **分支模型**：
+  - `main`: 同步 `upstream/main`，保持纯净。
+  - `private-deploy`: 长期保留的私有部署分支，包含 `deploy/docker-compose.private.yml` 等。
+- **详细指南**：
+  - [私有 Fork 工作流详情](docs/operations/fork-workflow.md)
+  - [上游同步检查清单](docs/operations/upstream-sync-checklist.md)
 
 ## 二、本地环境配置
 
@@ -272,19 +278,23 @@ psql -U sub2api -h 127.0.0.1 -d sub2api -f migration.sql
 
 ### Git 操作
 
+详细流程请参考 [上游同步检查清单](docs/operations/upstream-sync-checklist.md)。
+
 ```bash
-# 同步上游
+# 1. 同步上游到 main
 git fetch upstream
 git checkout main
 git merge upstream/main
 git push origin main
 
-# 创建功能分支
-git checkout -b feature/xxx
+# 2. 合并到私有部署分支
+git checkout private-deploy
+git merge main
+# 处理冲突，保留 deploy/ 中的私有文件
+git push origin private-deploy
 
-# Rebase 到最新 main
-git fetch upstream
-git rebase upstream/main
+# 3. 创建功能分支 (从 private-deploy 切出)
+git checkout -b feature/xxx private-deploy
 ```
 
 ### 前端操作

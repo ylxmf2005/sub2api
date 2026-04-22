@@ -1,138 +1,127 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-set -euo pipefail
+# Sub2API Server Audit Script
+# Purpose: Detect the current deployment mode and capture essential configuration.
 
-usage() {
-    cat <<'EOF'
-Usage:
-  ./deploy/migration/audit_server.sh [--scan-root DIR] [--output FILE]
-EOF
-}
+set -e
 
-SCAN_ROOT="/"
-OUTPUT_FILE=""
+# Output colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m' # No Color
 
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --scan-root)
-            SCAN_ROOT="$2"
-            shift 2
-            ;;
-        --output)
-            OUTPUT_FILE="$2"
-            shift 2
-            ;;
-        -h|--help)
-            usage
-            exit 0
-            ;;
-        *)
-            echo "Unknown option: $1" >&2
-            usage >&2
-            exit 1
-            ;;
-    esac
-done
+echo -e "${YELLOW}Starting Sub2API Server Audit...${NC}"
 
-join_lines() {
-    paste -sd ',' -
-}
+AUDIT_DIR="./migration_audit_$(date +%Y%m%d_%H%M%S)"
+mkdir -p "$AUDIT_DIR"
+MANIFEST="$AUDIT_DIR/manifest.json"
 
-root_path() {
-    local path="$1"
-    if [[ "${SCAN_ROOT}" == "/" ]]; then
-        printf '%s\n' "${path}"
+echo "{" > "$MANIFEST"
+echo "  \"audit_timestamp\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\"," >> "$MANIFEST"
+
+# 1. Detect Binary/Systemd Installation
+BINARY_DETECTED=false
+if systemctl is-active --quiet sub2api 2>/dev/null || [ -f /etc/systemd/system/sub2api.service ]; then
+    BINARY_DETECTED=true
+    echo -e "${GREEN}[+] Detected Systemd service (Binary Install)${NC}"
+fi
+
+# 2. Detect Docker Compose
+DOCKER_COMPOSE_DETECTED=false
+COMPOSE_FILE=""
+if [ -f "docker-compose.local.yml" ]; then
+    DOCKER_COMPOSE_DETECTED=true
+    COMPOSE_FILE="docker-compose.local.yml"
+    echo -e "${GREEN}[+] Detected docker-compose.local.yml${NC}"
+elif [ -f "docker-compose.yml" ]; then
+    DOCKER_COMPOSE_DETECTED=true
+    COMPOSE_FILE="docker-compose.yml"
+    echo -e "${GREEN}[+] Detected docker-compose.yml${NC}"
+fi
+
+# 3. Determine Source Mode
+SOURCE_MODE="unknown"
+if $BINARY_DETECTED && ! $DOCKER_COMPOSE_DETECTED; then
+    SOURCE_MODE="binary"
+elif $DOCKER_COMPOSE_DETECTED; then
+    # Check if it uses local directories or named volumes
+    if grep -q "\./postgres_data" "$COMPOSE_FILE" 2>/dev/null || grep -q "\./data" "$COMPOSE_FILE" 2>/dev/null; then
+        SOURCE_MODE="compose-local"
     else
-        printf '%s\n' "${SCAN_ROOT%/}${path}"
+        SOURCE_MODE="compose-volume"
+    fi
+fi
+
+echo -e "${YELLOW}Inferred Source Mode: $SOURCE_MODE${NC}"
+echo "  \"source_mode\": \"$SOURCE_MODE\"," >> "$MANIFEST"
+
+# 4. Capture Config and Secrets
+echo "  \"captured_files\": [" >> "$MANIFEST"
+
+capture_file() {
+    local src=$1
+    local name=$2
+    if [ -f "$src" ]; then
+        cp "$src" "$AUDIT_DIR/$name"
+        echo "    \"$name\"," >> "$MANIFEST"
+        echo -e "${GREEN}[+] Captured $src as $name${NC}"
     fi
 }
 
-path_exists() {
-    [[ -e "$(root_path "$1")" ]]
+# Capture .env if exists (for Docker)
+capture_file ".env" "env_file"
+
+# Capture config.yaml if exists
+if [ "$SOURCE_MODE" == "binary" ]; then
+    capture_file "/etc/sub2api/config.yaml" "config.yaml"
+    # Also capture service file to see env vars
+    capture_file "/etc/systemd/system/sub2api.service" "sub2api.service"
+elif [ "$SOURCE_MODE" == "compose-local" ] || [ "$SOURCE_MODE" == "compose-volume" ]; then
+    # Try to find config.yaml in data dir
+    if [ -f "data/config.yaml" ]; then
+        capture_file "data/config.yaml" "config.yaml"
+    fi
+    capture_file "$COMPOSE_FILE" "docker-compose.src.yml"
+fi
+
+# Remove trailing comma from last captured file entry
+sed -i '$ s/,$//' "$MANIFEST"
+echo "  ]," >> "$MANIFEST"
+
+# 5. Extract Key Secrets for verification
+echo "  \"extracted_secrets\": {" >> "$MANIFEST"
+
+extract_env() {
+    local file=$1
+    local var=$2
+    local val=$(grep "^$var=" "$file" | cut -d'=' -f2- | tr -d '"' | tr -d "'")
+    if [ -n "$val" ]; then
+        echo "    \"$var\": \"$val\"," >> "$MANIFEST"
+    fi
 }
 
-list_compose_files() {
-    find "${SCAN_ROOT}" \
-        \( -name 'docker-compose.local.yml' -o -name 'docker-compose.yml' \) \
-        -type f 2>/dev/null | sort
-}
-
-binary_present=false
-systemd_present=false
-datamanagement_unit_present=false
-datamanagement_socket_present=false
-compose_mode="none"
-compose_file=""
-compose_dir=""
-notes=()
-
-if path_exists /opt/sub2api/sub2api || path_exists /etc/sub2api/config.yaml; then
-    binary_present=true
+if [ -f "$AUDIT_DIR/env_file" ]; then
+    extract_env "$AUDIT_DIR/env_file" "POSTGRES_PASSWORD"
+    extract_env "$AUDIT_DIR/env_file" "JWT_SECRET"
+    extract_env "$AUDIT_DIR/env_file" "TOTP_ENCRYPTION_KEY"
+    extract_env "$AUDIT_DIR/env_file" "ADMIN_EMAIL"
 fi
 
-if path_exists /etc/systemd/system/sub2api.service || path_exists /lib/systemd/system/sub2api.service; then
-    systemd_present=true
+# Extract from service file if binary
+if [ -f "$AUDIT_DIR/sub2api.service" ]; then
+    grep "Environment=" "$AUDIT_DIR/sub2api.service" | while read -r line; do
+        pair=$(echo "$line" | cut -d'=' -f2-)
+        key=$(echo "$pair" | cut -d'=' -f1)
+        val=$(echo "$pair" | cut -d'=' -f2-)
+        echo "    \"$key\": \"$val\"," >> "$MANIFEST"
+    done
 fi
 
-if path_exists /etc/systemd/system/sub2api-datamanagementd.service || path_exists /lib/systemd/system/sub2api-datamanagementd.service; then
-    datamanagement_unit_present=true
-fi
+# Remove trailing comma from last secret entry
+sed -i '$ s/,$//' "$MANIFEST"
+echo "  }" >> "$MANIFEST"
 
-if [[ -S "$(root_path /tmp/sub2api-datamanagement.sock)" ]]; then
-    datamanagement_socket_present=true
-fi
+echo "}" >> "$MANIFEST"
 
-compose_candidates="$(list_compose_files || true)"
-if [[ -n "${compose_candidates}" ]]; then
-    while IFS= read -r candidate; do
-        [[ -z "${candidate}" ]] && continue
-        if grep -q '\./data:/app/data' "${candidate}" 2>/dev/null; then
-            compose_mode="docker-local"
-            compose_file="${candidate}"
-            compose_dir="$(dirname "${candidate}")"
-            break
-        fi
-        if [[ "${compose_mode}" == "none" ]]; then
-            compose_mode="docker-named"
-            compose_file="${candidate}"
-            compose_dir="$(dirname "${candidate}")"
-        fi
-    done <<< "${compose_candidates}"
-fi
-
-source_mode="unknown"
-if [[ "${binary_present}" == "true" && "${compose_mode}" != "none" ]]; then
-    source_mode="mixed"
-    notes+=("binary_and_compose_markers_present")
-elif [[ "${compose_mode}" != "none" ]]; then
-    source_mode="${compose_mode}"
-elif [[ "${binary_present}" == "true" ]]; then
-    source_mode="binary"
-else
-    notes+=("no_known_markers_found")
-fi
-
-if command -v docker >/dev/null 2>&1 && [[ "${SCAN_ROOT}" == "/" ]]; then
-    volume_names="$(docker volume ls --format '{{.Name}}' 2>/dev/null | grep '^sub2api' || true)"
-else
-    volume_names=""
-fi
-
-if [[ -n "${volume_names}" && "${source_mode}" == "unknown" ]]; then
-    source_mode="docker-named"
-    notes+=("derived_from_docker_volumes")
-fi
-
-{
-    printf 'SOURCE_MODE=%s\n' "${source_mode}"
-    printf 'BINARY_INSTALL_PRESENT=%s\n' "${binary_present}"
-    printf 'SYSTEMD_SUB2API_UNIT_PRESENT=%s\n' "${systemd_present}"
-    printf 'COMPOSE_MODE=%s\n' "${compose_mode}"
-    printf 'COMPOSE_FILE=%s\n' "${compose_file}"
-    printf 'COMPOSE_DIR=%s\n' "${compose_dir}"
-    printf 'DATAMANAGEMENT_UNIT_PRESENT=%s\n' "${datamanagement_unit_present}"
-    printf 'DATAMANAGEMENT_SOCKET_PRESENT=%s\n' "${datamanagement_socket_present}"
-    printf 'DOCKER_VOLUMES=%s\n' "$(printf '%s\n' "${volume_names}" | join_lines)"
-    printf 'SCAN_ROOT=%s\n' "${SCAN_ROOT}"
-    printf 'NOTES=%s\n' "$(printf '%s\n' "${notes[@]-}" | sed '/^$/d' | join_lines)"
-} > "${OUTPUT_FILE:-/dev/stdout}"
+echo -e "${GREEN}Audit complete. Results in $AUDIT_DIR${NC}"

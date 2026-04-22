@@ -1,49 +1,71 @@
-# 导入策略
+# Sub2API Migration: Import Strategy
 
-## 先决条件
+This document defines the mapping from detected source modes to the standardized Docker Compose production layout.
 
-- 已通过 `audit_server.sh` 明确源部署模式
-- 已完成完整备份
-- 已确认关键密钥是否可以沿用
+## Target Layout
+All migrations target the `docker-compose.local.yml` layout:
+- `./.env`: Environment variables and secrets.
+- `./data/`: Application runtime data (config, logs, etc.).
+- `./postgres_data/`: PostgreSQL data directory.
+- `./redis_data/`: Redis data directory.
 
-## 按源模式选择导入路径
+---
 
-### 1. `docker-local`
+## 1. Source: `binary` (Systemd)
 
-- 最终停写后冻结旧目录
-- 复制旧部署目录里的：
-  - `data/`
-  - `postgres_data/`
-  - `redis_data/`
-  - `.env`
-  - compose 文件
-- 在新工作目录里放入私有 overlay
-- 核对 `.env` 后再启动
+**Recovery:**
+- Secrets: Extract from `/etc/systemd/system/sub2api.service` (`Environment=` lines).
+- Config: `/etc/sub2api/config.yaml`.
+- DB: PostgreSQL dump from the host database.
+- Data: `/opt/sub2api/data/`.
 
-### 2. `docker-named`
+**Import Path:**
+1. Populate `.env` with extracted secrets (`POSTGRES_PASSWORD`, `JWT_SECRET`, etc.).
+2. Copy `/opt/sub2api/data/*` to `./data/`.
+3. Start the `postgres` service only.
+4. Restore the DB dump into the `postgres` container.
+5. Start the full Compose stack.
 
-- 导出命名卷
-- 在新目标目录恢复成：
-  - `data/`
-  - `postgres_data/`
-  - `redis_data/`
-- 保证目录落位完成后再第一次 `docker compose up`
+---
 
-### 3. `binary`
+## 2. Source: `compose-local` (Existing Local Directory)
 
-- 先备份 `/opt/sub2api` 与 `/etc/sub2api`
-- 提取 `config.yaml` 与任何环境变量
-- 从旧数据库/Redis 导出真实数据
-- 还原到新 Compose 目录后再启动
+**Recovery:**
+- Secrets: `.env` file.
+- Config: `data/config.yaml`.
+- DB: `postgres_data/` directory and optional dump.
+- Data: `data/` directory.
 
-### 4. `mixed`
+**Import Path:**
+1. This is the "Native" mode. Copy `.env`, `data/`, and `postgres_data/` directly to the new workspace.
+2. Verify ownership and permissions of the copied directories.
+3. Start the full Compose stack.
 
-- 不做“猜一个主路径”
-- 先确认谁才是当前生产流量真实来源
-- 未确认前不允许切服
+---
 
-## 关键门槛
+## 3. Source: `compose-volume` (Named Volumes)
 
-- 如果拿不到 `JWT_SECRET` / `TOTP_ENCRYPTION_KEY`，要把这件事明确记为切服风险
-- 如果旧环境存在额外宿主机组件，例如 `datamanagementd`，必须同时迁移挂载与服务托管关系
-- 所有导入动作完成前，不允许第一次启动新栈
+**Recovery:**
+- Secrets: `.env` file.
+- Config: Captured from inside the `sub2api` container or `data/` volume.
+- DB: Dump via `docker exec postgres pg_dump`.
+- Data: Backup volume via a helper container (e.g., `busybox` mount).
+
+**Import Path:**
+1. Populate `.env` with captured secrets.
+2. Extract the data volume backup into `./data/`.
+3. Start the `postgres` service only.
+4. Restore the DB dump into the `postgres` container (which maps to `./postgres_data`).
+5. Start the full Compose stack.
+
+---
+
+## Critical Continuity Rules
+
+| Data Point | Failure Impact | Mitigation |
+|------------|----------------|------------|
+| `JWT_SECRET` | All user sessions invalidated; all existing tokens fail. | MUST recover and carry forward to `.env`. |
+| `TOTP_ENCRYPTION_KEY` | All 2FA (TOTP) setups break; users locked out. | MUST recover and carry forward to `.env`. |
+| `POSTGRES_PASSWORD` | Service cannot connect to existing data. | Use existing password or update DB and `.env` simultaneously. |
+| `data/config.yaml` | Application settings (ports, features) reset. | Prefer using the recovered file. |
+| `data/.installed` | Auto-setup might try to recreate admin user. | Ensure this file exists in the target `./data/`. |

@@ -1,71 +1,69 @@
-# Sub2API 私有 Fork 工作流
+# Private Fork Workflow
 
-这个仓库的长期维护模式不是“直接改线上”，而是：
+This document describes the workflow for maintaining and deploying a private fork of Sub2API.
 
-1. 官方上游 `Wei-Shaw/sub2api` 持续更新
-2. 我们自己的私有仓库承载部署相关定制和后续功能开发
-3. 本地机器负责拉上游、解决冲突、构建镜像、生成部署包
-4. 服务器只负责接收构建产物并运行 `Docker Compose`
+## Overview
 
-## 远端模型
+We maintain a private fork of [Wei-Shaw/sub2api](https://github.com/Wei-Shaw/sub2api) to carry local customizations, private deployment configurations, and specific features that are not intended for the upstream repository.
 
-- `upstream`: 官方仓库
-- `origin`: 私有 GitHub 仓库
+The goal is to keep our fork as close to upstream as possible, making it easy to pull in updates while maintaining a stable, locally-built production environment.
 
-当前本地仓库已经接入 `upstream`。创建私有仓库后，把它接成 `origin`：
+## Repository Roles
 
-```bash
-git remote add origin <your-private-git-url>
-git push -u origin feat/private-fork-cutover
-```
+| Remote | URL | Role |
+|---|---|---|
+| `upstream` | `https://github.com/Wei-Shaw/sub2api.git` | Official source of truth. Read-only for us. |
+| `origin` | (Private Repo URL) | Our private source of truth. Where we push our changes. |
 
-如果后续要建立长期部署分支，推荐保留这类分工：
+## Branching Strategy
 
-- `main`: 跟随上游、保持可同步
-- `deploy/private`: 私有部署与功能定制的长期分支
-- 临时功能分支：每次新功能或迁移任务单独开
+- `main`: Tracks `upstream/main`. Should ideally remain clean or only contain minimal, universally applicable changes.
+- `private-deploy`: Our long-lived branch for production. Contains private deployment overlays (`deploy/docker-compose.private.yml`), migration scripts, and any private features.
+- `feature/*`: Short-lived branches for developing new features or fixes, branched from `private-deploy` or `main`.
 
-## 私有改动放哪里
+## Maintenance Loop (Syncing with Upstream)
 
-为了减少以后跟上游合并时的冲突，私有差异优先放在这些位置：
+The sync process should happen regularly to avoid large, painful merge conflicts.
 
-- `deploy/docker-compose.private.yml`
-- `deploy/private/`
-- `deploy/scripts/`
-- `deploy/migration/`
-- `deploy/runbooks/`
-- `docs/operations/`
+1.  **Fetch Upstream Changes:**
+    ```bash
+    git fetch upstream
+    ```
 
-尽量不要把“仅私有环境需要的运维差异”直接散落到上游已有的核心部署文件里。
+2.  **Update Local `main`:**
+    ```bash
+    git checkout main
+    git merge upstream/main
+    git push origin main
+    ```
 
-## 日常节奏
+3.  **Merge into `private-deploy`:**
+    ```bash
+    git checkout private-deploy
+    git merge main
+    # Resolve any conflicts. Prefer keeping private deployment files intact.
+    git push origin private-deploy
+    ```
 
-每次准备更新生产前，按固定顺序走：
+## Local Build & Release Process
 
-1. 拉取上游最新提交
-2. 合并到私有长期分支
-3. 解决代码和部署材料冲突
-4. 本地重新构建镜像
-5. 导出发布包
-6. 服务器做预检、备份、切换、烟测
+We build artifacts locally and transfer them to the server as image bundles.
 
-当前生产机 `154.26.179.199` 是 `linux/amd64`，本地发版时要显式构建：
+1.  **Merge & Verify:** Ensure `private-deploy` is synced and tests pass.
+2.  **Build Image:** Use `deploy/build_image.sh` to create the Docker image.
+3.  **Export Bundle:** Use `deploy/scripts/export_release_bundle.sh` to create a versioned `.tar.gz` bundle.
+4.  **Transfer:** Ship the bundle to the production server.
+5.  **Deploy:** Load the image and restart the Compose stack using the private overlay.
 
-```bash
-./deploy/build_image.sh --platform linux/amd64 ...
-```
+Detailed instructions for build and release can be found in `docs/operations/local-build-and-release.md`.
 
-## 服务器职责边界
+## Guidelines for Private Changes
 
-服务器只做这些事：
+- **Additive Overlays:** Prefer adding new files (e.g., `docker-compose.private.yml`) over modifying upstream files (e.g., `docker-compose.yml`).
+- **Isolation:** Keep private scripts in `deploy/scripts/`, `deploy/migration/`, and `deploy/runbooks/`.
+- **Documentation:** Document every private customization in `docs/operations/`.
+- **No Secrets in Repo:** Never commit real secrets. Use `.env.production.example` as a template and keep the real `.env` only on the production server.
 
-- 保存 `.env` 和迁移后的运行时数据
-- `docker load` 导入本地构建的镜像
-- `docker compose -f deploy/docker-compose.local.yml -f deploy/docker-compose.private.yml up -d`
-- 执行预检、烟测、回滚
+## Upstream Sync Checklist
 
-服务器不做这些事：
-
-- 不在生产机上跑前端/后端源码编译
-- 不在生产机上直接做日常开发
-- 不把“先试试再说”当成迁移策略
+Before every production cutover or major update, follow the [Upstream Sync Checklist](../operations/upstream-sync-checklist.md).

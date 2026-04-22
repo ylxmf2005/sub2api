@@ -162,6 +162,18 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/monitor',
+    name: 'Monitor',
+    component: () => import('@/views/admin/DashboardView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Monitor',
+      titleKey: 'admin.dashboard.title',
+      descriptionKey: 'admin.dashboard.description'
+    }
+  },
+  {
     path: '/keys',
     name: 'Keys',
     component: () => import('@/views/user/KeysView.vue'),

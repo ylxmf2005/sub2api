@@ -334,6 +334,7 @@ export default {
   // Navigation
   nav: {
     dashboard: 'Dashboard',
+    monitor: 'Monitor',
     announcements: 'Announcements',
     apiKeys: 'API Keys',
     usage: 'Usage',

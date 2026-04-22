@@ -1,47 +1,29 @@
-CREATE OR REPLACE FUNCTION temp_table_count(tab text)
-RETURNS bigint
-LANGUAGE plpgsql
-AS $$
-DECLARE
-  result bigint;
-BEGIN
-  EXECUTE format('SELECT count(*) FROM %I', tab) INTO result;
-  RETURN result;
-EXCEPTION
-  WHEN undefined_table THEN
-    RETURN NULL;
-END;
-$$;
+-- Sub2API Migration Verification Script
+-- Purpose: Verify that key data has been imported correctly into the new PostgreSQL database.
 
+\echo '--- Sub2API Data Verification ---'
+
+-- 1. Check User counts
+SELECT 
+    (SELECT COUNT(*) FROM users) AS user_count,
+    (SELECT COUNT(*) FROM users WHERE role = 'admin') AS admin_count;
+
+-- 2. Check Core Entities
 SELECT
-  tab AS table_name,
-  temp_table_count(tab) AS row_count
-FROM (
-  VALUES
-    ('users'),
-    ('api_keys'),
-    ('accounts'),
-    ('groups'),
-    ('settings'),
-    ('usage_logs'),
-    ('subscription_plans'),
-    ('user_subscriptions'),
-    ('payment_orders'),
-    ('redeem_codes')
-) AS t(tab);
+    (SELECT COUNT(*) FROM accounts) AS account_count,
+    (SELECT COUNT(*) FROM groups) AS group_count,
+    (SELECT COUNT(*) FROM api_keys) AS apikey_count;
 
+-- 3. Check for specific continuity indicators
+-- (Example: presence of the default group or the first user)
+SELECT id, email, role, status FROM users ORDER BY id ASC LIMIT 5;
+
+-- 4. Check for recent activity/logs to ensure usage data survived
+SELECT COUNT(*) AS usage_log_count FROM usage_logs;
+
+-- 5. Verify join table normalization (per upstream notes)
+-- users.allowed_groups -> user_allowed_groups
 SELECT
-  COUNT(*) FILTER (WHERE role = 'admin') AS admin_users,
-  COUNT(*) AS total_users
-FROM users;
+    (SELECT COUNT(*) FROM user_allowed_groups) AS join_table_pairs;
 
-SELECT
-  COUNT(*) AS total_accounts,
-  COUNT(*) FILTER (WHERE status = 'active') AS active_accounts
-FROM accounts;
-
-SELECT
-  MAX(created_at) AS latest_usage_log_at
-FROM usage_logs;
-
-DROP FUNCTION temp_table_count(text);
+\echo '--- Verification Complete ---'

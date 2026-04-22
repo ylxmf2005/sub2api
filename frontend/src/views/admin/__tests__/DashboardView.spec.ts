@@ -4,18 +4,52 @@ import { flushPromises, mount } from '@vue/test-utils'
 import type { DashboardStats } from '@/types'
 import DashboardView from '../DashboardView.vue'
 
-const { getSnapshotV2, getUserUsageTrend, getUserSpendingRanking } = vi.hoisted(() => ({
-  getSnapshotV2: vi.fn(),
-  getUserUsageTrend: vi.fn(),
-  getUserSpendingRanking: vi.fn()
+const {
+  adminGetSnapshotV2,
+  adminGetUserUsageTrend,
+  adminGetUserSpendingRanking,
+  adminGetAllGroups,
+  monitorGetSnapshotV2,
+  monitorGetUserUsageTrend,
+  monitorGetUserSpendingRanking,
+  monitorGetAllGroups,
+  routeState,
+  push
+} = vi.hoisted(() => ({
+  adminGetSnapshotV2: vi.fn(),
+  adminGetUserUsageTrend: vi.fn(),
+  adminGetUserSpendingRanking: vi.fn(),
+  adminGetAllGroups: vi.fn(),
+  monitorGetSnapshotV2: vi.fn(),
+  monitorGetUserUsageTrend: vi.fn(),
+  monitorGetUserSpendingRanking: vi.fn(),
+  monitorGetAllGroups: vi.fn(),
+  routeState: { path: '/admin/dashboard' },
+  push: vi.fn()
 }))
 
 vi.mock('@/api/admin', () => ({
   adminAPI: {
     dashboard: {
-      getSnapshotV2,
-      getUserUsageTrend,
-      getUserSpendingRanking
+      getSnapshotV2: adminGetSnapshotV2,
+      getUserUsageTrend: adminGetUserUsageTrend,
+      getUserSpendingRanking: adminGetUserSpendingRanking
+    },
+    groups: {
+      getAll: adminGetAllGroups
+    }
+  }
+}))
+
+vi.mock('@/api/monitor', () => ({
+  default: {
+    dashboard: {
+      getSnapshotV2: monitorGetSnapshotV2,
+      getUserUsageTrend: monitorGetUserUsageTrend,
+      getUserSpendingRanking: monitorGetUserSpendingRanking
+    },
+    groups: {
+      getAll: monitorGetAllGroups
     }
   }
 }))
@@ -27,8 +61,9 @@ vi.mock('@/stores/app', () => ({
 }))
 
 vi.mock('vue-router', () => ({
+  useRoute: () => routeState,
   useRouter: () => ({
-    push: vi.fn()
+    push
   })
 }))
 
@@ -71,6 +106,7 @@ const createDashboardStats = (): DashboardStats => ({
   total_tokens: 0,
   total_cost: 0,
   total_actual_cost: 0,
+  total_account_cost: 0,
   today_requests: 0,
   today_input_tokens: 0,
   today_output_tokens: 0,
@@ -79,30 +115,76 @@ const createDashboardStats = (): DashboardStats => ({
   today_tokens: 0,
   today_cost: 0,
   today_actual_cost: 0,
+  today_account_cost: 0,
   average_duration_ms: 0,
   uptime: 0,
   rpm: 0,
   tpm: 0
 })
 
+const selectStub = {
+  props: ['modelValue', 'options'],
+  emits: ['update:modelValue', 'change'],
+  methods: {
+    normalizeValue(value: string) {
+      if (value === '') return null
+      return /^-?\d+$/.test(value) ? Number.parseInt(value, 10) : value
+    }
+  },
+  template: `
+    <select
+      :value="modelValue ?? ''"
+      @change="$emit('update:modelValue', normalizeValue($event.target.value)); $emit('change', normalizeValue($event.target.value))"
+    >
+      <option v-for="option in options" :key="String(option.value ?? '')" :value="option.value ?? ''">
+        {{ option.label }}
+      </option>
+    </select>
+  `
+}
+
+const mountDashboard = () =>
+  mount(DashboardView, {
+    global: {
+      stubs: {
+        AppLayout: { template: '<div><slot /></div>' },
+        LoadingSpinner: true,
+        Icon: true,
+        DateRangePicker: true,
+        Select: selectStub,
+        ModelDistributionChart: true,
+        TokenUsageTrend: true,
+        Line: true
+      }
+    }
+  })
+
 describe('admin DashboardView', () => {
   beforeEach(() => {
-    getSnapshotV2.mockReset()
-    getUserUsageTrend.mockReset()
-    getUserSpendingRanking.mockReset()
+    routeState.path = '/admin/dashboard'
+    push.mockReset()
 
-    getSnapshotV2.mockResolvedValue({
+    adminGetSnapshotV2.mockReset()
+    adminGetUserUsageTrend.mockReset()
+    adminGetUserSpendingRanking.mockReset()
+    adminGetAllGroups.mockReset()
+    monitorGetSnapshotV2.mockReset()
+    monitorGetUserUsageTrend.mockReset()
+    monitorGetUserSpendingRanking.mockReset()
+    monitorGetAllGroups.mockReset()
+
+    adminGetSnapshotV2.mockResolvedValue({
       stats: createDashboardStats(),
       trend: [],
       models: []
     })
-    getUserUsageTrend.mockResolvedValue({
+    adminGetUserUsageTrend.mockResolvedValue({
       trend: [],
       start_date: '',
       end_date: '',
       granularity: 'hour'
     })
-    getUserSpendingRanking.mockResolvedValue({
+    adminGetUserSpendingRanking.mockResolvedValue({
       ranking: [],
       total_actual_cost: 0,
       total_requests: 0,
@@ -110,34 +192,105 @@ describe('admin DashboardView', () => {
       start_date: '',
       end_date: ''
     })
+    adminGetAllGroups.mockResolvedValue([
+      { id: 2, name: 'OpenAI Shared', platform: 'openai' }
+    ])
+
+    monitorGetSnapshotV2.mockResolvedValue({
+      stats: createDashboardStats(),
+      trend: [],
+      models: []
+    })
+    monitorGetUserUsageTrend.mockResolvedValue({
+      trend: [],
+      start_date: '',
+      end_date: '',
+      granularity: 'hour'
+    })
+    monitorGetUserSpendingRanking.mockResolvedValue({
+      ranking: [],
+      total_actual_cost: 0,
+      total_requests: 0,
+      total_tokens: 0,
+      start_date: '',
+      end_date: ''
+    })
+    monitorGetAllGroups.mockResolvedValue([
+      { id: 2, name: 'OpenAI Shared', platform: 'openai' }
+    ])
   })
 
   it('uses last 24 hours as default dashboard range', async () => {
-    mount(DashboardView, {
-      global: {
-        stubs: {
-          AppLayout: { template: '<div><slot /></div>' },
-          LoadingSpinner: true,
-          Icon: true,
-          DateRangePicker: true,
-          Select: true,
-          ModelDistributionChart: true,
-          TokenUsageTrend: true,
-          Line: true
-        }
-      }
-    })
+    mountDashboard()
 
     await flushPromises()
 
     const now = new Date()
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000)
 
-    expect(getSnapshotV2).toHaveBeenCalledTimes(1)
-    expect(getSnapshotV2).toHaveBeenCalledWith(expect.objectContaining({
+    expect(adminGetSnapshotV2).toHaveBeenCalledTimes(1)
+    expect(adminGetSnapshotV2).toHaveBeenCalledWith(expect.objectContaining({
       start_date: formatLocalDate(yesterday),
       end_date: formatLocalDate(now),
       granularity: 'hour'
+    }))
+  })
+
+  it('reloads admin dashboard charts with group filter when a group is selected', async () => {
+    const wrapper = mountDashboard()
+
+    await flushPromises()
+
+    adminGetSnapshotV2.mockClear()
+    adminGetUserUsageTrend.mockClear()
+    adminGetUserSpendingRanking.mockClear()
+
+    const selects = wrapper.findAll('select')
+    expect(selects).toHaveLength(2)
+
+    await selects[0].setValue('2')
+    await flushPromises()
+
+    expect(adminGetSnapshotV2).toHaveBeenCalledWith(expect.objectContaining({
+      group_id: 2
+    }))
+    expect(adminGetUserUsageTrend).toHaveBeenCalledWith(expect.objectContaining({
+      group_id: 2
+    }))
+    expect(adminGetUserSpendingRanking).toHaveBeenCalledWith(expect.objectContaining({
+      group_id: 2
+    }))
+  })
+
+  it('uses monitor endpoints when rendered on /monitor', async () => {
+    routeState.path = '/monitor'
+    const wrapper = mountDashboard()
+
+    await flushPromises()
+
+    expect(monitorGetSnapshotV2).toHaveBeenCalledTimes(1)
+    expect(monitorGetUserUsageTrend).toHaveBeenCalledTimes(1)
+    expect(monitorGetUserSpendingRanking).toHaveBeenCalledTimes(1)
+    expect(monitorGetAllGroups).toHaveBeenCalledTimes(1)
+
+    monitorGetSnapshotV2.mockClear()
+    monitorGetUserUsageTrend.mockClear()
+    monitorGetUserSpendingRanking.mockClear()
+
+    const selects = wrapper.findAll('select')
+    expect(selects).toHaveLength(2)
+
+    await selects[0].setValue('2')
+    await flushPromises()
+
+    expect(monitorGetSnapshotV2).toHaveBeenCalledWith(expect.objectContaining({
+      group_id: 2
+    }))
+    expect(monitorGetUserUsageTrend).toHaveBeenCalledWith(expect.objectContaining({
+      group_id: 2
+    }))
+    expect(monitorGetUserSpendingRanking).toHaveBeenCalledWith(expect.objectContaining({
+      group_id: 2
     }))
   })
 })

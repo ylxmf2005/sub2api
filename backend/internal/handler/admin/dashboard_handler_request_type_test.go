@@ -19,7 +19,11 @@ type dashboardUsageRepoCapture struct {
 	trendStream      *bool
 	modelRequestType *int16
 	modelStream      *bool
+	usersTrendGroup  int64
+	usersTrendCalls  int
 	rankingLimit     int
+	rankingCalls     int
+	rankingGroup     int64
 	ranking          []usagestats.UserSpendingRankingItem
 	rankingTotal     float64
 }
@@ -52,12 +56,54 @@ func (s *dashboardUsageRepoCapture) GetModelStatsWithFilters(
 	return []usagestats.ModelStat{}, nil
 }
 
+func (s *dashboardUsageRepoCapture) GetUserUsageTrend(
+	ctx context.Context,
+	startTime, endTime time.Time,
+	granularity string,
+	limit int,
+) ([]usagestats.UserUsageTrendPoint, error) {
+	s.usersTrendCalls++
+	s.usersTrendGroup = 0
+	return []usagestats.UserUsageTrendPoint{}, nil
+}
+
+func (s *dashboardUsageRepoCapture) GetUserUsageTrendWithGroup(
+	ctx context.Context,
+	startTime, endTime time.Time,
+	granularity string,
+	groupID int64,
+	limit int,
+) ([]usagestats.UserUsageTrendPoint, error) {
+	s.usersTrendCalls++
+	s.usersTrendGroup = groupID
+	return []usagestats.UserUsageTrendPoint{}, nil
+}
+
 func (s *dashboardUsageRepoCapture) GetUserSpendingRanking(
 	ctx context.Context,
 	startTime, endTime time.Time,
 	limit int,
 ) (*usagestats.UserSpendingRankingResponse, error) {
+	s.rankingCalls++
 	s.rankingLimit = limit
+	s.rankingGroup = 0
+	return &usagestats.UserSpendingRankingResponse{
+		Ranking:         s.ranking,
+		TotalActualCost: s.rankingTotal,
+		TotalRequests:   44,
+		TotalTokens:     1234,
+	}, nil
+}
+
+func (s *dashboardUsageRepoCapture) GetUserSpendingRankingWithGroup(
+	ctx context.Context,
+	startTime, endTime time.Time,
+	groupID int64,
+	limit int,
+) (*usagestats.UserSpendingRankingResponse, error) {
+	s.rankingCalls++
+	s.rankingLimit = limit
+	s.rankingGroup = groupID
 	return &usagestats.UserSpendingRankingResponse{
 		Ranking:         s.ranking,
 		TotalActualCost: s.rankingTotal,
@@ -73,6 +119,7 @@ func newDashboardRequestTypeTestRouter(repo *dashboardUsageRepoCapture) *gin.Eng
 	router := gin.New()
 	router.GET("/admin/dashboard/trend", handler.GetUsageTrend)
 	router.GET("/admin/dashboard/models", handler.GetModelStats)
+	router.GET("/admin/dashboard/users-trend", handler.GetUserUsageTrend)
 	router.GET("/admin/dashboard/users-ranking", handler.GetUserSpendingRanking)
 	return router
 }
@@ -173,6 +220,9 @@ func TestDashboardModelStatsValidModelSource(t *testing.T) {
 
 func TestDashboardUsersRankingLimitAndCache(t *testing.T) {
 	dashboardUsersRankingCache = newSnapshotCache(5 * time.Minute)
+	t.Cleanup(func() {
+		dashboardUsersRankingCache = newSnapshotCache(5 * time.Minute)
+	})
 	repo := &dashboardUsageRepoCapture{
 		ranking: []usagestats.UserSpendingRankingItem{
 			{UserID: 7, Email: "rank@example.com", ActualCost: 10.5, Requests: 3, Tokens: 300},
@@ -198,4 +248,72 @@ func TestDashboardUsersRankingLimitAndCache(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, rec2.Code)
 	require.Equal(t, "hit", rec2.Header().Get("X-Snapshot-Cache"))
+	require.Equal(t, 1, repo.rankingCalls)
+}
+
+func TestDashboardUsersTrendForwardsGroupID(t *testing.T) {
+	repo := &dashboardUsageRepoCapture{}
+	router := newDashboardRequestTypeTestRouter(repo)
+
+	req := httptest.NewRequest(http.MethodGet, "/admin/dashboard/users-trend?group_id=42", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.Equal(t, int64(42), repo.usersTrendGroup)
+	require.Equal(t, 1, repo.usersTrendCalls)
+}
+
+func TestDashboardUsersRankingForwardsGroupID(t *testing.T) {
+	dashboardUsersRankingCache = newSnapshotCache(5 * time.Minute)
+	t.Cleanup(func() {
+		dashboardUsersRankingCache = newSnapshotCache(5 * time.Minute)
+	})
+
+	repo := &dashboardUsageRepoCapture{}
+	router := newDashboardRequestTypeTestRouter(repo)
+
+	req := httptest.NewRequest(http.MethodGet, "/admin/dashboard/users-ranking?group_id=42", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.Equal(t, int64(42), repo.rankingGroup)
+	require.Equal(t, 1, repo.rankingCalls)
+}
+
+func TestDashboardUsersRankingGroupIDChangesCacheKey(t *testing.T) {
+	dashboardUsersRankingCache = newSnapshotCache(5 * time.Minute)
+	t.Cleanup(func() {
+		dashboardUsersRankingCache = newSnapshotCache(5 * time.Minute)
+	})
+
+	repo := &dashboardUsageRepoCapture{}
+	router := newDashboardRequestTypeTestRouter(repo)
+
+	req1 := httptest.NewRequest(http.MethodGet, "/admin/dashboard/users-ranking?start_date=2025-01-01&end_date=2025-01-02", nil)
+	rec1 := httptest.NewRecorder()
+	router.ServeHTTP(rec1, req1)
+
+	req2 := httptest.NewRequest(http.MethodGet, "/admin/dashboard/users-ranking?start_date=2025-01-01&end_date=2025-01-02", nil)
+	rec2 := httptest.NewRecorder()
+	router.ServeHTTP(rec2, req2)
+
+	req3 := httptest.NewRequest(http.MethodGet, "/admin/dashboard/users-ranking?start_date=2025-01-01&end_date=2025-01-02&group_id=7", nil)
+	rec3 := httptest.NewRecorder()
+	router.ServeHTTP(rec3, req3)
+
+	req4 := httptest.NewRequest(http.MethodGet, "/admin/dashboard/users-ranking?start_date=2025-01-01&end_date=2025-01-02&group_id=7", nil)
+	rec4 := httptest.NewRecorder()
+	router.ServeHTTP(rec4, req4)
+
+	require.Equal(t, http.StatusOK, rec1.Code)
+	require.Equal(t, "miss", rec1.Header().Get("X-Snapshot-Cache"))
+	require.Equal(t, http.StatusOK, rec2.Code)
+	require.Equal(t, "hit", rec2.Header().Get("X-Snapshot-Cache"))
+	require.Equal(t, http.StatusOK, rec3.Code)
+	require.Equal(t, "miss", rec3.Header().Get("X-Snapshot-Cache"))
+	require.Equal(t, http.StatusOK, rec4.Code)
+	require.Equal(t, "hit", rec4.Header().Get("X-Snapshot-Cache"))
+	require.Equal(t, 2, repo.rankingCalls)
 }

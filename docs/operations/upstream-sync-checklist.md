@@ -1,36 +1,41 @@
-# Upstream 同步检查清单
+# Upstream Sync Checklist
 
-每次准备吸收官方更新时，按这份清单走。
+Follow this checklist when merging changes from the official `Wei-Shaw/sub2api` repository into our private fork.
 
-## 同步前
+## 1. Preparation
+- [ ] Ensure local `main` and `private-deploy` branches are clean (`git status`).
+- [ ] Fetch latest from upstream: `git fetch upstream`.
 
-- 确认当前工作分支干净，没有未提交的部署变更
-- 记录当前线上所用私有版本号 / 镜像 tag
-- 确认本地能成功构建当前版本
-- 确认最近一次可用回滚包仍然存在
+## 2. Sync Upstream to Main
+- [ ] Checkout main: `git checkout main`.
+- [ ] Merge upstream: `git merge upstream/main`.
+- [ ] Resolve any conflicts (rare on `main`).
+- [ ] Run basic tests: `cd backend && go test -tags=unit ./...`.
+- [ ] Push to private origin: `git push origin main`.
 
-## 同步中
+## 3. Merge Main to Private Deploy
+- [ ] Checkout private-deploy: `git checkout private-deploy`.
+- [ ] Merge main: `git merge main`.
+- [ ] **Conflict Resolution:**
+    - [ ] Review changes in `deploy/`. Ensure our private overlays (`docker-compose.private.yml`) and scripts are not accidentally deleted or broken.
+    - [ ] Review `go.mod` and `pnpm-lock.yaml`.
+    - [ ] If core logic was changed upstream, ensure it doesn't break our private features.
+- [ ] Run full test suite:
+    - [ ] Backend: `cd backend && go test -tags=unit,integration ./...`
+    - [ ] Frontend: `cd frontend && pnpm build` (verifies buildability).
+- [ ] Push to private origin: `git push origin private-deploy`.
 
-- 获取 `upstream` 最新提交
-- 合并到私有长期分支
-- 优先处理这些冲突点：
-  - `Dockerfile`
-  - `deploy/`
-  - `backend/migrations/`
-  - `backend/internal/setup/`
-  - 前端管理后台相关页面与 API
+## 4. Local Build Validation
+- [ ] Run `deploy/build_image.sh` to ensure the combined codebase still builds a valid Docker image.
+- [ ] (Optional) Start the stack locally using the private override to smoke test:
+    ```bash
+    docker compose -f deploy/docker-compose.local.yml -f deploy/docker-compose.private.yml up -d
+    ```
 
-## 同步后
+## 5. Documentation Update
+- [ ] If upstream added new configuration options, update `deploy/private/.env.production.example`.
+- [ ] If upstream changed the deployment structure, update `docs/operations/deployment-layout.md`.
 
-- 重新检查私有 overlay 是否仍然成立
-- 重新构建镜像
-- 导出新的 release bundle
-- 运行 compose 配置校验
-- 更新 cutover / rollback 文档里引用的版本号
-
-## 切服前确认
-
-- 新镜像已经在本地完成构建
-- 迁移脚本与备份脚本已准备好
-- 服务器 `.env` 中的关键密钥已确认可沿用
-- 切换窗口内可执行烟测与回滚
+## 6. Readiness for Release
+- [ ] Tag the release in the private repo (e.g., `v1.2.3-private.1`).
+- [ ] Proceed to `deploy/scripts/export_release_bundle.sh`.

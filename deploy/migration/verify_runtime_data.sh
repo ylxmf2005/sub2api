@@ -1,29 +1,54 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-set -euo pipefail
+# Sub2API Runtime Data Verification Script
+# Purpose: Verify the presence and integrity of the runtime data directory.
 
-DEPLOY_DIR="${1:-.}"
+set -e
 
-check_path() {
-    local path="$1"
-    if [[ -e "${path}" ]]; then
-        printf 'OK %s\n' "${path}"
+# Output colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m' # No Color
+
+DATA_DIR=${1:-"./data"}
+
+echo -e "${YELLOW}Verifying runtime data in $DATA_DIR...${NC}"
+
+if [ ! -d "$DATA_DIR" ]; then
+    echo -e "${RED}[!] Error: Data directory $DATA_DIR does not exist.${NC}"
+    exit 1
+fi
+
+# 1. Check for essential files
+ESSENTIAL_FILES=("config.yaml" ".installed")
+for file in "${ESSENTIAL_FILES[@]}"; do
+    if [ -f "$DATA_DIR/$file" ]; then
+        echo -e "${GREEN}[+] Found $file${NC}"
     else
-        printf 'MISSING %s\n' "${path}"
-    fi
-}
-
-check_path "${DEPLOY_DIR}/.env"
-check_path "${DEPLOY_DIR}/docker-compose.local.yml"
-check_path "${DEPLOY_DIR}/docker-compose.private.yml"
-check_path "${DEPLOY_DIR}/data"
-check_path "${DEPLOY_DIR}/postgres_data"
-check_path "${DEPLOY_DIR}/redis_data"
-check_path "${DEPLOY_DIR}/data/config.yaml"
-check_path "${DEPLOY_DIR}/data/.installed"
-
-for dir in data postgres_data redis_data; do
-    if [[ -d "${DEPLOY_DIR}/${dir}" ]]; then
-        du -sh "${DEPLOY_DIR}/${dir}" 2>/dev/null || true
+        echo -e "${YELLOW}[!] Warning: $file is missing.${NC}"
     fi
 done
+
+# 2. Check for logs directory
+if [ -d "$DATA_DIR/logs" ]; then
+    echo -e "${GREEN}[+] Logs directory exists.${NC}"
+else
+    echo -e "${YELLOW}[!] Warning: logs directory is missing.${NC}"
+fi
+
+# 3. Check for certs/keys if applicable
+if [ -d "$DATA_DIR/certs" ]; then
+    echo -e "${GREEN}[+] Certs directory exists.${NC}"
+fi
+
+# 4. Permissions check (should be writable by the container user)
+# Assuming typical Docker user (uid 1000 or root)
+if [ -w "$DATA_DIR" ]; then
+    echo -e "${GREEN}[+] Data directory is writable.${NC}"
+else
+    echo -e "${RED}[!] Error: Data directory is NOT writable.${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}Runtime data verification complete.${NC}"

@@ -16,8 +16,9 @@ import (
 
 type dashboardUsageRepoCacheProbe struct {
 	service.UsageLogRepository
-	trendCalls      atomic.Int32
-	usersTrendCalls atomic.Int32
+	trendCalls             atomic.Int32
+	usersTrendCalls        atomic.Int32
+	groupedUsersTrendCalls atomic.Int32
 }
 
 func (r *dashboardUsageRepoCacheProbe) GetUsageTrendWithFilters(
@@ -55,6 +56,25 @@ func (r *dashboardUsageRepoCacheProbe) GetUserUsageTrend(
 		Tokens:     20,
 		Cost:       2,
 		ActualCost: 1,
+	}}, nil
+}
+
+func (r *dashboardUsageRepoCacheProbe) GetUserUsageTrendWithGroup(
+	ctx context.Context,
+	startTime, endTime time.Time,
+	granularity string,
+	groupID int64,
+	limit int,
+) ([]usagestats.UserUsageTrendPoint, error) {
+	r.groupedUsersTrendCalls.Add(1)
+	return []usagestats.UserUsageTrendPoint{{
+		Date:       "2026-03-11",
+		UserID:     groupID,
+		Email:      "group-cache@test.dev",
+		Requests:   3,
+		Tokens:     30,
+		Cost:       3,
+		ActualCost: 2,
 	}}, nil
 }
 
@@ -115,4 +135,43 @@ func TestDashboardHandler_GetUserUsageTrend_UsesCache(t *testing.T) {
 	require.Equal(t, http.StatusOK, rec2.Code)
 	require.Equal(t, "hit", rec2.Header().Get("X-Snapshot-Cache"))
 	require.Equal(t, int32(1), repo.usersTrendCalls.Load())
+}
+
+func TestDashboardHandler_GetUserUsageTrend_GroupIDHasDistinctCacheKey(t *testing.T) {
+	t.Cleanup(resetDashboardReadCachesForTest)
+	resetDashboardReadCachesForTest()
+
+	gin.SetMode(gin.TestMode)
+	repo := &dashboardUsageRepoCacheProbe{}
+	dashboardSvc := service.NewDashboardService(repo, nil, nil, nil)
+	handler := NewDashboardHandler(dashboardSvc, nil)
+	router := gin.New()
+	router.GET("/admin/dashboard/users-trend", handler.GetUserUsageTrend)
+
+	req1 := httptest.NewRequest(http.MethodGet, "/admin/dashboard/users-trend?start_date=2026-03-01&end_date=2026-03-07&granularity=day&limit=8", nil)
+	rec1 := httptest.NewRecorder()
+	router.ServeHTTP(rec1, req1)
+	require.Equal(t, http.StatusOK, rec1.Code)
+	require.Equal(t, "miss", rec1.Header().Get("X-Snapshot-Cache"))
+
+	req2 := httptest.NewRequest(http.MethodGet, "/admin/dashboard/users-trend?start_date=2026-03-01&end_date=2026-03-07&granularity=day&limit=8", nil)
+	rec2 := httptest.NewRecorder()
+	router.ServeHTTP(rec2, req2)
+	require.Equal(t, http.StatusOK, rec2.Code)
+	require.Equal(t, "hit", rec2.Header().Get("X-Snapshot-Cache"))
+
+	req3 := httptest.NewRequest(http.MethodGet, "/admin/dashboard/users-trend?start_date=2026-03-01&end_date=2026-03-07&granularity=day&limit=8&group_id=9", nil)
+	rec3 := httptest.NewRecorder()
+	router.ServeHTTP(rec3, req3)
+	require.Equal(t, http.StatusOK, rec3.Code)
+	require.Equal(t, "miss", rec3.Header().Get("X-Snapshot-Cache"))
+
+	req4 := httptest.NewRequest(http.MethodGet, "/admin/dashboard/users-trend?start_date=2026-03-01&end_date=2026-03-07&granularity=day&limit=8&group_id=9", nil)
+	rec4 := httptest.NewRecorder()
+	router.ServeHTTP(rec4, req4)
+	require.Equal(t, http.StatusOK, rec4.Code)
+	require.Equal(t, "hit", rec4.Header().Get("X-Snapshot-Cache"))
+
+	require.Equal(t, int32(1), repo.usersTrendCalls.Load())
+	require.Equal(t, int32(1), repo.groupedUsersTrendCalls.Load())
 }

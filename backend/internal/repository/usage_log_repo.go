@@ -2211,15 +2211,32 @@ func (r *usageLogRepository) GetAPIKeyUsageTrend(ctx context.Context, startTime,
 	return results, nil
 }
 
-// GetUserUsageTrend returns usage trend data grouped by user and date
+// GetUserUsageTrend returns usage trend data grouped by user and date.
 func (r *usageLogRepository) GetUserUsageTrend(ctx context.Context, startTime, endTime time.Time, granularity string, limit int) (results []UserUsageTrendPoint, err error) {
+	return r.getUserUsageTrendWithOptionalGroup(ctx, startTime, endTime, granularity, 0, limit)
+}
+
+func (r *usageLogRepository) GetUserUsageTrendWithGroup(ctx context.Context, startTime, endTime time.Time, granularity string, groupID int64, limit int) (results []UserUsageTrendPoint, err error) {
+	return r.getUserUsageTrendWithOptionalGroup(ctx, startTime, endTime, granularity, groupID, limit)
+}
+
+func (r *usageLogRepository) getUserUsageTrendWithOptionalGroup(ctx context.Context, startTime, endTime time.Time, granularity string, groupID int64, limit int) (results []UserUsageTrendPoint, err error) {
 	dateFormat := safeDateFormat(granularity)
 
-	query := fmt.Sprintf(`
+	args := []any{startTime, endTime, limit}
+	query := `
 		WITH top_users AS (
 			SELECT user_id
 			FROM usage_logs
 			WHERE created_at >= $1 AND created_at < $2
+	`
+
+	if groupID > 0 {
+		query += "\n\t\t\t  AND group_id = $4"
+		args = append(args, groupID)
+	}
+
+	query += fmt.Sprintf(`
 			GROUP BY user_id
 			ORDER BY SUM(input_tokens + output_tokens + cache_creation_tokens + cache_read_tokens) DESC
 			LIMIT $3
@@ -2236,12 +2253,22 @@ func (r *usageLogRepository) GetUserUsageTrend(ctx context.Context, startTime, e
 		FROM usage_logs u
 		LEFT JOIN users us ON u.user_id = us.id
 		WHERE u.user_id IN (SELECT user_id FROM top_users)
-		  AND u.created_at >= $4 AND u.created_at < $5
-		GROUP BY date, u.user_id, us.email, us.username
-		ORDER BY date ASC, tokens DESC
 	`, dateFormat)
 
-	rows, err := r.sql.QueryContext(ctx, query, startTime, endTime, limit, startTime, endTime)
+	startIndex := len(args) + 1
+	args = append(args, startTime, endTime)
+	query += fmt.Sprintf("\n\t\t  AND u.created_at >= $%d AND u.created_at < $%d", startIndex, startIndex+1)
+	if groupID > 0 {
+		args = append(args, groupID)
+		query += fmt.Sprintf("\n\t\t  AND u.group_id = $%d", len(args))
+	}
+
+	query += `
+		GROUP BY date, u.user_id, us.email, us.username
+		ORDER BY date ASC, tokens DESC
+	`
+
+	rows, err := r.sql.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -2316,6 +2343,88 @@ func (r *usageLogRepository) GetUserSpendingRanking(ctx context.Context, startTi
 	`
 
 	rows, err := r.sql.QueryContext(ctx, query, startTime, endTime, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil && err == nil {
+			err = closeErr
+			result = nil
+		}
+	}()
+
+	ranking := make([]UserSpendingRankingItem, 0)
+	totalActualCost := 0.0
+	totalRequests := int64(0)
+	totalTokens := int64(0)
+	for rows.Next() {
+		var row UserSpendingRankingItem
+		if err = rows.Scan(&row.UserID, &row.Email, &row.ActualCost, &row.Requests, &row.Tokens, &totalActualCost, &totalRequests, &totalTokens); err != nil {
+			return nil, err
+		}
+		ranking = append(ranking, row)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return &UserSpendingRankingResponse{
+		Ranking:         ranking,
+		TotalActualCost: totalActualCost,
+		TotalRequests:   totalRequests,
+		TotalTokens:     totalTokens,
+	}, nil
+}
+
+func (r *usageLogRepository) GetUserSpendingRankingWithGroup(ctx context.Context, startTime, endTime time.Time, groupID int64, limit int) (result *UserSpendingRankingResponse, err error) {
+	if groupID <= 0 {
+		return r.GetUserSpendingRanking(ctx, startTime, endTime, limit)
+	}
+	if limit <= 0 {
+		limit = 12
+	}
+
+	query := `
+		WITH user_spend AS (
+			SELECT
+				u.user_id,
+				COALESCE(us.email, '') as email,
+				COALESCE(SUM(u.actual_cost), 0) as actual_cost,
+				COUNT(*) as requests,
+				COALESCE(SUM(u.input_tokens + u.output_tokens + u.cache_creation_tokens + u.cache_read_tokens), 0) as tokens
+			FROM usage_logs u
+			LEFT JOIN users us ON u.user_id = us.id
+			WHERE u.created_at >= $1 AND u.created_at < $2 AND u.group_id = $3
+			GROUP BY u.user_id, us.email
+		),
+		ranked AS (
+			SELECT
+				user_id,
+				email,
+				actual_cost,
+				requests,
+				tokens,
+				COALESCE(SUM(actual_cost) OVER (), 0) as total_actual_cost,
+				COALESCE(SUM(requests) OVER (), 0) as total_requests,
+				COALESCE(SUM(tokens) OVER (), 0) as total_tokens
+			FROM user_spend
+			ORDER BY actual_cost DESC, tokens DESC, user_id ASC
+			LIMIT $4
+		)
+		SELECT
+			user_id,
+			email,
+			actual_cost,
+			requests,
+			tokens,
+			total_actual_cost,
+			total_requests,
+			total_tokens
+		FROM ranked
+		ORDER BY actual_cost DESC, tokens DESC, user_id ASC
+	`
+
+	rows, err := r.sql.QueryContext(ctx, query, startTime, endTime, groupID, limit)
 	if err != nil {
 		return nil, err
 	}

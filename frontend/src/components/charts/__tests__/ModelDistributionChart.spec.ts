@@ -9,14 +9,14 @@ const messages: Record<string, string> = {
   'admin.dashboard.viewModelDistribution': 'Model Distribution',
   'admin.dashboard.viewSpendingRanking': 'User Spending Ranking',
   'admin.dashboard.spendingRankingUser': 'User',
-  'admin.dashboard.spendingRankingRequests': 'Requests',
-  'admin.dashboard.spendingRankingTokens': 'Tokens',
+  'admin.dashboard.spendingRankingUsage': 'Usage',
   'admin.dashboard.spendingRankingSpend': 'Spend',
   'admin.dashboard.spendingRankingOther': 'Others',
   'admin.dashboard.model': 'Model',
   'admin.dashboard.requests': 'Requests',
   'admin.dashboard.tokens': 'Tokens',
   'admin.dashboard.actual': 'Actual',
+  'admin.dashboard.accountCost': 'Account Cost',
   'admin.dashboard.standard': 'Standard',
   'admin.dashboard.metricTokens': 'By Tokens',
   'admin.dashboard.metricActualCost': 'By Actual Cost',
@@ -53,6 +53,7 @@ describe('ModelDistributionChart', () => {
       total_tokens: 1000,
       cost: 1.5,
       actual_cost: 0.2,
+      account_cost: 0.1,
     },
     {
       model: 'model-b',
@@ -64,43 +65,14 @@ describe('ModelDistributionChart', () => {
       total_tokens: 500,
       cost: 0.5,
       actual_cost: 1.4,
+      account_cost: 0.8,
     },
   ]
 
-  it('uses total_tokens and token ordering by default', () => {
+  it('uses actual_cost and spend ordering by default', () => {
     const wrapper = mount(ModelDistributionChart, {
       props: {
         modelStats,
-      },
-      global: {
-        stubs: {
-          LoadingSpinner: true,
-        },
-      },
-    })
-
-    const chartData = JSON.parse(wrapper.find('.chart-data').text())
-    expect(chartData.labels).toEqual(['model-a', 'model-b'])
-    expect(chartData.datasets[0].data).toEqual([1000, 500])
-
-    const rows = wrapper.findAll('tbody tr')
-    expect(rows[0].text()).toContain('model-a')
-    expect(rows[1].text()).toContain('model-b')
-
-    const options = (wrapper.vm as any).$?.setupState.doughnutOptions
-    const label = options.plugins.tooltip.callbacks.label({
-      label: 'model-a',
-      raw: 1000,
-      dataset: { data: [1000, 500] },
-    })
-    expect(label).toBe('model-a: 1.00K (66.7%)')
-  })
-
-  it('uses actual_cost and reorders rows in actual cost mode', () => {
-    const wrapper = mount(ModelDistributionChart, {
-      props: {
-        modelStats,
-        metric: 'actual_cost',
       },
       global: {
         stubs: {
@@ -124,6 +96,36 @@ describe('ModelDistributionChart', () => {
       dataset: { data: [1.4, 0.2] },
     })
     expect(label).toBe('model-b: $1.40 (87.5%)')
+  })
+
+  it('uses total_tokens and reorders rows in token mode', () => {
+    const wrapper = mount(ModelDistributionChart, {
+      props: {
+        modelStats,
+        metric: 'tokens',
+      },
+      global: {
+        stubs: {
+          LoadingSpinner: true,
+        },
+      },
+    })
+
+    const chartData = JSON.parse(wrapper.find('.chart-data').text())
+    expect(chartData.labels).toEqual(['model-a', 'model-b'])
+    expect(chartData.datasets[0].data).toEqual([1000, 500])
+
+    const rows = wrapper.findAll('tbody tr')
+    expect(rows[0].text()).toContain('model-a')
+    expect(rows[1].text()).toContain('model-b')
+
+    const options = (wrapper.vm as any).$?.setupState.doughnutOptions
+    const label = options.plugins.tooltip.callbacks.label({
+      label: 'model-a',
+      raw: 1000,
+      dataset: { data: [1000, 500] },
+    })
+    expect(label).toBe('model-a: 1.00K (66.7%)')
   })
 
   it('renders Others in the spending ranking table and uses a dedicated chart color', async () => {
@@ -164,7 +166,6 @@ describe('ModelDistributionChart', () => {
     const rows = wrapper.findAll('tbody tr')
     expect(rows).toHaveLength(3)
     expect(rows[2].text()).toContain('Others')
-    expect(rows[2].text()).toContain('4')
     expect(rows[2].text()).toContain('400')
     expect(rows[2].text()).toContain('$10.00')
   })

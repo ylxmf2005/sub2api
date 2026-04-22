@@ -81,6 +81,8 @@ func RegisterUserRoutes(
 			usage.POST("/dashboard/api-keys-usage", h.Usage.DashboardAPIKeysUsage)
 		}
 
+		registerMonitorRoutes(authenticated, h)
+
 		// 公告（用户可见）
 		announcements := authenticated.Group("/announcements")
 		{
