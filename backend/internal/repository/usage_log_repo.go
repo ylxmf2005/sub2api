@@ -1947,6 +1947,17 @@ func resolveUsageStatsTimezone() string {
 	return "UTC"
 }
 
+func resolveUsageStatsTimezoneForTimeRange(startTime, endTime time.Time) string {
+	for _, ts := range []time.Time{startTime, endTime} {
+		if loc := ts.Location(); loc != nil {
+			if tzName := strings.TrimSpace(loc.String()); tzName != "" && tzName != "Local" {
+				return tzName
+			}
+		}
+	}
+	return resolveUsageStatsTimezone()
+}
+
 func (r *usageLogRepository) ListByAPIKeyAndTimeRange(ctx context.Context, apiKeyID int64, startTime, endTime time.Time) ([]service.UsageLog, *pagination.PaginationResult, error) {
 	query := "SELECT " + usageLogSelectColumns + " FROM usage_logs WHERE api_key_id = $1 AND created_at >= $2 AND created_at < $3 ORDER BY id DESC LIMIT 10000"
 	logs, err := r.queryUsageLogs(ctx, query, apiKeyID, startTime, endTime)
@@ -2159,6 +2170,7 @@ type APIKeyUsageTrendPoint = usagestats.APIKeyUsageTrendPoint
 // GetAPIKeyUsageTrend returns usage trend data grouped by API key and date
 func (r *usageLogRepository) GetAPIKeyUsageTrend(ctx context.Context, startTime, endTime time.Time, granularity string, limit int) (results []APIKeyUsageTrendPoint, err error) {
 	dateFormat := safeDateFormat(granularity)
+	queryTZ := resolveUsageStatsTimezoneForTimeRange(startTime, endTime)
 
 	query := fmt.Sprintf(`
 		WITH top_keys AS (
@@ -2170,7 +2182,7 @@ func (r *usageLogRepository) GetAPIKeyUsageTrend(ctx context.Context, startTime,
 			LIMIT $3
 		)
 		SELECT
-			TO_CHAR(u.created_at, '%s') as date,
+			TO_CHAR(u.created_at AT TIME ZONE $6, '%s') as date,
 			u.api_key_id,
 			COALESCE(k.name, '') as key_name,
 			COUNT(*) as requests,
@@ -2183,7 +2195,7 @@ func (r *usageLogRepository) GetAPIKeyUsageTrend(ctx context.Context, startTime,
 		ORDER BY date ASC, tokens DESC
 	`, dateFormat)
 
-	rows, err := r.sql.QueryContext(ctx, query, startTime, endTime, limit, startTime, endTime)
+	rows, err := r.sql.QueryContext(ctx, query, startTime, endTime, limit, startTime, endTime, queryTZ)
 	if err != nil {
 		return nil, err
 	}
@@ -2222,6 +2234,7 @@ func (r *usageLogRepository) GetUserUsageTrendWithGroup(ctx context.Context, sta
 
 func (r *usageLogRepository) getUserUsageTrendWithOptionalGroup(ctx context.Context, startTime, endTime time.Time, granularity string, groupID int64, limit int) (results []UserUsageTrendPoint, err error) {
 	dateFormat := safeDateFormat(granularity)
+	queryTZ := resolveUsageStatsTimezoneForTimeRange(startTime, endTime)
 
 	args := []any{startTime, endTime, limit}
 	query := `
@@ -2236,13 +2249,13 @@ func (r *usageLogRepository) getUserUsageTrendWithOptionalGroup(ctx context.Cont
 		args = append(args, groupID)
 	}
 
-	query += fmt.Sprintf(`
+	query += `
 			GROUP BY user_id
 			ORDER BY SUM(input_tokens + output_tokens + cache_creation_tokens + cache_read_tokens) DESC
 			LIMIT $3
 		)
 		SELECT
-			TO_CHAR(u.created_at, '%s') as date,
+			%s as date,
 			u.user_id,
 			COALESCE(us.email, '') as email,
 			COALESCE(us.username, '') as username,
@@ -2253,7 +2266,7 @@ func (r *usageLogRepository) getUserUsageTrendWithOptionalGroup(ctx context.Cont
 		FROM usage_logs u
 		LEFT JOIN users us ON u.user_id = us.id
 		WHERE u.user_id IN (SELECT user_id FROM top_users)
-	`, dateFormat)
+	`
 
 	startIndex := len(args) + 1
 	args = append(args, startTime, endTime)
@@ -2267,6 +2280,9 @@ func (r *usageLogRepository) getUserUsageTrendWithOptionalGroup(ctx context.Cont
 		GROUP BY date, u.user_id, us.email, us.username
 		ORDER BY date ASC, tokens DESC
 	`
+	timezonePlaceholder := len(args) + 1
+	args = append(args, queryTZ)
+	query = fmt.Sprintf(query, fmt.Sprintf("TO_CHAR(u.created_at AT TIME ZONE $%d, '%s')", timezonePlaceholder, dateFormat))
 
 	rows, err := r.sql.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -2663,10 +2679,11 @@ func (r *usageLogRepository) GetAPIKeyDashboardStats(ctx context.Context, apiKey
 // GetUserUsageTrendByUserID 获取指定用户的使用趋势
 func (r *usageLogRepository) GetUserUsageTrendByUserID(ctx context.Context, userID int64, startTime, endTime time.Time, granularity string) (results []TrendDataPoint, err error) {
 	dateFormat := safeDateFormat(granularity)
+	queryTZ := resolveUsageStatsTimezoneForTimeRange(startTime, endTime)
 
 	query := fmt.Sprintf(`
 		SELECT
-			TO_CHAR(created_at, '%s') as date,
+			TO_CHAR(created_at AT TIME ZONE $4, '%s') as date,
 			COUNT(*) as requests,
 			COALESCE(SUM(input_tokens), 0) as input_tokens,
 			COALESCE(SUM(output_tokens), 0) as output_tokens,
@@ -2681,7 +2698,7 @@ func (r *usageLogRepository) GetUserUsageTrendByUserID(ctx context.Context, user
 		ORDER BY date ASC
 	`, dateFormat)
 
-	rows, err := r.sql.QueryContext(ctx, query, userID, startTime, endTime)
+	rows, err := r.sql.QueryContext(ctx, query, userID, startTime, endTime, queryTZ)
 	if err != nil {
 		return nil, err
 	}
@@ -2961,8 +2978,9 @@ func (r *usageLogRepository) GetBatchAPIKeyUsageStats(ctx context.Context, apiKe
 
 // GetUsageTrendWithFilters returns usage trend data with optional filters
 func (r *usageLogRepository) GetUsageTrendWithFilters(ctx context.Context, startTime, endTime time.Time, granularity string, userID, apiKeyID, accountID, groupID int64, model string, requestType *int16, stream *bool, billingType *int8) (results []TrendDataPoint, err error) {
-	if shouldUsePreaggregatedTrend(granularity, userID, apiKeyID, accountID, groupID, model, requestType, stream, billingType) {
-		aggregated, aggregatedErr := r.getUsageTrendFromAggregates(ctx, startTime, endTime, granularity)
+	queryTZ := resolveUsageStatsTimezoneForTimeRange(startTime, endTime)
+	if shouldUsePreaggregatedTrend(granularity, userID, apiKeyID, accountID, groupID, model, requestType, stream, billingType, queryTZ) {
+		aggregated, aggregatedErr := r.getUsageTrendFromAggregates(ctx, startTime, endTime, granularity, queryTZ)
 		if aggregatedErr == nil && len(aggregated) > 0 {
 			return aggregated, nil
 		}
@@ -2970,9 +2988,9 @@ func (r *usageLogRepository) GetUsageTrendWithFilters(ctx context.Context, start
 
 	dateFormat := safeDateFormat(granularity)
 
-	query := fmt.Sprintf(`
+	query := `
 		SELECT
-			TO_CHAR(created_at, '%s') as date,
+			%s as date,
 			COUNT(*) as requests,
 			COALESCE(SUM(input_tokens), 0) as input_tokens,
 			COALESCE(SUM(output_tokens), 0) as output_tokens,
@@ -2983,7 +3001,7 @@ func (r *usageLogRepository) GetUsageTrendWithFilters(ctx context.Context, start
 			COALESCE(SUM(actual_cost), 0) as actual_cost
 		FROM usage_logs
 		WHERE created_at >= $1 AND created_at < $2
-	`, dateFormat)
+	`
 
 	args := []any{startTime, endTime}
 	if userID > 0 {
@@ -3008,6 +3026,9 @@ func (r *usageLogRepository) GetUsageTrendWithFilters(ctx context.Context, start
 		query += fmt.Sprintf(" AND billing_type = $%d", len(args)+1)
 		args = append(args, int16(*billingType))
 	}
+	timezonePlaceholder := len(args) + 1
+	args = append(args, queryTZ)
+	query = fmt.Sprintf(query, fmt.Sprintf("TO_CHAR(created_at AT TIME ZONE $%d, '%s')", timezonePlaceholder, dateFormat))
 	query += " GROUP BY date ORDER BY date ASC"
 
 	rows, err := r.sql.QueryContext(ctx, query, args...)
@@ -3030,8 +3051,11 @@ func (r *usageLogRepository) GetUsageTrendWithFilters(ctx context.Context, start
 	return results, nil
 }
 
-func shouldUsePreaggregatedTrend(granularity string, userID, apiKeyID, accountID, groupID int64, model string, requestType *int16, stream *bool, billingType *int8) bool {
+func shouldUsePreaggregatedTrend(granularity string, userID, apiKeyID, accountID, groupID int64, model string, requestType *int16, stream *bool, billingType *int8, queryTZ string) bool {
 	if granularity != "day" && granularity != "hour" {
+		return false
+	}
+	if strings.TrimSpace(queryTZ) != resolveUsageStatsTimezone() {
 		return false
 	}
 	return userID == 0 &&
@@ -3044,7 +3068,7 @@ func shouldUsePreaggregatedTrend(granularity string, userID, apiKeyID, accountID
 		billingType == nil
 }
 
-func (r *usageLogRepository) getUsageTrendFromAggregates(ctx context.Context, startTime, endTime time.Time, granularity string) (results []TrendDataPoint, err error) {
+func (r *usageLogRepository) getUsageTrendFromAggregates(ctx context.Context, startTime, endTime time.Time, granularity string, queryTZ string) (results []TrendDataPoint, err error) {
 	dateFormat := safeDateFormat(granularity)
 	query := ""
 	args := []any{startTime, endTime}
@@ -3053,7 +3077,7 @@ func (r *usageLogRepository) getUsageTrendFromAggregates(ctx context.Context, st
 	case "hour":
 		query = fmt.Sprintf(`
 			SELECT
-				TO_CHAR(bucket_start, '%s') as date,
+				TO_CHAR(bucket_start AT TIME ZONE $3, '%s') as date,
 				total_requests as requests,
 				input_tokens,
 				output_tokens,
@@ -3066,6 +3090,7 @@ func (r *usageLogRepository) getUsageTrendFromAggregates(ctx context.Context, st
 			WHERE bucket_start >= $1 AND bucket_start < $2
 			ORDER BY bucket_start ASC
 		`, dateFormat)
+		args = append(args, queryTZ)
 	case "day":
 		query = fmt.Sprintf(`
 			SELECT
