@@ -52,7 +52,7 @@ elif [ "$SOURCE_MODE" == "compose-local" ] || [ "$SOURCE_MODE" == "compose-volum
     if [ -n "$POSTGRES_CONTAINER" ]; then
         docker exec "$POSTGRES_CONTAINER" pg_dump -U postgres sub2api > "$BACKUP_DIR/database/dump.sql" || echo "Warning: Docker pg_dump failed."
     fi
-    
+
     # For compose-local, also backup the directory
     if [ "$SOURCE_MODE" == "compose-local" ] && [ -d "postgres_data" ]; then
         tar czf "$BACKUP_DIR/database/postgres_data.tar.gz" postgres_data/

@@ -26,19 +26,19 @@ trap cleanup EXIT
 test_mode() {
     local mode_name=$1
     local expected_source_mode=$2
-    
+
     echo -n "Testing $mode_name... "
     cd "$TEST_ROOT/$mode_name"
-    
+
     # Mock systemctl if testing binary
     if [ "$expected_source_mode" == "binary" ]; then
-        # We can't easily mock systemctl without being root or using aliases, 
+        # We can't easily mock systemctl without being root or using aliases,
         # but the script also checks for the service file.
         mkdir -p etc/systemd/system
         touch etc/systemd/system/sub2api.service
         # Inject a fake /etc/systemd/system/sub2api.service path into the script for testing?
         # Better: the script uses [ -f /etc/systemd/system/sub2api.service ].
-        # I'll modify the script to allow an override for testing if needed, 
+        # I'll modify the script to allow an override for testing if needed,
         # but for now let's just use what's possible.
     fi
 

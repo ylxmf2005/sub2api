@@ -4,7 +4,7 @@
 \echo '--- Sub2API Data Verification ---'
 
 -- 1. Check User counts
-SELECT 
+SELECT
     (SELECT COUNT(*) FROM users) AS user_count,
     (SELECT COUNT(*) FROM users WHERE role = 'admin') AS admin_count;
 
