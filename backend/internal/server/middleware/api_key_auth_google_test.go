@@ -32,6 +32,17 @@ type fakeGoogleSubscriptionRepo struct {
 	resetMonthly   func(ctx context.Context, id int64, start time.Time) error
 }
 
+type fakeSettlementPoolAccessReader struct {
+	isParticipant func(ctx context.Context, userID, groupID int64) (bool, error)
+}
+
+func (f fakeSettlementPoolAccessReader) IsParticipant(ctx context.Context, userID, groupID int64) (bool, error) {
+	if f.isParticipant == nil {
+		return false, nil
+	}
+	return f.isParticipant(ctx, userID, groupID)
+}
+
 func (f fakeAPIKeyRepo) Create(ctx context.Context, key *service.APIKey) error {
 	return errors.New("not implemented")
 }
@@ -462,6 +473,116 @@ func TestApiKeyAuthWithSubscriptionGoogle_InsufficientBalance(t *testing.T) {
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
 	require.Equal(t, http.StatusForbidden, resp.Error.Code)
 	require.Equal(t, "Insufficient account balance", resp.Error.Message)
+	require.Equal(t, "PERMISSION_DENIED", resp.Error.Status)
+}
+
+func TestApiKeyAuthWithSubscriptionGoogle_SettlementPoolBypassesBalanceForParticipant(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	group := &service.Group{
+		ID:               77,
+		Name:             "gemini-pool",
+		Status:           service.StatusActive,
+		Platform:         service.PlatformGemini,
+		Hydrated:         true,
+		SubscriptionType: service.SubscriptionTypeSettlementPool,
+	}
+	user := &service.User{
+		ID:          123,
+		Status:      service.StatusActive,
+		Balance:     0,
+		Concurrency: 1,
+	}
+	apiKey := &service.APIKey{
+		ID:     1,
+		Key:    "pool-ok",
+		Status: service.StatusActive,
+		User:   user,
+		Group:  group,
+	}
+	apiKey.GroupID = &group.ID
+
+	apiKeyService := newTestAPIKeyService(fakeAPIKeyRepo{
+		getByKey: func(ctx context.Context, key string) (*service.APIKey, error) {
+			if key != apiKey.Key {
+				return nil, service.ErrAPIKeyNotFound
+			}
+			clone := *apiKey
+			return &clone, nil
+		},
+	})
+	apiKeyService.SetSettlementPoolReader(fakeSettlementPoolAccessReader{
+		isParticipant: func(ctx context.Context, userID, groupID int64) (bool, error) {
+			return userID == user.ID && groupID == group.ID, nil
+		},
+	})
+
+	r := gin.New()
+	r.Use(APIKeyAuthWithSubscriptionGoogle(apiKeyService, nil, &config.Config{RunMode: config.RunModeStandard}))
+	r.GET("/v1beta/test", func(c *gin.Context) { c.JSON(200, gin.H{"ok": true}) })
+
+	req := httptest.NewRequest(http.MethodGet, "/v1beta/test", nil)
+	req.Header.Set("x-goog-api-key", apiKey.Key)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+}
+
+func TestApiKeyAuthWithSubscriptionGoogle_SettlementPoolRejectsNonParticipant(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	group := &service.Group{
+		ID:               77,
+		Name:             "gemini-pool",
+		Status:           service.StatusActive,
+		Platform:         service.PlatformGemini,
+		Hydrated:         true,
+		SubscriptionType: service.SubscriptionTypeSettlementPool,
+	}
+	user := &service.User{
+		ID:          123,
+		Status:      service.StatusActive,
+		Balance:     10,
+		Concurrency: 1,
+	}
+	apiKey := &service.APIKey{
+		ID:     1,
+		Key:    "pool-denied",
+		Status: service.StatusActive,
+		User:   user,
+		Group:  group,
+	}
+	apiKey.GroupID = &group.ID
+
+	apiKeyService := newTestAPIKeyService(fakeAPIKeyRepo{
+		getByKey: func(ctx context.Context, key string) (*service.APIKey, error) {
+			if key != apiKey.Key {
+				return nil, service.ErrAPIKeyNotFound
+			}
+			clone := *apiKey
+			return &clone, nil
+		},
+	})
+	apiKeyService.SetSettlementPoolReader(fakeSettlementPoolAccessReader{
+		isParticipant: func(ctx context.Context, userID, groupID int64) (bool, error) {
+			return false, nil
+		},
+	})
+
+	r := gin.New()
+	r.Use(APIKeyAuthWithSubscriptionGoogle(apiKeyService, nil, &config.Config{RunMode: config.RunModeStandard}))
+	r.GET("/v1beta/test", func(c *gin.Context) { c.JSON(200, gin.H{"ok": true}) })
+
+	req := httptest.NewRequest(http.MethodGet, "/v1beta/test", nil)
+	req.Header.Set("x-goog-api-key", apiKey.Key)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusForbidden, rec.Code)
+	var resp googleErrorResponse
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+	require.Equal(t, "No active settlement pool participation found for this group", resp.Error.Message)
 	require.Equal(t, "PERMISSION_DENIED", resp.Error.Status)
 }
 

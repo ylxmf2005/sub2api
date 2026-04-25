@@ -80,6 +80,14 @@ func (g *Group) IsSubscriptionType() bool {
 	return g.SubscriptionType == SubscriptionTypeSubscription
 }
 
+func (g *Group) IsSettlementPoolType() bool {
+	return g.SubscriptionType == SubscriptionTypeSettlementPool
+}
+
+func (g *Group) IsFreeSubscription() bool {
+	return g.IsSubscriptionType() && g.RateMultiplier == 0
+}
+
 func (g *Group) HasDailyLimit() bool {
 	return g.DailyLimitUSD != nil && *g.DailyLimitUSD > 0
 }

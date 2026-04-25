@@ -3,6 +3,8 @@
 - IP: `154.26.179.199`
 - Key archive: `/Users/ethan/Desktop/s2a/DMIT-5FilTo7Lwa-ed25519.zip`
 - Treat the zip archive above as the key.
+- Private keys were moved out of this file into local ignored storage under `.codex-local/secrets/`.
+- Never store private keys directly in `AGENTS.md`.
 
 # Release Versioning Rule
 

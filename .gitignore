@@ -141,6 +141,7 @@ docs/*
 !deploy/tests/
 !deploy/tests/**
 .serena/
+.codex-local/
 .codex/
 frontend/coverage/
 aicodex

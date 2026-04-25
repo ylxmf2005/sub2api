@@ -24,6 +24,7 @@ type AdminHandlers struct {
 	Ops                    *admin.OpsHandler
 	System                 *admin.SystemHandler
 	Subscription           *admin.SubscriptionHandler
+	SettlementPool         *admin.SettlementPoolHandler
 	Usage                  *admin.UsageHandler
 	UserAttribute          *admin.UserAttributeHandler
 	ErrorPassthrough       *admin.ErrorPassthroughHandler
@@ -46,6 +47,7 @@ type Handlers struct {
 	Monitor          *MonitorHandler
 	Redeem           *RedeemHandler
 	Subscription     *SubscriptionHandler
+	SettlementPool   *SettlementPoolHandler
 	Announcement     *AnnouncementHandler
 	ChannelMonitor   *ChannelMonitorUserHandler
 	Admin            *AdminHandlers

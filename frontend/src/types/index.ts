@@ -468,7 +468,7 @@ export interface PaginationConfig {
 
 export type GroupPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity'
 
-export type SubscriptionType = 'standard' | 'subscription'
+export type SubscriptionType = 'standard' | 'subscription' | 'settlement_pool'
 
 export interface OpenAIMessagesDispatchModelConfig {
   opus_mapped_model?: string
@@ -636,6 +636,91 @@ export interface UpdateGroupRequest {
   require_oauth_only?: boolean
   require_privacy_set?: boolean
   copy_accounts_from_group_ids?: number[]
+}
+
+// ==================== Settlement Pool Types ====================
+
+export interface SettlementPoolTier {
+  up_to: number | null
+  weight: number
+}
+
+export interface SettlementPoolConfig {
+  group_id: number
+  base_ratio: number
+  market_cap: number
+  tiers: SettlementPoolTier[]
+  active_cycle_id?: number
+  created_at: string
+  updated_at: string
+}
+
+export interface SettlementPoolGroup {
+  id: number
+  name: string
+  description: string | null
+  platform: GroupPlatform
+  subscription_type: SubscriptionType
+  status: 'active' | 'inactive'
+  rate_multiplier: number
+}
+
+export interface SettlementPoolCycle {
+  id: number
+  group_id: number
+  status: 'active' | 'locked'
+  started_at: string
+  ended_at?: string | null
+  total_cost: number
+  base_ratio: number
+  market_cap: number
+  tiers: SettlementPoolTier[]
+  snapshot?: SettlementPoolEstimate | null
+  created_at: string
+  updated_at: string
+}
+
+export interface SettlementPoolParticipantEstimate {
+  user_id: number
+  email: string
+  username: string
+  status: string
+  raw_usage: number
+  weighted_usage: number
+  current_tier: number
+  fixed_share: number
+  dynamic_charge: number
+  total_due: number
+}
+
+export interface SettlementPoolEstimate {
+  group_id: number
+  cycle_id: number
+  status: 'active' | 'locked'
+  started_at: string
+  ended_at?: string | null
+  locked_at?: string | null
+  total_cost: number
+  base_ratio: number
+  market_cap: number
+  tiers: SettlementPoolTier[]
+  participant_count: number
+  fixed_pool: number
+  dynamic_pool: number
+  total_raw_usage: number
+  total_weighted_usage: number
+  uncapped_dynamic_rate: number
+  effective_dynamic_rate: number
+  owner_covered_loss: number
+  participants: SettlementPoolParticipantEstimate[]
+}
+
+export interface SettlementPoolSummary {
+  group: SettlementPoolGroup
+  config?: SettlementPoolConfig
+  active_cycle?: SettlementPoolCycle
+  estimate?: SettlementPoolEstimate
+  cycles: SettlementPoolCycle[]
 }
 
 // ==================== Account & Proxy Types ====================

@@ -198,6 +198,7 @@ type APIKeyService struct {
 	groupRepo             GroupRepository
 	userSubRepo           UserSubscriptionRepository
 	userGroupRateRepo     UserGroupRateRepository
+	settlementPoolReader  SettlementPoolAccessReader
 	cache                 APIKeyCache
 	rateLimitCacheInvalid RateLimitCacheInvalidator // optional: invalidate Redis rate limit cache
 	cfg                   *config.Config
@@ -206,6 +207,10 @@ type APIKeyService struct {
 	authGroup             singleflight.Group
 	lastUsedTouchL1       sync.Map // keyID -> nextAllowedAt(time.Time)
 	lastUsedTouchSF       singleflight.Group
+}
+
+type SettlementPoolAccessReader interface {
+	IsParticipant(ctx context.Context, userID, groupID int64) (bool, error)
 }
 
 // NewAPIKeyService 创建API Key服务实例
@@ -217,6 +222,7 @@ func NewAPIKeyService(
 	userGroupRateRepo UserGroupRateRepository,
 	cache APIKeyCache,
 	cfg *config.Config,
+	settlementReaders ...SettlementPoolAccessReader,
 ) *APIKeyService {
 	svc := &APIKeyService{
 		apiKeyRepo:        apiKeyRepo,
@@ -227,8 +233,15 @@ func NewAPIKeyService(
 		cache:             cache,
 		cfg:               cfg,
 	}
+	if len(settlementReaders) > 0 {
+		svc.settlementPoolReader = settlementReaders[0]
+	}
 	svc.initAuthCache(cfg)
 	return svc
+}
+
+func (s *APIKeyService) SetSettlementPoolReader(reader SettlementPoolAccessReader) {
+	s.settlementPoolReader = reader
 }
 
 // SetRateLimitCacheInvalidator sets the optional rate limit cache invalidator.
@@ -320,6 +333,10 @@ func (s *APIKeyService) canUserBindGroup(ctx context.Context, user *User, group 
 	if group.IsSubscriptionType() {
 		_, err := s.userSubRepo.GetActiveByUserIDAndGroupID(ctx, user.ID, group.ID)
 		return err == nil // 有有效订阅则允许
+	}
+	if group.IsSettlementPoolType() {
+		ok, err := s.IsSettlementPoolParticipant(ctx, user.ID, group.ID)
+		return err == nil && ok
 	}
 	// 标准类型分组：使用原有逻辑
 	return user.CanBindGroup(group.ID, group.IsExclusive)
@@ -781,8 +798,23 @@ func (s *APIKeyService) canUserBindGroupInternal(user *User, group *Group, subsc
 	if group.IsSubscriptionType() {
 		return subscribedGroupIDs[group.ID]
 	}
+	if group.IsSettlementPoolType() {
+		for _, id := range user.AllowedGroups {
+			if id == group.ID {
+				return true
+			}
+		}
+		return false
+	}
 	// 标准类型分组：使用原有逻辑
 	return user.CanBindGroup(group.ID, group.IsExclusive)
+}
+
+func (s *APIKeyService) IsSettlementPoolParticipant(ctx context.Context, userID, groupID int64) (bool, error) {
+	if s == nil || s.settlementPoolReader == nil {
+		return false, ErrSettlementPoolNotFound
+	}
+	return s.settlementPoolReader.IsParticipant(ctx, userID, groupID)
 }
 
 func (s *APIKeyService) SearchAPIKeys(ctx context.Context, userID int64, keyword string, limit int) ([]APIKey, error) {
