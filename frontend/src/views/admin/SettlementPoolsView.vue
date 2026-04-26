@@ -114,6 +114,7 @@
                     <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('settlementPools.weightedUsage') }}</th>
                     <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('settlementPools.currentTier') }}</th>
                     <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('settlementPools.fixedShare') }}</th>
+                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('settlementPools.dynamicCharge') }}</th>
                     <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('settlementPools.totalDue') }}</th>
                     <th class="px-3 py-2"></th>
                   </tr>
@@ -128,6 +129,7 @@
                     <td class="px-3 py-2 text-right tabular-nums">{{ money(row.weighted_usage) }}</td>
                     <td class="px-3 py-2 text-right tabular-nums">{{ currentTierLabel(row.current_tier) }}</td>
                     <td class="px-3 py-2 text-right tabular-nums">{{ money(row.fixed_share) }}</td>
+                    <td class="px-3 py-2 text-right tabular-nums">{{ money(row.dynamic_charge) }}</td>
                     <td class="px-3 py-2 text-right font-medium tabular-nums text-gray-900 dark:text-white">{{ money(row.total_due) }}</td>
                     <td class="px-3 py-2 text-right">
                       <button class="btn btn-ghost btn-sm" @click="removeParticipant(row.user_id)">
@@ -136,7 +138,7 @@
                     </td>
                   </tr>
                   <tr v-if="participantRows.length === 0">
-                    <td colspan="7" class="px-3 py-8 text-center text-sm text-gray-500 dark:text-gray-400">{{ t('settlementPools.noParticipants') }}</td>
+                    <td colspan="8" class="px-3 py-8 text-center text-sm text-gray-500 dark:text-gray-400">{{ t('settlementPools.noParticipants') }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -237,7 +239,6 @@ const participantRows = computed(() => {
   for (const row of manualParticipants.value) byID.set(row.user_id, row)
   return [...byID.values()].sort((a, b) => a.user_id - b.user_id)
 })
-
 watch(selectedGroupId, () => {
   if (selectedGroupId.value) loadSummary()
 })

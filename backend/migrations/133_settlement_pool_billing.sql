@@ -49,7 +49,7 @@ CREATE INDEX IF NOT EXISTS idx_settlement_pool_participants_user
     ON settlement_pool_participants (user_id, group_id);
 
 CREATE INDEX IF NOT EXISTS idx_usage_logs_settlement_pool_window
-    ON usage_logs (group_id, user_id, created_at)
+    ON usage_logs (group_id, user_id, billing_type, created_at)
     WHERE group_id IS NOT NULL;
 
 DO $$

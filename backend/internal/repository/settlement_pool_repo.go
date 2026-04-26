@@ -451,8 +451,9 @@ func (r *settlementPoolRepository) SumUsageByUsers(ctx context.Context, groupID 
 			AND user_id = ANY($2)
 			AND created_at >= $3
 			AND ($4::timestamptz IS NULL OR created_at < $4)
+			AND billing_type = $5
 		GROUP BY user_id
-	`, groupID, pq.Array(userIDs), startedAt, endedAt)
+	`, groupID, pq.Array(userIDs), startedAt, endedAt, service.BillingTypeSettlementPool)
 	if err != nil {
 		return nil, err
 	}
