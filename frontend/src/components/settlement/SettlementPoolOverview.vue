@@ -15,7 +15,7 @@
       </span>
     </div>
 
-    <div v-if="estimate" class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <div v-if="estimate" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <div
         v-for="card in overviewCards"
         :key="card.key"
@@ -27,14 +27,14 @@
           </div>
           <div class="min-w-0">
             <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ card.label }}</p>
-            <p :class="['mt-1 truncate text-xl font-bold text-gray-900 dark:text-white', card.valueClass]">{{ card.value }}</p>
-            <p v-if="card.meta" class="mt-1 truncate text-xs text-gray-500 dark:text-gray-400">{{ card.meta }}</p>
+            <p :class="['mt-1 break-words text-xl font-bold text-gray-900 dark:text-white', card.valueClass]">{{ card.value }}</p>
+            <p v-if="card.meta" class="mt-1 break-words text-xs text-gray-500 dark:text-gray-400">{{ card.meta }}</p>
           </div>
         </div>
       </div>
     </div>
 
-    <div v-if="estimate && myParticipant" class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <div v-if="estimate && myParticipant" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <div
         v-for="card in personalCards"
         :key="card.key"
@@ -46,8 +46,8 @@
           </div>
           <div class="min-w-0">
             <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ card.label }}</p>
-            <p :class="['mt-1 truncate text-xl font-bold text-gray-900 dark:text-white', card.valueClass]">{{ card.value }}</p>
-            <p v-if="card.meta" class="mt-1 truncate text-xs text-gray-500 dark:text-gray-400">{{ card.meta }}</p>
+            <p :class="['mt-1 break-words text-xl font-bold text-gray-900 dark:text-white', card.valueClass]">{{ card.value }}</p>
+            <p v-if="card.meta" class="mt-1 break-words text-xs text-gray-500 dark:text-gray-400">{{ card.meta }}</p>
           </div>
         </div>
       </div>
