@@ -670,6 +670,7 @@ func TestAdminService_CreateGroup_InvalidRequestFallbackRejectsSubscription(t *t
 			_, err := svc.CreateGroup(context.Background(), &CreateGroupInput{
 				Name:                            "g1",
 				Platform:                        PlatformAnthropic,
+				RateMultiplier:                  1.0,
 				SubscriptionType:                subscriptionType,
 				FallbackGroupIDOnInvalidRequest: &fallbackID,
 			})

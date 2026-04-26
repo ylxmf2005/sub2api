@@ -10,6 +10,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/handler/dto"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
+	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -20,6 +21,7 @@ type GroupHandler struct {
 	adminService         service.AdminService
 	dashboardService     *service.DashboardService
 	groupCapacityService *service.GroupCapacityService
+	settlementService    *service.SettlementPoolService
 }
 
 type optionalLimitField struct {
@@ -72,11 +74,12 @@ func (f optionalLimitField) ToServiceInput() *float64 {
 }
 
 // NewGroupHandler creates a new admin group handler
-func NewGroupHandler(adminService service.AdminService, dashboardService *service.DashboardService, groupCapacityService *service.GroupCapacityService) *GroupHandler {
+func NewGroupHandler(adminService service.AdminService, dashboardService *service.DashboardService, groupCapacityService *service.GroupCapacityService, settlementService *service.SettlementPoolService) *GroupHandler {
 	return &GroupHandler{
 		adminService:         adminService,
 		dashboardService:     dashboardService,
 		groupCapacityService: groupCapacityService,
+		settlementService:    settlementService,
 	}
 }
 
@@ -241,6 +244,20 @@ func (h *GroupHandler) Create(c *gin.Context) {
 		return
 	}
 
+	var settlementCreatorID int64
+	if req.SubscriptionType == service.SubscriptionTypeSettlementPool {
+		subject, ok := middleware2.GetAuthSubjectFromContext(c)
+		if !ok || subject.UserID <= 0 {
+			response.Unauthorized(c, "User not authenticated")
+			return
+		}
+		if h.settlementService == nil {
+			response.InternalError(c, "Settlement pool service is not configured")
+			return
+		}
+		settlementCreatorID = subject.UserID
+	}
+
 	group, err := h.adminService.CreateGroup(c.Request.Context(), &service.CreateGroupInput{
 		Name:                            req.Name,
 		Description:                     req.Description,
@@ -272,6 +289,17 @@ func (h *GroupHandler) Create(c *gin.Context) {
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
+	}
+
+	if group.IsSettlementPoolType() {
+		if settlementCreatorID <= 0 {
+			response.InternalError(c, "Settlement pool creator is missing")
+			return
+		}
+		if _, err := h.settlementService.SyncParticipants(c.Request.Context(), group.ID, []int64{settlementCreatorID}); err != nil {
+			response.ErrorFrom(c, err)
+			return
+		}
 	}
 
 	response.Success(c, dto.GroupFromServiceAdmin(group))

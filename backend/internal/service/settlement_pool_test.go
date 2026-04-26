@@ -232,6 +232,8 @@ func TestSettlementPoolStartNextCycle_RotatesWithLockedSnapshot(t *testing.T) {
 	require.Equal(t, SettlementPoolCycleStatusLocked, repo.rotatedSnapshot.Status)
 	require.NotNil(t, repo.rotatedSnapshot.EndedAt)
 	require.NotNil(t, repo.rotatedSnapshot.LockedAt)
+	require.NotNil(t, repo.sumUsageEndedAt)
+	require.Equal(t, *repo.rotatedSnapshot.EndedAt, *repo.sumUsageEndedAt)
 	require.Len(t, repo.rotatedSnapshot.Participants, 1)
 	require.InDelta(t, 100, repo.rotatedSnapshot.TotalCost, 1e-9)
 	require.NotNil(t, repo.rotatedNext)
@@ -250,6 +252,7 @@ type settlementPoolRepoStub struct {
 	userCycles            []SettlementPoolCycle
 	participants          []SettlementPoolParticipant
 	rawUsage              map[int64]float64
+	sumUsageEndedAt       *time.Time
 	listParticipantsCalls int
 	sumUsageCalls         int
 	rotateCalls           int
@@ -349,8 +352,12 @@ func (s *settlementPoolRepoStub) ListUserPoolGroupIDs(context.Context, int64) ([
 	return s.groupIDs, nil
 }
 
-func (s *settlementPoolRepoStub) SumUsageByUsers(context.Context, int64, []int64, time.Time, *time.Time) (map[int64]float64, error) {
+func (s *settlementPoolRepoStub) SumUsageByUsers(_ context.Context, _ int64, _ []int64, _ time.Time, endedAt *time.Time) (map[int64]float64, error) {
 	s.sumUsageCalls++
+	if endedAt != nil {
+		capturedEndedAt := *endedAt
+		s.sumUsageEndedAt = &capturedEndedAt
+	}
 	return s.rawUsage, nil
 }
 

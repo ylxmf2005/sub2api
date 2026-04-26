@@ -29,29 +29,17 @@
               </div>
               <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ date(displayEstimate(summary)?.started_at) }}</p>
             </div>
-            <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
-              <div class="rounded-lg bg-gray-50 px-3 py-2 dark:bg-dark-700">
-                <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('settlementPools.myDue') }}</p>
-                <p class="text-base font-semibold text-primary-600 dark:text-primary-400">{{ money(myRow(summary)?.total_due) }}</p>
-              </div>
-              <div class="rounded-lg bg-gray-50 px-3 py-2 dark:bg-dark-700">
-                <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('settlementPools.myUsage') }}</p>
-                <p class="text-base font-semibold text-gray-900 dark:text-white">{{ money(myRow(summary)?.raw_usage) }}</p>
-              </div>
-              <div class="rounded-lg bg-gray-50 px-3 py-2 dark:bg-dark-700">
-                <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('settlementPools.dynamicRate') }}</p>
-                <p class="text-base font-semibold text-gray-900 dark:text-white">{{ money(displayEstimate(summary)?.effective_dynamic_rate) }}</p>
-              </div>
-              <div class="rounded-lg bg-gray-50 px-3 py-2 dark:bg-dark-700">
-                <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('settlementPools.ownerLoss') }}</p>
-                <p class="text-base font-semibold text-amber-600 dark:text-amber-400">{{ money(displayEstimate(summary)?.owner_covered_loss) }}</p>
-              </div>
-            </div>
           </div>
         </div>
 
         <div class="grid gap-6 p-4 xl:grid-cols-[1fr_320px]">
-          <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-dark-600">
+          <div class="space-y-6">
+            <SettlementPoolOverview
+              :summary="summary"
+              :current-user-id="authStore.user?.id ?? null"
+            />
+
+            <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-dark-600">
             <table class="min-w-full divide-y divide-gray-200 text-sm dark:divide-dark-600">
               <thead class="bg-gray-50 dark:bg-dark-700">
                 <tr>
@@ -87,18 +75,9 @@
               </tbody>
             </table>
           </div>
+          </div>
 
           <aside class="space-y-4">
-            <div class="rounded-lg border border-gray-200 p-3 dark:border-dark-600">
-              <h3 class="mb-2 text-sm font-medium text-gray-900 dark:text-white">{{ t('settlementPools.tiers') }}</h3>
-              <div class="space-y-2">
-                <div v-for="(tier, index) in displayEstimate(summary)?.tiers || []" :key="index" class="flex items-center justify-between text-sm">
-                  <span class="text-gray-600 dark:text-gray-300">{{ tierLabel(displayEstimate(summary)?.tiers || [], index) }}</span>
-                  <span class="font-medium text-gray-900 dark:text-white">{{ tier.weight }}</span>
-                </div>
-              </div>
-            </div>
-
             <div class="rounded-lg border border-gray-200 p-3 dark:border-dark-600">
               <h3 class="mb-2 text-sm font-medium text-gray-900 dark:text-white">{{ t('settlementPools.cycles') }}</h3>
               <div class="space-y-2">
@@ -138,6 +117,7 @@ import { useI18n } from 'vue-i18n'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
+import SettlementPoolOverview from '@/components/settlement/SettlementPoolOverview.vue'
 import settlementPoolsAPI from '@/api/settlementPools'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
@@ -149,10 +129,6 @@ const authStore = useAuthStore()
 const loading = ref(false)
 const summaries = ref<SettlementPoolSummary[]>([])
 const selectedCycleIds = ref<Record<number, number | null>>({})
-
-function myRow(summary: SettlementPoolSummary) {
-  return displayEstimate(summary)?.participants.find(row => row.user_id === authStore.user?.id)
-}
 
 function displayEstimate(summary: SettlementPoolSummary): SettlementPoolEstimate | null {
   const selectedCycleId = selectedCycleIds.value[summary.group.id]

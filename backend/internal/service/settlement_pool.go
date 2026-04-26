@@ -258,7 +258,9 @@ func (s *SettlementPoolService) StartNextCycle(ctx context.Context, groupID int6
 	if active == nil || active.Status != SettlementPoolCycleStatusActive {
 		return nil, ErrSettlementPoolNotFound
 	}
-	estimate, err := s.CalculateEstimate(ctx, active)
+	lockingCycle := *active
+	lockingCycle.EndedAt = &now
+	estimate, err := s.CalculateEstimate(ctx, &lockingCycle)
 	if err != nil {
 		return nil, err
 	}

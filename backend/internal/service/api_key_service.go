@@ -211,6 +211,7 @@ type APIKeyService struct {
 
 type SettlementPoolAccessReader interface {
 	IsParticipant(ctx context.Context, userID, groupID int64) (bool, error)
+	ListUserPoolGroupIDs(ctx context.Context, userID int64) ([]int64, error)
 }
 
 // NewAPIKeyService 创建API Key服务实例
@@ -756,6 +757,7 @@ func (s *APIKeyService) IncrementUsage(ctx context.Context, keyID int64) error {
 // 返回用户可以选择的分组：
 // - 标准类型分组：公开的（非专属）或用户被明确允许的
 // - 订阅类型分组：用户有有效订阅的
+// - 结算池分组：用户在参与者名单中的
 func (s *APIKeyService) GetAvailableGroups(ctx context.Context, userID int64) ([]Group, error) {
 	// 获取用户信息
 	user, err := s.userRepo.GetByID(ctx, userID)
@@ -781,10 +783,31 @@ func (s *APIKeyService) GetAvailableGroups(ctx context.Context, userID int64) ([
 		subscribedGroupIDs[sub.GroupID] = true
 	}
 
+	settlementPoolGroupIDs := make(map[int64]bool)
+	hasSettlementPoolGroups := false
+	for _, group := range allGroups {
+		if group.IsSettlementPoolType() {
+			hasSettlementPoolGroups = true
+			break
+		}
+	}
+	if hasSettlementPoolGroups {
+		if s.settlementPoolReader == nil {
+			return nil, fmt.Errorf("settlement pool repository not configured")
+		}
+		groupIDs, err := s.settlementPoolReader.ListUserPoolGroupIDs(ctx, userID)
+		if err != nil {
+			return nil, fmt.Errorf("list user settlement pools: %w", err)
+		}
+		for _, groupID := range groupIDs {
+			settlementPoolGroupIDs[groupID] = true
+		}
+	}
+
 	// 过滤出用户有权限的分组
 	availableGroups := make([]Group, 0)
 	for _, group := range allGroups {
-		if s.canUserBindGroupInternal(user, &group, subscribedGroupIDs) {
+		if s.canUserBindGroupInternal(user, &group, subscribedGroupIDs, settlementPoolGroupIDs) {
 			availableGroups = append(availableGroups, group)
 		}
 	}
@@ -793,18 +816,13 @@ func (s *APIKeyService) GetAvailableGroups(ctx context.Context, userID int64) ([
 }
 
 // canUserBindGroupInternal 内部方法，检查用户是否可以绑定分组（使用预加载的订阅数据）
-func (s *APIKeyService) canUserBindGroupInternal(user *User, group *Group, subscribedGroupIDs map[int64]bool) bool {
+func (s *APIKeyService) canUserBindGroupInternal(user *User, group *Group, subscribedGroupIDs map[int64]bool, settlementPoolGroupIDs map[int64]bool) bool {
+	if group.IsSettlementPoolType() {
+		return settlementPoolGroupIDs[group.ID]
+	}
 	// 订阅类型分组：需要有效订阅
 	if group.IsSubscriptionType() {
 		return subscribedGroupIDs[group.ID]
-	}
-	if group.IsSettlementPoolType() {
-		for _, id := range user.AllowedGroups {
-			if id == group.ID {
-				return true
-			}
-		}
-		return false
 	}
 	// 标准类型分组：使用原有逻辑
 	return user.CanBindGroup(group.ID, group.IsExclusive)

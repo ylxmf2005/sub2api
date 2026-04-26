@@ -1508,6 +1508,9 @@ func (s *adminServiceImpl) validateFallbackGroup(ctx context.Context, currentGro
 		if err != nil {
 			return fmt.Errorf("fallback group not found: %w", err)
 		}
+		if !fallbackGroup.IsStandardType() {
+			return fmt.Errorf("fallback group must be standard billing type")
+		}
 
 		// 降级分组不能启用 claude_code_only，否则会造成死循环
 		if nextID == fallbackGroupID && fallbackGroup.ClaudeCodeOnly {
@@ -1543,7 +1546,7 @@ func (s *adminServiceImpl) validateFallbackGroupOnInvalidRequest(ctx context.Con
 	if fallbackGroup.Platform != PlatformAnthropic {
 		return fmt.Errorf("fallback group must be anthropic platform")
 	}
-	if fallbackGroup.SubscriptionType != SubscriptionTypeStandard {
+	if !fallbackGroup.IsStandardType() {
 		return fmt.Errorf("fallback group must be standard billing type")
 	}
 	if fallbackGroup.FallbackGroupIDOnInvalidRequest != nil {
@@ -1906,7 +1909,7 @@ func (s *adminServiceImpl) AdminUpdateAPIKeyGroupID(ctx context.Context, keyID i
 		apiKey.Group = group
 
 		// 专属标准分组：使用事务保证「添加分组权限」与「更新 API Key」的原子性
-		if group.IsExclusive && group.SubscriptionType == SubscriptionTypeStandard {
+		if group.IsExclusive && group.IsStandardType() {
 			opCtx := ctx
 			var tx *dbent.Tx
 			if s.entClient == nil {
@@ -1978,7 +1981,7 @@ func (s *adminServiceImpl) ReplaceUserGroup(ctx context.Context, userID, oldGrou
 	if !newGroup.IsExclusive {
 		return nil, infraerrors.BadRequest("GROUP_NOT_EXCLUSIVE", "target group is not exclusive")
 	}
-	if newGroup.SubscriptionType != SubscriptionTypeStandard {
+	if !newGroup.IsStandardType() {
 		return nil, infraerrors.BadRequest("GROUP_NOT_STANDARD_BILLING", "only standard billing groups are supported for replacement")
 	}
 

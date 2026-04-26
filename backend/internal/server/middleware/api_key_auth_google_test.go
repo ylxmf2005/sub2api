@@ -34,6 +34,7 @@ type fakeGoogleSubscriptionRepo struct {
 
 type fakeSettlementPoolAccessReader struct {
 	isParticipant func(ctx context.Context, userID, groupID int64) (bool, error)
+	listUserPools func(ctx context.Context, userID int64) ([]int64, error)
 }
 
 func (f fakeSettlementPoolAccessReader) IsParticipant(ctx context.Context, userID, groupID int64) (bool, error) {
@@ -41,6 +42,13 @@ func (f fakeSettlementPoolAccessReader) IsParticipant(ctx context.Context, userI
 		return false, nil
 	}
 	return f.isParticipant(ctx, userID, groupID)
+}
+
+func (f fakeSettlementPoolAccessReader) ListUserPoolGroupIDs(ctx context.Context, userID int64) ([]int64, error) {
+	if f.listUserPools == nil {
+		return nil, nil
+	}
+	return f.listUserPools(ctx, userID)
 }
 
 func (f fakeAPIKeyRepo) Create(ctx context.Context, key *service.APIKey) error {

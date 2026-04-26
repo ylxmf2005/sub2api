@@ -26,28 +26,10 @@
 
       <template v-else>
         <div class="card p-4">
-          <div class="grid gap-4 lg:grid-cols-[minmax(240px,360px)_1fr_auto] lg:items-end">
+          <div class="grid gap-4 lg:grid-cols-[minmax(240px,360px)_auto] lg:items-end lg:justify-between">
             <div>
               <label class="input-label">{{ t('settlementPools.pool') }}</label>
               <Select v-model="selectedGroupId" :options="groupOptions" searchable />
-            </div>
-            <div v-if="summary?.estimate" class="grid grid-cols-2 gap-3 md:grid-cols-4">
-              <div class="rounded-lg bg-gray-50 p-3 dark:bg-dark-700">
-                <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('settlementPools.totalCost') }}</p>
-                <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{{ money(summary.estimate.total_cost) }}</p>
-              </div>
-              <div class="rounded-lg bg-gray-50 p-3 dark:bg-dark-700">
-                <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('settlementPools.dynamicRate') }}</p>
-                <p class="mt-1 text-lg font-semibold text-primary-600 dark:text-primary-400">{{ money(summary.estimate.effective_dynamic_rate) }}</p>
-              </div>
-              <div class="rounded-lg bg-gray-50 p-3 dark:bg-dark-700">
-                <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('settlementPools.participants') }}</p>
-                <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{{ summary.estimate.participant_count }}</p>
-              </div>
-              <div class="rounded-lg bg-gray-50 p-3 dark:bg-dark-700">
-                <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('settlementPools.ownerLoss') }}</p>
-                <p class="mt-1 text-lg font-semibold text-amber-600 dark:text-amber-400">{{ money(summary.estimate.owner_covered_loss) }}</p>
-              </div>
             </div>
             <button class="btn btn-primary" :disabled="saving || !selectedGroupId" @click="showStartCycleDialog = true">
               <Icon name="play" size="sm" />
@@ -55,6 +37,8 @@
             </button>
           </div>
         </div>
+
+        <SettlementPoolOverview v-if="summary" :summary="summary" />
 
         <div class="grid gap-6 xl:grid-cols-[420px_1fr]">
           <section class="card p-4">
@@ -174,7 +158,7 @@
               </thead>
               <tbody class="divide-y divide-gray-100 bg-white dark:divide-dark-700 dark:bg-dark-800">
                 <tr v-for="cycle in summary?.cycles || []" :key="cycle.id">
-                  <td class="px-3 py-2 text-gray-700 dark:text-gray-200">{{ date(cycle.started_at) }} - {{ cycle.ended_at ? date(cycle.ended_at) : t('settlementPools.active') }}</td>
+                  <td class="px-3 py-2 text-gray-700 dark:text-gray-200">{{ date(cycle.started_at) }} - {{ cycle.ended_at ? date(cycle.ended_at) : t('settlementPools.status.active') }}</td>
                   <td class="px-3 py-2">
                     <span class="badge" :class="cycle.status === 'active' ? 'badge-success' : 'badge-secondary'">{{ t(`settlementPools.status.${cycle.status}`) }}</span>
                   </td>
@@ -209,6 +193,7 @@ import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import Select from '@/components/common/Select.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import Icon from '@/components/icons/Icon.vue'
+import SettlementPoolOverview from '@/components/settlement/SettlementPoolOverview.vue'
 import { useAppStore } from '@/stores/app'
 import * as groupsAPI from '@/api/admin/groups'
 import * as usersAPI from '@/api/admin/users'
