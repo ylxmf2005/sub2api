@@ -89,6 +89,8 @@ func RegisterUserRoutes(
 			usage.POST("/dashboard/api-keys-usage", h.Usage.DashboardAPIKeysUsage)
 		}
 
+		registerMonitorRoutes(authenticated, h)
+
 		// 公告（用户可见）
 		announcements := authenticated.Group("/announcements")
 		{
@@ -117,6 +119,12 @@ func RegisterUserRoutes(
 		{
 			monitors.GET("", h.ChannelMonitor.List)
 			monitors.GET("/:id/status", h.ChannelMonitor.GetStatus)
+		}
+
+		settlementPools := authenticated.Group("/settlement-pools")
+		{
+			settlementPools.GET("", h.SettlementPool.List)
+			settlementPools.GET("/:id", h.SettlementPool.GetByGroup)
 		}
 	}
 }

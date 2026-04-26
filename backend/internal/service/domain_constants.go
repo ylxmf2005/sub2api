@@ -70,8 +70,9 @@ const (
 
 // Group subscription type constants
 const (
-	SubscriptionTypeStandard     = domain.SubscriptionTypeStandard     // 标准计费模式（按余额扣费）
-	SubscriptionTypeSubscription = domain.SubscriptionTypeSubscription // 订阅模式（按限额控制）
+	SubscriptionTypeStandard       = domain.SubscriptionTypeStandard       // 标准计费模式（按余额扣费）
+	SubscriptionTypeSubscription   = domain.SubscriptionTypeSubscription   // 订阅模式（按限额控制）
+	SubscriptionTypeSettlementPool = domain.SubscriptionTypeSettlementPool // 结算池模式（周期结算，不扣余额）
 )
 
 // Subscription status constants

@@ -68,6 +68,9 @@ func RegisterAdminRoutes(
 		// 订阅管理
 		registerSubscriptionRoutes(admin, h)
 
+		// 结算池管理
+		registerSettlementPoolRoutes(admin, h)
+
 		// 使用记录管理
 		registerUsageRoutes(admin, h)
 
@@ -254,6 +257,16 @@ func registerGroupRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		groups.PUT("/:id/rpm-overrides", h.Admin.Group.BatchSetGroupRPMOverrides)
 		groups.DELETE("/:id/rpm-overrides", h.Admin.Group.ClearGroupRPMOverrides)
 		groups.GET("/:id/api-keys", h.Admin.Group.GetGroupAPIKeys)
+	}
+}
+
+func registerSettlementPoolRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	settlementPools := admin.Group("/settlement-pools")
+	{
+		settlementPools.GET("/groups/:id", h.Admin.SettlementPool.GetSummary)
+		settlementPools.PUT("/groups/:id/config", h.Admin.SettlementPool.UpdateConfig)
+		settlementPools.PUT("/groups/:id/participants", h.Admin.SettlementPool.SyncParticipants)
+		settlementPools.POST("/groups/:id/start-cycle", h.Admin.SettlementPool.StartNextCycle)
 	}
 }
 

@@ -111,9 +111,9 @@
           <thead>
             <tr class="text-gray-500 dark:text-gray-400">
               <th class="pb-2 text-left">{{ t('admin.dashboard.model') }}</th>
-              <th class="pb-2 text-right">{{ t('admin.dashboard.requests') }}</th>
-              <th class="pb-2 text-right">{{ t('admin.dashboard.tokens') }}</th>
               <th class="pb-2 text-right">{{ t('admin.dashboard.actual') }}</th>
+              <th class="pb-2 text-right">{{ t('admin.dashboard.tokens') }}</th>
+              <th class="pb-2 text-right">{{ t('admin.dashboard.requests') }}</th>
               <th class="pb-2 text-right">{{ t('admin.dashboard.accountCost') }}</th>
               <th class="pb-2 text-right">{{ t('admin.dashboard.standard') }}</th>
             </tr>
@@ -121,27 +121,53 @@
           <tbody>
             <template v-for="model in displayModelStats" :key="model.model">
               <tr
-                class="border-t border-gray-100 cursor-pointer transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-dark-700/40"
-                @click="toggleBreakdown('model', model.model)"
+                :class="[
+                  'border-t border-gray-100 transition-colors dark:border-gray-700',
+                  props.enableBreakdown
+                    ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-700/40'
+                    : ''
+                ]"
+                @click="props.enableBreakdown ? toggleBreakdown('model', model.model) : undefined"
               >
                 <td
-                  class="max-w-[100px] truncate py-1.5 font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                  :class="[
+                    'max-w-[100px] truncate py-1.5 font-medium',
+                    props.enableBreakdown
+                      ? 'text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300'
+                      : 'text-gray-900 dark:text-white'
+                  ]"
                   :title="model.model"
                 >
                   <span class="inline-flex items-center gap-1">
-                    <svg v-if="expandedKey === `model-${model.model}`" class="h-3 w-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    <svg v-else class="h-3 w-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    <svg
+                      v-if="props.enableBreakdown && expandedKey === `model-${model.model}`"
+                      class="h-3 w-3 shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                    <svg
+                      v-else-if="props.enableBreakdown"
+                      class="h-3 w-3 shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
                     {{ model.model }}
                   </span>
                 </td>
-                <td class="py-1.5 text-right text-gray-600 dark:text-gray-400">
-                  {{ formatNumber(model.requests) }}
+                <td class="py-1.5 text-right text-green-600 dark:text-green-400">
+                  ${{ formatCost(model.actual_cost) }}
                 </td>
                 <td class="py-1.5 text-right text-gray-600 dark:text-gray-400">
                   {{ formatTokens(model.total_tokens) }}
                 </td>
-                <td class="py-1.5 text-right text-green-600 dark:text-green-400">
-                  ${{ formatCost(model.actual_cost) }}
+                <td class="py-1.5 text-right text-gray-400 dark:text-gray-500">
+                  {{ formatNumber(model.requests) }}
                 </td>
                 <td class="py-1.5 text-right text-orange-500 dark:text-orange-400">
                   ${{ formatCost(model.account_cost) }}
@@ -150,7 +176,7 @@
                   ${{ formatCost(model.cost) }}
                 </td>
               </tr>
-              <tr v-if="expandedKey === `model-${model.model}`">
+              <tr v-if="props.enableBreakdown && expandedKey === `model-${model.model}`">
                 <td colspan="6" class="p-0">
                   <UserBreakdownSubTable
                     :items="breakdownItems"
@@ -188,8 +214,7 @@
           <thead>
             <tr class="text-gray-500 dark:text-gray-400">
               <th class="pb-2 text-left">{{ t('admin.dashboard.spendingRankingUser') }}</th>
-              <th class="pb-2 text-right">{{ t('admin.dashboard.spendingRankingRequests') }}</th>
-              <th class="pb-2 text-right">{{ t('admin.dashboard.spendingRankingTokens') }}</th>
+              <th class="pb-2 text-right">{{ t('admin.dashboard.spendingRankingUsage') }}</th>
               <th class="pb-2 text-right">{{ t('admin.dashboard.spendingRankingSpend') }}</th>
             </tr>
           </thead>
@@ -200,8 +225,10 @@
               class="border-t border-gray-100 transition-colors dark:border-gray-700"
               :class="item.isOther
                 ? 'bg-gray-50/70 dark:bg-dark-700/20'
-                : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-700/40'"
-              @click="item.isOther ? undefined : emit('ranking-click', item)"
+                : props.enableRankingClick
+                  ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-700/40'
+                  : ''"
+              @click="item.isOther || !props.enableRankingClick ? undefined : emit('ranking-click', item)"
             >
               <td class="py-1.5">
                 <div class="flex min-w-0 items-center gap-2">
@@ -215,9 +242,6 @@
                     {{ getRankingRowLabel(item) }}
                   </span>
                 </div>
-              </td>
-              <td class="py-1.5 text-right text-gray-600 dark:text-gray-400">
-                {{ formatNumber(item.requests) }}
               </td>
               <td class="py-1.5 text-right text-gray-600 dark:text-gray-400">
                 {{ formatTokens(item.tokens) }}
@@ -247,7 +271,8 @@ import { Doughnut } from 'vue-chartjs'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import UserBreakdownSubTable from './UserBreakdownSubTable.vue'
 import type { ModelStat, UserSpendingRankingItem, UserBreakdownItem } from '@/types'
-import { getUserBreakdown } from '@/api/admin/dashboard'
+import { getUserBreakdown as getAdminUserBreakdown } from '@/api/admin/dashboard'
+import { getUserBreakdown as getMonitorUserBreakdown } from '@/api/monitor'
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
@@ -255,6 +280,7 @@ const { t } = useI18n()
 
 type DistributionMetric = 'tokens' | 'actual_cost'
 type ModelSource = 'requested' | 'upstream' | 'mapping'
+type BreakdownScope = 'admin' | 'monitor'
 type RankingDisplayItem = UserSpendingRankingItem & { isOther?: boolean }
 const props = withDefaults(defineProps<{
   modelStats: ModelStat[]
@@ -275,6 +301,9 @@ const props = withDefaults(defineProps<{
   startDate?: string
   endDate?: string
   filters?: Record<string, any>
+  breakdownScope?: BreakdownScope
+  enableBreakdown?: boolean
+  enableRankingClick?: boolean
 }>(), {
   upstreamModelStats: () => [],
   mappingModelStats: () => [],
@@ -285,11 +314,14 @@ const props = withDefaults(defineProps<{
   rankingTotalRequests: 0,
   rankingTotalTokens: 0,
   loading: false,
-  metric: 'tokens',
+  metric: 'actual_cost',
   showSourceToggle: false,
   showMetricToggle: false,
   rankingLoading: false,
-  rankingError: false
+  rankingError: false,
+  breakdownScope: 'admin',
+  enableBreakdown: true,
+  enableRankingClick: true
 })
 
 const expandedKey = ref<string | null>(null)
@@ -306,6 +338,9 @@ const toggleBreakdown = async (type: string, id: string) => {
   breakdownLoading.value = true
   breakdownItems.value = []
   try {
+    const getUserBreakdown = props.breakdownScope === 'monitor'
+      ? getMonitorUserBreakdown
+      : getAdminUserBreakdown
     const res = await getUserBreakdown({
       ...props.filters,
       start_date: props.startDate,
@@ -401,20 +436,18 @@ const otherRankingItem = computed<RankingDisplayItem | null>(() => {
   if (!props.rankingItems?.length) return null
 
   const rankedActualCost = props.rankingItems.reduce((sum, item) => sum + item.actual_cost, 0)
-  const rankedRequests = props.rankingItems.reduce((sum, item) => sum + item.requests, 0)
   const rankedTokens = props.rankingItems.reduce((sum, item) => sum + item.tokens, 0)
 
   const otherActualCost = Math.max((props.rankingTotalActualCost || 0) - rankedActualCost, 0)
-  const otherRequests = Math.max((props.rankingTotalRequests || 0) - rankedRequests, 0)
   const otherTokens = Math.max((props.rankingTotalTokens || 0) - rankedTokens, 0)
 
-  if (otherActualCost <= 0.000001 && otherRequests <= 0 && otherTokens <= 0) return null
+  if (otherActualCost <= 0.000001 && otherTokens <= 0) return null
 
   return {
     user_id: 0,
     email: '',
     actual_cost: otherActualCost,
-    requests: otherRequests,
+    requests: 0,
     tokens: otherTokens,
     isOther: true
   }

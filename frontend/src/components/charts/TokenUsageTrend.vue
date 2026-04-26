@@ -1,19 +1,19 @@
 <template>
   <div class="card p-4">
     <h3 class="mb-4 text-sm font-semibold text-gray-900 dark:text-white">
-      {{ t('admin.dashboard.tokenUsageTrend') }}
+      {{ title }}
     </h3>
-    <div v-if="loading" class="flex h-48 items-center justify-center">
+    <div v-if="loading" :class="['flex items-center justify-center', heightClass]">
       <LoadingSpinner />
     </div>
-    <div v-else-if="trendData.length > 0 && chartData" class="h-48">
+    <div v-else-if="trendData.length > 0 && chartData" :class="heightClass">
       <Line :data="chartData" :options="lineOptions" />
     </div>
     <div
       v-else
-      class="flex h-48 items-center justify-center text-sm text-gray-500 dark:text-gray-400"
+      :class="['flex items-center justify-center text-sm text-gray-500 dark:text-gray-400', heightClass]"
     >
-      {{ t('admin.dashboard.noDataAvailable') }}
+      {{ emptyText }}
     </div>
   </div>
 </template>
@@ -52,7 +52,14 @@ const { t } = useI18n()
 const props = defineProps<{
   trendData: TrendDataPoint[]
   loading?: boolean
+  title?: string
+  emptyText?: string
+  heightClass?: string
 }>()
+
+const title = computed(() => props.title || t('admin.dashboard.tokenUsageTrend'))
+const emptyText = computed(() => props.emptyText || t('admin.dashboard.noDataAvailable'))
+const heightClass = computed(() => props.heightClass || 'h-48')
 
 const isDarkMode = computed(() => {
   return document.documentElement.classList.contains('dark')

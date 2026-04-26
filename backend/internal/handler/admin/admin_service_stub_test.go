@@ -258,7 +258,7 @@ func (s *stubAdminService) GetGroup(ctx context.Context, id int64) (*service.Gro
 }
 
 func (s *stubAdminService) CreateGroup(ctx context.Context, input *service.CreateGroupInput) (*service.Group, error) {
-	group := service.Group{ID: 200, Name: input.Name, Status: service.StatusActive}
+	group := service.Group{ID: 200, Name: input.Name, Status: service.StatusActive, SubscriptionType: input.SubscriptionType}
 	return &group, nil
 }
 

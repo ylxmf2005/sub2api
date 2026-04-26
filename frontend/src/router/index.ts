@@ -162,6 +162,18 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/monitor',
+    name: 'Monitor',
+    component: () => import('@/views/admin/DashboardView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Monitor',
+      titleKey: 'admin.dashboard.title',
+      descriptionKey: 'admin.dashboard.description'
+    }
+  },
+  {
     path: '/keys',
     name: 'Keys',
     component: () => import('@/views/user/KeysView.vue'),
@@ -243,6 +255,18 @@ const routes: RouteRecordRaw[] = [
       title: 'My Subscriptions',
       titleKey: 'userSubscriptions.title',
       descriptionKey: 'userSubscriptions.description'
+    }
+  },
+  {
+    path: '/settlement-pools',
+    name: 'SettlementPools',
+    component: () => import('@/views/user/SettlementPoolsView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Settlement Pools',
+      titleKey: 'settlementPools.userTitle',
+      descriptionKey: 'settlementPools.userDescription'
     }
   },
   {
@@ -431,6 +455,18 @@ const routes: RouteRecordRaw[] = [
       title: 'Subscription Management',
       titleKey: 'admin.subscriptions.title',
       descriptionKey: 'admin.subscriptions.description'
+    }
+  },
+  {
+    path: '/admin/settlement-pools',
+    name: 'AdminSettlementPools',
+    component: () => import('@/views/admin/SettlementPoolsView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Settlement Pools',
+      titleKey: 'settlementPools.adminTitle',
+      descriptionKey: 'settlementPools.adminDescription'
     }
   },
   {
@@ -712,8 +748,10 @@ router.beforeEach((to, _from, next) => {
     const restrictedPaths = [
       '/admin/groups',
       '/admin/subscriptions',
+      '/admin/settlement-pools',
       '/admin/redeem',
       '/subscriptions',
+      '/settlement-pools',
       '/redeem'
     ]
 

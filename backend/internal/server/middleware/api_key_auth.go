@@ -131,6 +131,7 @@ func apiKeyAuthWithSubscription(apiKeyService *service.APIKeyService, subscripti
 
 		var subscription *service.UserSubscription
 		isSubscriptionType := apiKey.Group != nil && apiKey.Group.IsSubscriptionType()
+		isSettlementPoolType := apiKey.Group != nil && apiKey.Group.IsSettlementPoolType()
 
 		if isSubscriptionType && subscriptionService != nil {
 			sub, subErr := subscriptionService.GetActiveSubscription(
@@ -172,8 +173,14 @@ func apiKeyAuthWithSubscription(apiKeyService *service.APIKeyService, subscripti
 				return
 			}
 
-			// 订阅模式：验证订阅限额
-			if subscription != nil {
+			if isSettlementPoolType {
+				ok, participantErr := apiKeyService.IsSettlementPoolParticipant(c.Request.Context(), apiKey.User.ID, apiKey.Group.ID)
+				if participantErr != nil || !ok {
+					AbortWithError(c, 403, "SETTLEMENT_POOL_PARTICIPANT_REQUIRED", "No active settlement pool participation found for this group")
+					return
+				}
+			} else if subscription != nil {
+				// 订阅模式：验证订阅限额
 				needsMaintenance, validateErr := subscriptionService.ValidateAndCheckLimits(subscription, apiKey.Group)
 				if validateErr != nil {
 					code := "SUBSCRIPTION_INVALID"

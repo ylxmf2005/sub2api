@@ -3,7 +3,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 
 import UsageView from '../UsageView.vue'
 
-const { list, getStats, getSnapshotV2, getById } = vi.hoisted(() => {
+const { list, getStats, getSnapshotV2, getModelStats, getById } = vi.hoisted(() => {
   vi.stubGlobal('localStorage', {
     getItem: vi.fn(() => null),
     setItem: vi.fn(),
@@ -14,6 +14,7 @@ const { list, getStats, getSnapshotV2, getById } = vi.hoisted(() => {
     list: vi.fn(),
     getStats: vi.fn(),
     getSnapshotV2: vi.fn(),
+    getModelStats: vi.fn(),
     getById: vi.fn(),
   }
 })
@@ -40,6 +41,7 @@ vi.mock('@/api/admin', () => ({
     },
     dashboard: {
       getSnapshotV2,
+      getModelStats,
     },
     users: {
       getById,
@@ -90,7 +92,7 @@ const ModelDistributionChartStub = {
   template: `
     <div data-test="model-chart">
       <span class="metric">{{ metric }}</span>
-      <button class="switch-metric" @click="$emit('update:metric', 'actual_cost')">switch</button>
+      <button class="switch-metric" @click="$emit('update:metric', 'tokens')">switch</button>
     </div>
   `,
 }
@@ -100,7 +102,7 @@ const GroupDistributionChartStub = {
   template: `
     <div data-test="group-chart">
       <span class="metric">{{ metric }}</span>
-      <button class="switch-metric" @click="$emit('update:metric', 'actual_cost')">switch</button>
+      <button class="switch-metric" @click="$emit('update:metric', 'tokens')">switch</button>
     </div>
   `,
 }
@@ -111,6 +113,7 @@ describe('admin UsageView distribution metric toggles', () => {
     list.mockReset()
     getStats.mockReset()
     getSnapshotV2.mockReset()
+    getModelStats.mockReset()
     getById.mockReset()
 
     list.mockResolvedValue({
@@ -132,6 +135,9 @@ describe('admin UsageView distribution metric toggles', () => {
       trend: [],
       models: [],
       groups: [],
+    })
+    getModelStats.mockResolvedValue({
+      models: [],
     })
   })
 
@@ -176,21 +182,21 @@ describe('admin UsageView distribution metric toggles', () => {
     const modelChart = wrapper.find('[data-test="model-chart"]')
     const groupChart = wrapper.find('[data-test="group-chart"]')
 
-    expect(modelChart.find('.metric').text()).toBe('tokens')
-    expect(groupChart.find('.metric').text()).toBe('tokens')
+    expect(modelChart.find('.metric').text()).toBe('actual_cost')
+    expect(groupChart.find('.metric').text()).toBe('actual_cost')
 
     await modelChart.find('.switch-metric').trigger('click')
     await flushPromises()
 
-    expect(modelChart.find('.metric').text()).toBe('actual_cost')
-    expect(groupChart.find('.metric').text()).toBe('tokens')
+    expect(modelChart.find('.metric').text()).toBe('tokens')
+    expect(groupChart.find('.metric').text()).toBe('actual_cost')
     expect(getSnapshotV2).toHaveBeenCalledTimes(1)
 
     await groupChart.find('.switch-metric').trigger('click')
     await flushPromises()
 
-    expect(modelChart.find('.metric').text()).toBe('actual_cost')
-    expect(groupChart.find('.metric').text()).toBe('actual_cost')
+    expect(modelChart.find('.metric').text()).toBe('tokens')
+    expect(groupChart.find('.metric').text()).toBe('tokens')
     expect(getSnapshotV2).toHaveBeenCalledTimes(1)
   })
 })

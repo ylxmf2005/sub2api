@@ -7,8 +7,9 @@ import (
 )
 
 const (
-	BillingTypeBalance      int8 = 0 // 钱包余额
-	BillingTypeSubscription int8 = 1 // 订阅套餐
+	BillingTypeBalance        int8 = 0 // 钱包余额
+	BillingTypeSubscription   int8 = 1 // 订阅套餐
+	BillingTypeSettlementPool int8 = 2 // 结算池周期结算
 )
 
 type RequestType int16

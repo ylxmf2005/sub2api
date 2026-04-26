@@ -33,6 +33,14 @@ type dashboardStatsRangeFetcher interface {
 	GetDashboardStatsWithRange(ctx context.Context, start, end time.Time) (*usagestats.DashboardStats, error)
 }
 
+type userSpendingRankingWithGroupFetcher interface {
+	GetUserSpendingRankingWithGroup(ctx context.Context, startTime, endTime time.Time, groupID int64, limit int) (*usagestats.UserSpendingRankingResponse, error)
+}
+
+type userUsageTrendWithGroupFetcher interface {
+	GetUserUsageTrendWithGroup(ctx context.Context, startTime, endTime time.Time, granularity string, groupID int64, limit int) ([]usagestats.UserUsageTrendPoint, error)
+}
+
 type dashboardStatsCacheEntry struct {
 	Stats     *usagestats.DashboardStats `json:"stats"`
 	UpdatedAt int64                      `json:"updated_at"`
@@ -120,6 +128,27 @@ func (s *DashboardService) GetDashboardStats(ctx context.Context) (*usagestats.D
 	stats, err := s.refreshDashboardStats(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("get dashboard stats: %w", err)
+	}
+	return stats, nil
+}
+
+func (s *DashboardService) GetDashboardStatsWithRange(ctx context.Context, start, end time.Time) (*usagestats.DashboardStats, error) {
+	if fetcher, ok := s.usageRepo.(dashboardStatsRangeFetcher); ok {
+		stats, err := fetcher.GetDashboardStatsWithRange(ctx, start, end)
+		if err != nil {
+			return nil, fmt.Errorf("get dashboard stats with range: %w", err)
+		}
+		s.applyAggregationStatus(ctx, stats)
+		return stats, nil
+	}
+
+	return s.GetDashboardStats(ctx)
+}
+
+func (s *DashboardService) GetUsageStatsWithFilters(ctx context.Context, filters usagestats.UsageLogFilters) (*usagestats.UsageStats, error) {
+	stats, err := s.usageRepo.GetStatsWithFilters(ctx, filters)
+	if err != nil {
+		return nil, fmt.Errorf("get usage stats with filters: %w", err)
 	}
 	return stats, nil
 }
@@ -357,12 +386,44 @@ func (s *DashboardService) GetUserUsageTrend(ctx context.Context, startTime, end
 	return trend, nil
 }
 
+func (s *DashboardService) GetUserUsageTrendWithGroup(ctx context.Context, startTime, endTime time.Time, granularity string, groupID int64, limit int) ([]usagestats.UserUsageTrendPoint, error) {
+	if groupID <= 0 {
+		return s.GetUserUsageTrend(ctx, startTime, endTime, granularity, limit)
+	}
+
+	if fetcher, ok := s.usageRepo.(userUsageTrendWithGroupFetcher); ok {
+		trend, err := fetcher.GetUserUsageTrendWithGroup(ctx, startTime, endTime, granularity, groupID, limit)
+		if err != nil {
+			return nil, fmt.Errorf("get user usage trend with group: %w", err)
+		}
+		return trend, nil
+	}
+
+	return s.GetUserUsageTrend(ctx, startTime, endTime, granularity, limit)
+}
+
 func (s *DashboardService) GetUserSpendingRanking(ctx context.Context, startTime, endTime time.Time, limit int) (*usagestats.UserSpendingRankingResponse, error) {
 	ranking, err := s.usageRepo.GetUserSpendingRanking(ctx, startTime, endTime, limit)
 	if err != nil {
 		return nil, fmt.Errorf("get user spending ranking: %w", err)
 	}
 	return ranking, nil
+}
+
+func (s *DashboardService) GetUserSpendingRankingWithGroup(ctx context.Context, startTime, endTime time.Time, groupID int64, limit int) (*usagestats.UserSpendingRankingResponse, error) {
+	if groupID <= 0 {
+		return s.GetUserSpendingRanking(ctx, startTime, endTime, limit)
+	}
+
+	if fetcher, ok := s.usageRepo.(userSpendingRankingWithGroupFetcher); ok {
+		ranking, err := fetcher.GetUserSpendingRankingWithGroup(ctx, startTime, endTime, groupID, limit)
+		if err != nil {
+			return nil, fmt.Errorf("get user spending ranking with group: %w", err)
+		}
+		return ranking, nil
+	}
+
+	return s.GetUserSpendingRanking(ctx, startTime, endTime, limit)
 }
 
 func (s *DashboardService) GetUserBreakdownStats(ctx context.Context, startTime, endTime time.Time, dim usagestats.UserBreakdownDimension, limit int) ([]usagestats.UserBreakdownItem, error) {

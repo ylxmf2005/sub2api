@@ -1,0 +1,34 @@
+# =============================================================================
+# Sub2API Docker Compose - Private Fork Override
+# =============================================================================
+# This file provides private customizations for the Sub2API deployment.
+# It is designed to be used as an override to docker-compose.local.yml.
+#
+# Usage:
+#   docker compose -f docker-compose.local.yml -f docker-compose.private.yml up -d
+# =============================================================================
+
+services:
+  sub2api:
+    # Use an explicit image reference so cutover can swap tags atomically
+    # by updating a single .env key on the server.
+    image: ${SUB2API_IMAGE:?SUB2API_IMAGE is required}
+
+    # Ensure Docker doesn't try to pull this private image from a registry.
+    pull_policy: never
+
+    environment:
+      # Inject the release tag into the container for visibility in logs/UI.
+      - SUB2API_RELEASE_TAG=${SUB2API_RELEASE_TAG:-manual}
+
+    labels:
+      # Administrative labels for easier container management.
+      io.sub2api.deployment: private-fork
+      io.sub2api.release: ${SUB2API_RELEASE_TAG:-manual}
+
+    # Optional host integrations.
+    # Uncomment and adjust these if you need to integrate with host-side services.
+    # volumes:
+    #   # Example: Mount the datamanagementd socket if it's running on the host.
+    #   # See deploy/DATAMANAGEMENTD_CN.md for details.
+    #   - /tmp/sub2api-datamanagement.sock:/tmp/sub2api-datamanagement.sock

@@ -14,6 +14,7 @@ const messages: Record<string, string> = {
   'admin.dashboard.metricTokens': 'By Tokens',
   'admin.dashboard.metricActualCost': 'By Actual Cost',
   'admin.dashboard.noDataAvailable': 'No data available',
+  'admin.dashboard.accountCost': 'Account Cost',
 }
 
 vi.mock('vue-i18n', async () => {
@@ -42,6 +43,7 @@ describe('GroupDistributionChart', () => {
       total_tokens: 1200,
       cost: 1.8,
       actual_cost: 0.1,
+      account_cost: 0.05,
     },
     {
       group_id: 2,
@@ -50,43 +52,14 @@ describe('GroupDistributionChart', () => {
       total_tokens: 600,
       cost: 0.7,
       actual_cost: 0.9,
+      account_cost: 0.4,
     },
   ]
 
-  it('uses total_tokens and token ordering by default', () => {
+  it('uses actual_cost and spend ordering by default', () => {
     const wrapper = mount(GroupDistributionChart, {
       props: {
         groupStats,
-      },
-      global: {
-        stubs: {
-          LoadingSpinner: true,
-        },
-      },
-    })
-
-    const chartData = JSON.parse(wrapper.find('.chart-data').text())
-    expect(chartData.labels).toEqual(['group-a', 'group-b'])
-    expect(chartData.datasets[0].data).toEqual([1200, 600])
-
-    const rows = wrapper.findAll('tbody tr')
-    expect(rows[0].text()).toContain('group-a')
-    expect(rows[1].text()).toContain('group-b')
-
-    const options = (wrapper.vm as any).$?.setupState.doughnutOptions
-    const label = options.plugins.tooltip.callbacks.label({
-      label: 'group-a',
-      raw: 1200,
-      dataset: { data: [1200, 600] },
-    })
-    expect(label).toBe('group-a: 1.20K (66.7%)')
-  })
-
-  it('uses actual_cost and reorders rows in actual cost mode', () => {
-    const wrapper = mount(GroupDistributionChart, {
-      props: {
-        groupStats,
-        metric: 'actual_cost',
       },
       global: {
         stubs: {
@@ -110,5 +83,35 @@ describe('GroupDistributionChart', () => {
       dataset: { data: [0.9, 0.1] },
     })
     expect(label).toBe('group-b: $0.900 (90.0%)')
+  })
+
+  it('uses total_tokens and reorders rows in token mode', () => {
+    const wrapper = mount(GroupDistributionChart, {
+      props: {
+        groupStats,
+        metric: 'tokens',
+      },
+      global: {
+        stubs: {
+          LoadingSpinner: true,
+        },
+      },
+    })
+
+    const chartData = JSON.parse(wrapper.find('.chart-data').text())
+    expect(chartData.labels).toEqual(['group-a', 'group-b'])
+    expect(chartData.datasets[0].data).toEqual([1200, 600])
+
+    const rows = wrapper.findAll('tbody tr')
+    expect(rows[0].text()).toContain('group-a')
+    expect(rows[1].text()).toContain('group-b')
+
+    const options = (wrapper.vm as any).$?.setupState.doughnutOptions
+    const label = options.plugins.tooltip.callbacks.label({
+      label: 'group-a',
+      raw: 1200,
+      dataset: { data: [1200, 600] },
+    })
+    expect(label).toBe('group-a: 1.20K (66.7%)')
   })
 })

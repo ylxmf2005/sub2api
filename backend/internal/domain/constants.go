@@ -55,8 +55,9 @@ const (
 
 // Group subscription type constants
 const (
-	SubscriptionTypeStandard     = "standard"     // 标准计费模式（按余额扣费）
-	SubscriptionTypeSubscription = "subscription" // 订阅模式（按限额控制）
+	SubscriptionTypeStandard       = "standard"        // 标准计费模式（按余额扣费）
+	SubscriptionTypeSubscription   = "subscription"    // 订阅模式（按限额控制）
+	SubscriptionTypeSettlementPool = "settlement_pool" // 结算池模式（周期结算，不扣余额）
 )
 
 // Subscription status constants

@@ -102,3 +102,18 @@ func TestBillingCacheServiceEnqueueAfterStopReturnsFalse(t *testing.T) {
 	})
 	require.False(t, enqueued)
 }
+
+func TestBillingCacheServiceCheckEligibility_SettlementPoolSkipsBalance(t *testing.T) {
+	cache := &billingCacheWorkerStub{}
+	svc := NewBillingCacheService(cache, nil, nil, nil, nil, nil, &config.Config{})
+	t.Cleanup(svc.Stop)
+
+	err := svc.CheckBillingEligibility(context.Background(),
+		&User{ID: 42, Balance: 0},
+		&APIKey{ID: 99},
+		&Group{ID: 7, SubscriptionType: SubscriptionTypeSettlementPool},
+		nil,
+	)
+
+	require.NoError(t, err)
+}

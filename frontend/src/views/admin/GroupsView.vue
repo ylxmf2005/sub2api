@@ -122,12 +122,16 @@
                   'inline-block rounded-full px-2 py-0.5 text-xs font-medium',
                   row.subscription_type === 'subscription'
                     ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400'
+                    : row.subscription_type === 'settlement_pool'
+                      ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
                     : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
                 ]"
               >
                 {{
                   row.subscription_type === "subscription"
                     ? t("admin.groups.subscription.subscription")
+                    : row.subscription_type === "settlement_pool"
+                      ? t("admin.groups.subscription.settlementPool")
                     : t("admin.groups.subscription.standard")
                 }}
               </span>
@@ -308,6 +312,14 @@
                   t("admin.groups.rateMultipliers")
                 }}</span>
               </button>
+              <router-link
+                v-if="row.subscription_type === 'settlement_pool'"
+                :to="{ path: '/admin/settlement-pools', query: { group: row.id } }"
+                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/20 dark:hover:text-amber-400"
+              >
+                <Icon name="chart" size="sm" />
+                <span class="text-xs">{{ t("admin.groups.subscription.poolSettings") }}</span>
+              </router-link>
               <button
                 @click="handleRPMOverrides(row)"
                 class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-orange-600 dark:hover:bg-dark-700 dark:hover:text-orange-400"
@@ -513,7 +525,7 @@
           <p class="input-hint">{{ t("admin.groups.form.rpmLimitHint") }}</p>
         </div>
         <div
-          v-if="createForm.subscription_type !== 'subscription'"
+          v-if="createForm.subscription_type === 'standard'"
           data-tour="group-form-exclusive"
         >
           <div class="mb-1.5 flex items-center gap-1">
@@ -1225,11 +1237,11 @@
           </div>
         </div>
 
-        <!-- 无效请求兜底（仅 anthropic/antigravity 平台，且非订阅分组） -->
+        <!-- 无效请求兜底（仅 anthropic/antigravity 平台，且标准计费分组） -->
         <div
           v-if="
             ['anthropic', 'antigravity'].includes(createForm.platform) &&
-            createForm.subscription_type !== 'subscription'
+            createForm.subscription_type === 'standard'
           "
           class="border-t pt-4"
         >
@@ -1645,7 +1657,7 @@
           />
           <p class="input-hint">{{ t("admin.groups.form.rpmLimitHint") }}</p>
         </div>
-        <div v-if="editForm.subscription_type !== 'subscription'">
+        <div v-if="editForm.subscription_type === 'standard'">
           <div class="mb-1.5 flex items-center gap-1">
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
               {{ t("admin.groups.form.exclusive") }}
@@ -2356,11 +2368,11 @@
           </div>
         </div>
 
-        <!-- 无效请求兜底（仅 anthropic/antigravity 平台，且非订阅分组） -->
+        <!-- 无效请求兜底（仅 anthropic/antigravity 平台，且标准计费分组） -->
         <div
           v-if="
             ['anthropic', 'antigravity'].includes(editForm.platform) &&
-            editForm.subscription_type !== 'subscription'
+            editForm.subscription_type === 'standard'
           "
           class="border-t pt-4"
         >
@@ -2843,6 +2855,10 @@ const editStatusOptions = computed(() => [
 const subscriptionTypeOptions = computed(() => [
   { value: "standard", label: t("admin.groups.subscription.standard") },
   { value: "subscription", label: t("admin.groups.subscription.subscription") },
+  {
+    value: "settlement_pool",
+    label: t("admin.groups.subscription.settlementPool"),
+  },
 ]);
 
 // 降级分组选项（创建时）- 仅包含 anthropic 平台且未启用 claude_code_only 的分组
@@ -2881,7 +2897,7 @@ const fallbackGroupOptionsForEdit = computed(() => {
   return options;
 });
 
-// 无效请求兜底分组选项（创建时）- 仅包含 anthropic 平台、非订阅且未配置兜底的分组
+// 无效请求兜底分组选项（创建时）- 仅包含 anthropic 平台、标准计费且未配置兜底的分组
 const invalidRequestFallbackOptions = computed(() => {
   const options: { value: number | null; label: string }[] = [
     { value: null, label: t("admin.groups.invalidRequestFallback.noFallback") },
@@ -2890,7 +2906,7 @@ const invalidRequestFallbackOptions = computed(() => {
     (g) =>
       g.platform === "anthropic" &&
       g.status === "active" &&
-      g.subscription_type !== "subscription" &&
+      g.subscription_type === "standard" &&
       g.fallback_group_id_on_invalid_request === null,
   );
   eligibleGroups.forEach((g) => {
@@ -2909,7 +2925,7 @@ const invalidRequestFallbackOptionsForEdit = computed(() => {
     (g) =>
       g.platform === "anthropic" &&
       g.status === "active" &&
-      g.subscription_type !== "subscription" &&
+      g.subscription_type === "standard" &&
       g.fallback_group_id_on_invalid_request === null &&
       g.id !== currentId,
   );
@@ -3746,11 +3762,11 @@ const confirmDelete = async () => {
   }
 };
 
-// 监听 subscription_type 变化，订阅模式时 is_exclusive 默认为 true
+// 监听 subscription_type 变化，非标准计费分组由后台/专用页面管理参与关系
 watch(
   () => createForm.subscription_type,
   (newVal) => {
-    if (newVal === "subscription") {
+    if (newVal !== "standard") {
       createForm.is_exclusive = true;
       createForm.fallback_group_id_on_invalid_request = null;
     }

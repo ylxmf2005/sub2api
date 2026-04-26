@@ -37,18 +37,18 @@
               <thead>
                 <tr class="text-gray-500 dark:text-gray-400">
                   <th class="pb-2 text-left">{{ t('dashboard.model') }}</th>
-                  <th class="pb-2 text-right">{{ t('dashboard.requests') }}</th>
-                  <th class="pb-2 text-right">{{ t('dashboard.tokens') }}</th>
                   <th class="pb-2 text-right">{{ t('dashboard.actual') }}</th>
+                  <th class="pb-2 text-right">{{ t('dashboard.tokens') }}</th>
+                  <th class="pb-2 text-right">{{ t('dashboard.requests') }}</th>
                   <th class="pb-2 text-right">{{ t('dashboard.standard') }}</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="model in models" :key="model.model" class="border-t border-gray-100 dark:border-gray-700">
+                <tr v-for="model in sortedModels" :key="model.model" class="border-t border-gray-100 dark:border-gray-700">
                   <td class="max-w-[100px] truncate py-1.5 font-medium text-gray-900 dark:text-white" :title="model.model">{{ model.model }}</td>
-                  <td class="py-1.5 text-right text-gray-600 dark:text-gray-400">{{ formatNumber(model.requests) }}</td>
-                  <td class="py-1.5 text-right text-gray-600 dark:text-gray-400">{{ formatTokens(model.total_tokens) }}</td>
                   <td class="py-1.5 text-right text-green-600 dark:text-green-400">${{ formatCost(model.actual_cost) }}</td>
+                  <td class="py-1.5 text-right text-gray-600 dark:text-gray-400">{{ formatTokens(model.total_tokens) }}</td>
+                  <td class="py-1.5 text-right text-gray-400 dark:text-gray-500">{{ formatNumber(model.requests) }}</td>
                   <td class="py-1.5 text-right text-gray-400 dark:text-gray-500">${{ formatCost(model.cost) }}</td>
                 </tr>
               </tbody>
@@ -80,10 +80,14 @@ const props = defineProps<{ loading: boolean, startDate: string, endDate: string
 defineEmits(['update:startDate', 'update:endDate', 'update:granularity', 'dateRangeChange', 'granularityChange', 'refresh'])
 const { t } = useI18n()
 
-const modelData = computed(() => !props.models?.length ? null : {
-  labels: props.models.map((m: ModelStat) => m.model),
+const sortedModels = computed(() =>
+  [...(props.models ?? [])].sort((a: ModelStat, b: ModelStat) => b.actual_cost - a.actual_cost)
+)
+
+const modelData = computed(() => !sortedModels.value.length ? null : {
+  labels: sortedModels.value.map((m: ModelStat) => m.model),
   datasets: [{
-    data: props.models.map((m: ModelStat) => m.total_tokens),
+    data: sortedModels.value.map((m: ModelStat) => m.actual_cost),
     backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16']
   }]
 })
@@ -95,7 +99,7 @@ const doughnutOptions = {
     legend: { display: false },
     tooltip: {
       callbacks: {
-        label: (context: any) => `${context.label}: ${formatTokens(context.parsed)} tokens`
+        label: (context: any) => `${context.label}: $${formatCost(context.parsed)}`
       }
     }
   }

@@ -231,6 +231,19 @@
                   @change="onDateRangeChange"
                 />
               </div>
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >{{ t('admin.dashboard.group') }}:</span
+                >
+                <div class="w-48">
+                  <Select
+                    :model-value="selectedGroupId"
+                    :options="groupOptions"
+                    searchable
+                    @update:model-value="onGroupChange"
+                  />
+                </div>
+              </div>
               <button @click="loadDashboardStats" :disabled="chartsLoading" class="btn btn-secondary">
                 {{ t('common.refresh') }}
               </button>
@@ -254,6 +267,7 @@
             <ModelDistributionChart
               :model-stats="modelStats"
               :enable-ranking-view="true"
+              :enable-ranking-click="!isMonitorRoute"
               :ranking-items="rankingItems"
               :ranking-total-actual-cost="rankingTotalActualCost"
               :ranking-total-requests="rankingTotalRequests"
@@ -263,6 +277,8 @@
               :ranking-error="rankingError"
               :start-date="startDate"
               :end-date="endDate"
+              :filters="breakdownFilters"
+              :breakdown-scope="isMonitorRoute ? 'monitor' : 'admin'"
               @ranking-click="goToUserUsage"
             />
             <TokenUsageTrend :trend-data="trendData" :loading="chartsLoading" />
@@ -295,12 +311,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 
 const { t } = useI18n()
 import { adminAPI } from '@/api/admin'
+import monitorAPI from '@/api/monitor'
 import type {
+  AdminGroup,
   DashboardStats,
   TrendDataPoint,
   ModelStat,
@@ -339,6 +357,7 @@ ChartJS.register(
 )
 
 const appStore = useAppStore()
+const route = useRoute()
 const router = useRouter()
 const stats = ref<DashboardStats | null>(null)
 const loading = ref(false)
@@ -346,6 +365,8 @@ const chartsLoading = ref(false)
 const userTrendLoading = ref(false)
 const rankingLoading = ref(false)
 const rankingError = ref(false)
+const groups = ref<AdminGroup[]>([])
+const selectedGroupId = ref<number | null>(null)
 
 // Chart data
 const trendData = ref<TrendDataPoint[]>([])
@@ -385,6 +406,18 @@ const granularityOptions = computed(() => [
   { value: 'day', label: t('admin.dashboard.day') },
   { value: 'hour', label: t('admin.dashboard.hour') }
 ])
+
+const groupOptions = computed(() => [
+  { value: null, label: t('admin.groups.allGroups') },
+  ...groups.value.map((group) => ({
+    value: group.id,
+    label: group.name
+  }))
+])
+
+const isMonitorRoute = computed(() => route.path.startsWith('/monitor'))
+const dashboardReadAPI = computed(() => (isMonitorRoute.value ? monitorAPI.dashboard : adminAPI.dashboard))
+const groupReadAPI = computed(() => (isMonitorRoute.value ? monitorAPI.groups : adminAPI.groups))
 
 // Dark mode detection
 const isDarkMode = computed(() => {
@@ -556,12 +589,16 @@ const formatDuration = (ms: number): string => {
 }
 
 const goToUserUsage = (item: UserSpendingRankingItem) => {
+  if (isMonitorRoute.value) {
+    return
+  }
   void router.push({
     path: '/admin/usage',
     query: {
       user_id: String(item.user_id),
       start_date: startDate.value,
-      end_date: endDate.value
+      end_date: endDate.value,
+      group_id: selectedGroupId.value ? String(selectedGroupId.value) : undefined
     }
   })
 }
@@ -587,7 +624,27 @@ const onDateRangeChange = (range: {
   loadChartData()
 }
 
-// Load data
+const loadUsersTrend = async () => {
+  const currentSeq = ++usersTrendLoadSeq
+  userTrendLoading.value = true
+  try {
+    const response = await dashboardReadAPI.value.getUserUsageTrend({
+      ...buildScopedChartParams(),
+      limit: 12
+    })
+    if (currentSeq !== usersTrendLoadSeq) return
+    userTrend.value = response.trend || []
+  } catch (error) {
+    if (currentSeq !== usersTrendLoadSeq) return
+    console.error('Error loading users trend:', error)
+    userTrend.value = []
+  } finally {
+    if (currentSeq === usersTrendLoadSeq) {
+      userTrendLoading.value = false
+    }
+  }
+}
+
 const loadDashboardSnapshot = async (includeStats: boolean) => {
   const currentSeq = ++chartLoadSeq
   if (includeStats && !stats.value) {
@@ -595,10 +652,8 @@ const loadDashboardSnapshot = async (includeStats: boolean) => {
   }
   chartsLoading.value = true
   try {
-    const response = await adminAPI.dashboard.getSnapshotV2({
-      start_date: startDate.value,
-      end_date: endDate.value,
-      granularity: granularity.value,
+    const response = await dashboardReadAPI.value.getSnapshotV2({
+      ...buildScopedChartParams(),
       include_stats: includeStats,
       include_trend: true,
       include_model_stats: true,
@@ -623,37 +678,15 @@ const loadDashboardSnapshot = async (includeStats: boolean) => {
   }
 }
 
-const loadUsersTrend = async () => {
-  const currentSeq = ++usersTrendLoadSeq
-  userTrendLoading.value = true
-  try {
-    const response = await adminAPI.dashboard.getUserUsageTrend({
-      start_date: startDate.value,
-      end_date: endDate.value,
-      granularity: granularity.value,
-      limit: 12
-    })
-    if (currentSeq !== usersTrendLoadSeq) return
-    userTrend.value = response.trend || []
-  } catch (error) {
-    if (currentSeq !== usersTrendLoadSeq) return
-    console.error('Error loading users trend:', error)
-    userTrend.value = []
-  } finally {
-    if (currentSeq === usersTrendLoadSeq) {
-      userTrendLoading.value = false
-    }
-  }
-}
-
 const loadUserSpendingRanking = async () => {
   const currentSeq = ++rankingLoadSeq
   rankingLoading.value = true
   rankingError.value = false
   try {
-    const response = await adminAPI.dashboard.getUserSpendingRanking({
+    const response = await dashboardReadAPI.value.getUserSpendingRanking({
       start_date: startDate.value,
       end_date: endDate.value,
+      group_id: selectedGroupId.value ?? undefined,
       limit: rankingLimit
     })
     if (currentSeq !== rankingLoadSeq) return
@@ -676,6 +709,10 @@ const loadUserSpendingRanking = async () => {
   }
 }
 
+const breakdownFilters = computed(() => ({
+  group_id: selectedGroupId.value ?? undefined
+}))
+
 const loadDashboardStats = async () => {
   await Promise.all([
     loadDashboardSnapshot(true),
@@ -692,8 +729,39 @@ const loadChartData = async () => {
   ])
 }
 
+const loadGroups = async () => {
+  try {
+    groups.value = await groupReadAPI.value.getAll()
+  } catch (error) {
+    console.error('Error loading groups:', error)
+    groups.value = []
+  }
+}
+
+const onGroupChange = (value: string | number | boolean | null) => {
+  if (value === null || value === '' || typeof value === 'boolean') {
+    selectedGroupId.value = null
+  } else {
+    const parsed = typeof value === 'number' ? value : Number.parseInt(String(value), 10)
+    selectedGroupId.value = Number.isFinite(parsed) && parsed > 0 ? parsed : null
+  }
+  void loadChartData()
+}
+
+const buildScopedChartParams = (): {
+  start_date: string
+  end_date: string
+  granularity: 'day' | 'hour'
+  group_id?: number
+} => ({
+  start_date: startDate.value,
+  end_date: endDate.value,
+  granularity: granularity.value,
+  group_id: selectedGroupId.value ?? undefined
+})
+
 onMounted(() => {
-  loadDashboardStats()
+  void Promise.all([loadGroups(), loadDashboardStats()])
 })
 </script>
 
