@@ -40,7 +40,7 @@
 
         <SettlementPoolOverview v-if="summary" :summary="summary" />
 
-        <div class="grid gap-6 xl:grid-cols-[420px_1fr]">
+        <div class="space-y-6">
           <section class="card p-4">
             <div class="mb-4 flex items-center justify-between">
               <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ t('settlementPools.parameters') }}</h2>

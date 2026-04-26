@@ -1,5 +1,5 @@
 <template>
-  <div class="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+  <div class="grid gap-4">
     <section class="rounded-lg border border-gray-200 p-4 dark:border-dark-600">
       <div class="mb-4 flex items-start justify-between gap-3">
         <div>
