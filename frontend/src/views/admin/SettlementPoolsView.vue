@@ -98,86 +98,82 @@
               </div>
             </div>
 
-            <div class="overflow-hidden rounded-xl border border-gray-200 dark:border-dark-700">
-              <DataTable
-                :columns="participantColumns"
-                :data="participantRows"
-                row-key="user_id"
-                :loading="loading && !!summary"
-              >
-                <template #cell-user="{ row }">
-                  <div class="font-medium text-gray-900 dark:text-white">{{ row.email }}</div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400">
-                    #{{ row.user_id }} <span v-if="row.username">{{ row.username }}</span>
-                  </div>
-                </template>
-                <template #cell-raw_usage="{ value }">
-                  <span class="tabular-nums">{{ money(value) }}</span>
-                </template>
-                <template #cell-weighted_usage="{ value }">
-                  <span class="tabular-nums">{{ money(value) }}</span>
-                </template>
-                <template #cell-current_tier="{ row }">
-                  <span class="tabular-nums">{{ currentTierLabel(row.current_tier) }}</span>
-                </template>
-                <template #cell-fixed_share="{ value }">
-                  <span class="tabular-nums">{{ money(value) }}</span>
-                </template>
-                <template #cell-dynamic_charge="{ value }">
-                  <span class="tabular-nums">{{ money(value) }}</span>
-                </template>
-                <template #cell-total_due="{ value }">
-                  <span class="font-medium tabular-nums text-gray-900 dark:text-white">{{ money(value) }}</span>
-                </template>
-                <template #cell-actions="{ row }">
-                  <div class="flex justify-end">
-                    <button
-                      class="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-                      :title="t('common.delete')"
-                      @click="removeParticipant(row.user_id)"
-                    >
-                      <Icon name="trash" size="sm" />
-                    </button>
-                  </div>
-                </template>
-                <template #empty>
-                  <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('settlementPools.noParticipants') }}</p>
-                </template>
-              </DataTable>
-            </div>
+            <DataTable
+              :columns="participantColumns"
+              :data="participantRows"
+              row-key="user_id"
+              :loading="loading && !!summary"
+            >
+              <template #cell-user="{ row }">
+                <div class="font-medium text-gray-900 dark:text-white">{{ row.email }}</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  #{{ row.user_id }} <span v-if="row.username">{{ row.username }}</span>
+                </div>
+              </template>
+              <template #cell-raw_usage="{ value }">
+                <span class="tabular-nums">{{ money(value) }}</span>
+              </template>
+              <template #cell-weighted_usage="{ value }">
+                <span class="tabular-nums">{{ money(value) }}</span>
+              </template>
+              <template #cell-current_tier="{ row }">
+                <span class="tabular-nums">{{ currentTierLabel(row.current_tier) }}</span>
+              </template>
+              <template #cell-fixed_share="{ value }">
+                <span class="tabular-nums">{{ money(value) }}</span>
+              </template>
+              <template #cell-dynamic_charge="{ value }">
+                <span class="tabular-nums">{{ money(value) }}</span>
+              </template>
+              <template #cell-total_due="{ value }">
+                <span class="font-medium tabular-nums text-gray-900 dark:text-white">{{ money(value) }}</span>
+              </template>
+              <template #cell-actions="{ row }">
+                <div class="flex justify-end">
+                  <button
+                    class="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                    :title="t('common.delete')"
+                    @click="removeParticipant(row.user_id)"
+                  >
+                    <Icon name="trash" size="sm" />
+                  </button>
+                </div>
+              </template>
+              <template #empty>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('settlementPools.noParticipants') }}</p>
+              </template>
+            </DataTable>
           </section>
         </div>
 
         <section class="card p-4">
           <h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">{{ t('settlementPools.cycles') }}</h2>
-          <div class="overflow-hidden rounded-xl border border-gray-200 dark:border-dark-700">
-            <DataTable
-              :columns="cycleColumns"
-              :data="summary?.cycles || []"
-              row-key="id"
-              :loading="loading && !!summary"
-            >
-              <template #cell-period="{ row }">
-                <span class="text-gray-700 dark:text-gray-200">
-                  {{ date(row.started_at) }} - {{ row.ended_at ? date(row.ended_at) : t('settlementPools.status.active') }}
-                </span>
-              </template>
-              <template #cell-status="{ row }">
-                <span class="badge" :class="row.status === 'active' ? 'badge-success' : 'badge-secondary'">
-                  {{ t(`settlementPools.status.${row.status}`) }}
-                </span>
-              </template>
-              <template #cell-total_cost="{ row }">
-                <span class="tabular-nums">{{ money(row.snapshot?.total_cost ?? row.total_cost) }}</span>
-              </template>
-              <template #cell-owner_loss="{ row }">
-                <span class="tabular-nums">{{ money(row.snapshot?.owner_covered_loss ?? 0) }}</span>
-              </template>
-              <template #empty>
-                <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('settlementPools.noCycles') }}</p>
-              </template>
-            </DataTable>
-          </div>
+          <DataTable
+            :columns="cycleColumns"
+            :data="summary?.cycles || []"
+            row-key="id"
+            :loading="loading && !!summary"
+          >
+            <template #cell-period="{ row }">
+              <span class="text-gray-700 dark:text-gray-200">
+                {{ date(row.started_at) }} - {{ row.ended_at ? date(row.ended_at) : t('settlementPools.status.active') }}
+              </span>
+            </template>
+            <template #cell-status="{ row }">
+              <span class="badge" :class="row.status === 'active' ? 'badge-success' : 'badge-secondary'">
+                {{ t(`settlementPools.status.${row.status}`) }}
+              </span>
+            </template>
+            <template #cell-total_cost="{ row }">
+              <span class="tabular-nums">{{ money(row.snapshot?.total_cost ?? row.total_cost) }}</span>
+            </template>
+            <template #cell-owner_loss="{ row }">
+              <span class="tabular-nums">{{ money(row.snapshot?.owner_covered_loss ?? 0) }}</span>
+            </template>
+            <template #empty>
+              <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('settlementPools.noCycles') }}</p>
+            </template>
+          </DataTable>
         </section>
       </template>
     </div>
@@ -239,6 +235,7 @@ const configForm = reactive({
 
 const settlementGroups = computed(() => groups.value.filter(group => group.subscription_type === 'settlement_pool'))
 const groupOptions = computed(() => settlementGroups.value.map(group => ({ value: group.id, label: `${group.name} #${group.id}` })))
+const rightAlignedColumnClass = 'text-right [&>div]:justify-end'
 const participantRows = computed(() => {
   const fromEstimate = summary.value?.estimate?.participants || []
   const byID = new Map<number, SettlementPoolParticipantEstimate>()
@@ -250,19 +247,19 @@ const participantRows = computed(() => {
 })
 const participantColumns = computed<Column[]>(() => [
   { key: 'user', label: t('settlementPools.user'), class: 'min-w-[220px]' },
-  { key: 'raw_usage', label: t('settlementPools.rawUsage'), class: 'text-right' },
-  { key: 'weighted_usage', label: t('settlementPools.weightedUsage'), class: 'text-right' },
-  { key: 'current_tier', label: t('settlementPools.currentTier'), class: 'text-right' },
-  { key: 'fixed_share', label: t('settlementPools.fixedShare'), class: 'text-right' },
-  { key: 'dynamic_charge', label: t('settlementPools.dynamicCharge'), class: 'text-right' },
-  { key: 'total_due', label: t('settlementPools.totalDue'), class: 'text-right' },
-  { key: 'actions', label: '', class: 'text-right' }
+  { key: 'raw_usage', label: t('settlementPools.rawUsage'), class: rightAlignedColumnClass },
+  { key: 'weighted_usage', label: t('settlementPools.weightedUsage'), class: rightAlignedColumnClass },
+  { key: 'current_tier', label: t('settlementPools.currentTier'), class: rightAlignedColumnClass },
+  { key: 'fixed_share', label: t('settlementPools.fixedShare'), class: rightAlignedColumnClass },
+  { key: 'dynamic_charge', label: t('settlementPools.dynamicCharge'), class: rightAlignedColumnClass },
+  { key: 'total_due', label: t('settlementPools.totalDue'), class: rightAlignedColumnClass },
+  { key: 'actions', label: '', class: rightAlignedColumnClass }
 ])
 const cycleColumns = computed<Column[]>(() => [
   { key: 'period', label: t('settlementPools.period'), class: 'min-w-[260px]' },
   { key: 'status', label: t('common.status') },
-  { key: 'total_cost', label: t('settlementPools.totalCost'), class: 'text-right' },
-  { key: 'owner_loss', label: t('settlementPools.ownerLoss'), class: 'text-right' }
+  { key: 'total_cost', label: t('settlementPools.totalCost'), class: rightAlignedColumnClass },
+  { key: 'owner_loss', label: t('settlementPools.ownerLoss'), class: rightAlignedColumnClass }
 ])
 
 watch(selectedGroupId, () => {
