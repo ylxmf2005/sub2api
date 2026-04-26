@@ -392,6 +392,7 @@ export default {
     noJoinedPools: '你还没有加入任何结算池',
     noJoinedPoolsDesc: '加入结算池后，这里会显示你的实时预估和历史周期。',
     pool: '结算池',
+    parameters: '配置参数',
     currentEstimate: '当前预估',
     publicParameters: '公开参数',
     totalCost: '总成本',

@@ -392,6 +392,7 @@ export default {
     noJoinedPools: 'You have not joined any settlement pool yet',
     noJoinedPoolsDesc: 'Once you join a pool, your live estimate and history will appear here.',
     pool: 'Pool',
+    parameters: 'Parameters',
     currentEstimate: 'Current Estimate',
     publicParameters: 'Public Parameters',
     totalCost: 'Total Cost',
