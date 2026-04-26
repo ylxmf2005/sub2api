@@ -16,112 +16,121 @@
         :description="t('settlementPools.noJoinedPoolsDesc')"
       />
 
-      <template v-else>
-      <section v-for="summary in summaries" :key="summary.group.id" class="card overflow-hidden">
-        <div class="border-b border-gray-200 p-4 dark:border-dark-600">
-          <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <div class="flex items-center gap-2">
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ summary.group.name }}</h2>
-                <span :class="['badge', displayEstimate(summary)?.status === 'active' ? 'badge-success' : 'badge-secondary']">
-                  {{ t(`settlementPools.status.${displayEstimate(summary)?.status === 'active' ? 'active' : 'history'}`) }}
+      <div v-else class="space-y-6">
+        <section v-for="summary in summaries" :key="summary.group.id" class="space-y-4">
+          <div class="card p-4">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <div class="flex items-center gap-2">
+                  <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ summary.group.name }}</h2>
+                  <span :class="['badge', displayEstimate(summary)?.status === 'active' ? 'badge-success' : 'badge-secondary']">
+                    {{ t(`settlementPools.status.${displayEstimate(summary)?.status === 'active' ? 'active' : 'history'}`) }}
+                  </span>
+                </div>
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ date(displayEstimate(summary)?.started_at) }}</p>
+              </div>
+            </div>
+          </div>
+
+          <SettlementPoolOverview
+            :summary="summary"
+            :current-user-id="authStore.user?.id ?? null"
+          />
+
+          <section class="card p-4">
+            <h3 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">{{ t('settlementPools.participants') }}</h3>
+            <DataTable
+              :columns="participantColumns"
+              :data="participantRows(summary)"
+              row-key="user_id"
+              :loading="loading"
+            >
+              <template #cell-user="{ row }">
+                <div class="font-medium text-gray-900 dark:text-white">{{ row.email }}</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  #{{ row.user_id }} <span v-if="row.username">{{ row.username }}</span>
+                </div>
+              </template>
+              <template #cell-raw_usage="{ value }">
+                <span class="tabular-nums">{{ money(value) }}</span>
+              </template>
+              <template #cell-weighted_usage="{ value }">
+                <span class="tabular-nums">{{ money(value) }}</span>
+              </template>
+              <template #cell-current_tier="{ row }">
+                <span class="tabular-nums">{{ currentTierLabel(summary, row.current_tier) }}</span>
+              </template>
+              <template #cell-fixed_share="{ value }">
+                <span class="tabular-nums">{{ money(value) }}</span>
+              </template>
+              <template #cell-dynamic_charge="{ value }">
+                <span class="tabular-nums">{{ money(value) }}</span>
+              </template>
+              <template #cell-total_due="{ value }">
+                <span class="font-medium tabular-nums text-gray-900 dark:text-white">{{ money(value) }}</span>
+              </template>
+              <template #empty>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('settlementPools.noActiveEstimate') }}</p>
+              </template>
+            </DataTable>
+          </section>
+
+          <section class="card p-4">
+            <h3 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">{{ t('settlementPools.cycles') }}</h3>
+            <DataTable
+              :columns="cycleColumns"
+              :data="cycleRows(summary)"
+              row-key="id"
+              :loading="loading"
+            >
+              <template #cell-period="{ row }">
+                <span class="text-gray-700 dark:text-gray-200">
+                  {{ date(row.started_at) }} - {{ row.ended_at ? date(row.ended_at) : t('settlementPools.status.active') }}
                 </span>
-              </div>
-              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ date(displayEstimate(summary)?.started_at) }}</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="grid gap-6 p-4 xl:grid-cols-[1fr_320px]">
-          <div class="space-y-6">
-            <SettlementPoolOverview
-              :summary="summary"
-              :current-user-id="authStore.user?.id ?? null"
-            />
-
-            <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-dark-600">
-            <table class="min-w-full divide-y divide-gray-200 text-sm dark:divide-dark-600">
-              <thead class="bg-gray-50 dark:bg-dark-700">
-                <tr>
-                  <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('settlementPools.user') }}</th>
-                  <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('settlementPools.rawUsage') }}</th>
-                  <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('settlementPools.weightedUsage') }}</th>
-                  <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('settlementPools.currentTier') }}</th>
-                  <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('settlementPools.fixedShare') }}</th>
-                  <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('settlementPools.dynamicCharge') }}</th>
-                  <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('settlementPools.totalDue') }}</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-100 bg-white dark:divide-dark-700 dark:bg-dark-800">
-                <tr
-                  v-for="row in displayEstimate(summary)?.participants || []"
-                  :key="row.user_id"
-                  :class="row.user_id === authStore.user?.id ? 'bg-primary-50/70 dark:bg-primary-900/10' : ''"
-                >
-                  <td class="px-3 py-2">
-                    <div class="font-medium text-gray-900 dark:text-white">{{ row.email }}</div>
-                    <div class="text-xs text-gray-500">#{{ row.user_id }}</div>
-                  </td>
-                  <td class="px-3 py-2 text-right tabular-nums">{{ money(row.raw_usage) }}</td>
-                  <td class="px-3 py-2 text-right tabular-nums">{{ money(row.weighted_usage) }}</td>
-                  <td class="px-3 py-2 text-right tabular-nums">{{ currentTierLabel(summary, row.current_tier) }}</td>
-                  <td class="px-3 py-2 text-right tabular-nums">{{ money(row.fixed_share) }}</td>
-                  <td class="px-3 py-2 text-right tabular-nums">{{ money(row.dynamic_charge) }}</td>
-                  <td class="px-3 py-2 text-right font-medium tabular-nums text-gray-900 dark:text-white">{{ money(row.total_due) }}</td>
-                </tr>
-                <tr v-if="!displayEstimate(summary)">
-                  <td colspan="7" class="px-3 py-8 text-center text-sm text-gray-500 dark:text-gray-400">{{ t('settlementPools.noActiveEstimate') }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          </div>
-
-          <aside class="space-y-4">
-            <div class="rounded-lg border border-gray-200 p-3 dark:border-dark-600">
-              <h3 class="mb-2 text-sm font-medium text-gray-900 dark:text-white">{{ t('settlementPools.cycles') }}</h3>
-              <div class="space-y-2">
-                <button
-                  v-if="summary.estimate"
-                  class="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-gray-50 dark:hover:bg-dark-700"
-                  :class="selectedCycleIds[summary.group.id] == null ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300' : ''"
-                  @click="selectedCycleIds[summary.group.id] = null"
-                >
-                  <span>{{ date(summary.estimate.started_at) }}</span>
-                  <span class="font-medium">{{ money(summary.estimate.participants.find(row => row.user_id === authStore.user?.id)?.total_due) }}</span>
-                </button>
-                <button
-                  v-for="cycle in summary.cycles"
-                  :key="cycle.id"
-                  class="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-gray-50 dark:hover:bg-dark-700"
-                  :class="selectedCycleIds[summary.group.id] === cycle.id ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300' : 'text-gray-600 dark:text-gray-300'"
-                  @click="selectedCycleIds[summary.group.id] = cycle.id"
-                >
-                  <span>{{ date(cycle.started_at) }}</span>
-                  <span class="font-medium text-gray-900 dark:text-white">{{ money(cycle.snapshot?.participants?.find(row => row.user_id === authStore.user?.id)?.total_due) }}</span>
-                </button>
-                <p v-if="summary.cycles.length === 0" class="text-sm text-gray-500 dark:text-gray-400">{{ t('settlementPools.noCycles') }}</p>
-              </div>
-            </div>
-          </aside>
-        </div>
-      </section>
-      </template>
+              </template>
+              <template #cell-status="{ row }">
+                <span class="badge" :class="row.status === 'active' ? 'badge-success' : 'badge-secondary'">
+                  {{ t(`settlementPools.status.${row.status}`) }}
+                </span>
+              </template>
+              <template #cell-total_due="{ row }">
+                <span class="font-medium tabular-nums text-gray-900 dark:text-white">{{ money(cycleTotalDue(row)) }}</span>
+              </template>
+              <template #cell-actions="{ row }">
+                <div class="flex justify-end">
+                  <button
+                    class="btn btn-secondary btn-sm"
+                    :disabled="selectedCycleId(summary) === row.cycle_id"
+                    @click="selectedCycleIds[summary.group.id] = row.cycle_id"
+                  >
+                    {{ t('common.view') }}
+                  </button>
+                </div>
+              </template>
+              <template #empty>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('settlementPools.noCycles') }}</p>
+              </template>
+            </DataTable>
+          </section>
+        </section>
+      </div>
     </div>
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
+import DataTable from '@/components/common/DataTable.vue'
 import SettlementPoolOverview from '@/components/settlement/SettlementPoolOverview.vue'
 import settlementPoolsAPI from '@/api/settlementPools'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
-import type { SettlementPoolEstimate, SettlementPoolSummary, SettlementPoolTier } from '@/types'
+import type { Column } from '@/components/common/types'
+import type { SettlementPoolCycle, SettlementPoolEstimate, SettlementPoolParticipantEstimate, SettlementPoolSummary, SettlementPoolTier } from '@/types'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -129,13 +138,84 @@ const authStore = useAuthStore()
 const loading = ref(false)
 const summaries = ref<SettlementPoolSummary[]>([])
 const selectedCycleIds = ref<Record<number, number | null>>({})
+const rightAlignedColumnClass = 'text-right [&>div]:justify-end'
+const participantColumns = computed<Column[]>(() => [
+  { key: 'user', label: t('settlementPools.user'), class: 'min-w-[220px]' },
+  { key: 'raw_usage', label: t('settlementPools.rawUsage'), class: rightAlignedColumnClass },
+  { key: 'weighted_usage', label: t('settlementPools.weightedUsage'), class: rightAlignedColumnClass },
+  { key: 'current_tier', label: t('settlementPools.currentTier'), class: rightAlignedColumnClass },
+  { key: 'fixed_share', label: t('settlementPools.fixedShare'), class: rightAlignedColumnClass },
+  { key: 'dynamic_charge', label: t('settlementPools.dynamicCharge'), class: rightAlignedColumnClass },
+  { key: 'total_due', label: t('settlementPools.totalDue'), class: rightAlignedColumnClass }
+])
+const cycleColumns = computed<Column[]>(() => [
+  { key: 'period', label: t('settlementPools.period'), class: 'min-w-[260px]' },
+  { key: 'status', label: t('common.status') },
+  { key: 'total_due', label: t('settlementPools.totalDue'), class: rightAlignedColumnClass },
+  { key: 'actions', label: '', class: rightAlignedColumnClass }
+])
+
+type CycleRow = {
+  id: string
+  cycle_id: number | null
+  estimate: SettlementPoolEstimate | null
+  group_id: number
+  status: 'active' | 'locked'
+  started_at: string
+  ended_at?: string | null
+  total_cost: number
+  base_ratio: number
+  market_cap: number
+  tiers: SettlementPoolTier[]
+}
+
+function selectedCycleId(summary: SettlementPoolSummary): number | null {
+  return selectedCycleIds.value[summary.group.id] ?? null
+}
 
 function displayEstimate(summary: SettlementPoolSummary): SettlementPoolEstimate | null {
-  const selectedCycleId = selectedCycleIds.value[summary.group.id]
-  if (selectedCycleId != null) {
-    return summary.cycles.find(cycle => cycle.id === selectedCycleId)?.snapshot ?? null
+  const cycleId = selectedCycleId(summary)
+  if (cycleId != null) {
+    return summaryCycles(summary).find(cycle => cycle.id === cycleId)?.snapshot ?? null
   }
-  return summary.estimate ?? summary.cycles.find(cycle => cycle.snapshot)?.snapshot ?? null
+  return summary.estimate ?? summaryCycles(summary).find(cycle => cycle.snapshot)?.snapshot ?? null
+}
+
+function summaryCycles(summary: SettlementPoolSummary): SettlementPoolCycle[] {
+  return summary.cycles || []
+}
+
+function participantRows(summary: SettlementPoolSummary): SettlementPoolParticipantEstimate[] {
+  return displayEstimate(summary)?.participants || []
+}
+
+function cycleRows(summary: SettlementPoolSummary): CycleRow[] {
+  const rows: CycleRow[] = []
+  if (summary.estimate) {
+    rows.push({
+      id: `active-${summary.group.id}`,
+      cycle_id: null,
+      estimate: summary.estimate,
+      group_id: summary.group.id,
+      status: summary.estimate.status,
+      started_at: summary.estimate.started_at,
+      ended_at: summary.estimate.ended_at,
+      total_cost: summary.estimate.total_cost,
+      base_ratio: summary.estimate.base_ratio,
+      market_cap: summary.estimate.market_cap,
+      tiers: summary.estimate.tiers
+    })
+  }
+  return rows.concat(summaryCycles(summary).map(cycle => ({
+    ...cycle,
+    id: String(cycle.id),
+    cycle_id: cycle.id,
+    estimate: cycle.snapshot ?? null
+  })))
+}
+
+function cycleTotalDue(row: CycleRow): number | null | undefined {
+  return row.estimate?.participants.find(participant => participant.user_id === authStore.user?.id)?.total_due
 }
 
 function money(value: number | null | undefined) {
