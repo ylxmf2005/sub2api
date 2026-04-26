@@ -38,10 +38,14 @@
           </div>
         </div>
 
-        <SettlementPoolOverview v-if="summary" :summary="summary" />
+        <SettlementPoolOverview
+          v-if="summary"
+          :summary="summary"
+          :display-estimate="displayEstimate"
+        />
 
         <div class="space-y-6">
-          <section class="card p-4">
+          <section v-if="!viewingHistory" class="card p-4">
             <div class="mb-4 flex items-center justify-between">
               <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ t('settlementPools.parameters') }}</h2>
               <button class="btn btn-primary btn-sm" :disabled="saving" @click="saveConfig">
@@ -86,7 +90,7 @@
           <section class="card p-4">
             <div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ t('settlementPools.participants') }}</h2>
-              <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+              <div v-if="!viewingHistory" class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                 <UserSearchCombobox
                   class="w-full sm:w-72"
                   :placeholder="t('admin.usage.searchUserPlaceholder')"
@@ -111,22 +115,22 @@
                 </div>
               </template>
               <template #cell-raw_usage="{ value }">
-                <span class="tabular-nums">{{ money(value) }}</span>
+                <span class="tabular-nums">{{ usdMoney(value) }}</span>
               </template>
               <template #cell-weighted_usage="{ value }">
-                <span class="tabular-nums">{{ money(value) }}</span>
+                <span class="tabular-nums">{{ usdMoney(value) }}</span>
               </template>
               <template #cell-current_tier="{ row }">
                 <span class="tabular-nums">{{ currentTierLabel(row.current_tier) }}</span>
               </template>
               <template #cell-fixed_share="{ value }">
-                <span class="tabular-nums">{{ money(value) }}</span>
+                <span class="tabular-nums">{{ cnyMoney(value) }}</span>
               </template>
               <template #cell-dynamic_charge="{ value }">
-                <span class="tabular-nums">{{ money(value) }}</span>
+                <span class="tabular-nums">{{ cnyMoney(value) }}</span>
               </template>
               <template #cell-total_due="{ value }">
-                <span class="font-medium tabular-nums text-gray-900 dark:text-white">{{ money(value) }}</span>
+                <span class="font-medium tabular-nums text-gray-900 dark:text-white">{{ cnyMoney(value) }}</span>
               </template>
               <template #cell-actions="{ row }">
                 <div class="flex justify-end">
@@ -150,7 +154,7 @@
           <h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">{{ t('settlementPools.cycles') }}</h2>
           <DataTable
             :columns="cycleColumns"
-            :data="summary?.cycles || []"
+            :data="cycleRows"
             row-key="id"
             :loading="loading && !!summary"
           >
@@ -165,10 +169,21 @@
               </span>
             </template>
             <template #cell-total_cost="{ row }">
-              <span class="tabular-nums">{{ money(row.snapshot?.total_cost ?? row.total_cost) }}</span>
+              <span class="tabular-nums">{{ cnyMoney(row.snapshot?.total_cost ?? row.total_cost) }}</span>
             </template>
             <template #cell-owner_loss="{ row }">
-              <span class="tabular-nums">{{ money(row.snapshot?.owner_covered_loss ?? 0) }}</span>
+              <span class="tabular-nums">{{ cnyMoney(row.snapshot?.owner_covered_loss ?? 0) }}</span>
+            </template>
+            <template #cell-actions="{ row }">
+              <div class="flex justify-end">
+                <button
+                  class="btn btn-secondary btn-sm"
+                  :disabled="selectedCycleId === row.cycle_id"
+                  @click="selectCycle(row.cycle_id)"
+                >
+                  {{ t('common.view') }}
+                </button>
+              </div>
             </template>
             <template #empty>
               <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('settlementPools.noCycles') }}</p>
@@ -207,7 +222,7 @@ import * as groupsAPI from '@/api/admin/groups'
 import settlementPoolsAPI from '@/api/admin/settlementPools'
 import type { SimpleUser } from '@/api/admin/usage'
 import type { Column } from '@/components/common/types'
-import type { AdminGroup, SettlementPoolParticipantEstimate, SettlementPoolSummary, SettlementPoolTier } from '@/types'
+import type { AdminGroup, SettlementPoolEstimate, SettlementPoolParticipantEstimate, SettlementPoolSummary, SettlementPoolTier } from '@/types'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -218,6 +233,7 @@ const saving = ref(false)
 const groups = ref<AdminGroup[]>([])
 const selectedGroupId = ref<number | null>(null)
 const summary = ref<SettlementPoolSummary | null>(null)
+const selectedCycleId = ref<number | null>(null)
 const showStartCycleDialog = ref(false)
 const manualParticipants = ref<SettlementPoolParticipantEstimate[]>([])
 const removedParticipantIds = ref<Set<number>>(new Set())
@@ -236,8 +252,19 @@ const configForm = reactive({
 const settlementGroups = computed(() => groups.value.filter(group => group.subscription_type === 'settlement_pool'))
 const groupOptions = computed(() => settlementGroups.value.map(group => ({ value: group.id, label: `${group.name} #${group.id}` })))
 const rightAlignedColumnClass = 'text-right [&>div]:justify-end'
+const viewingHistory = computed(() => selectedCycleId.value != null)
+const displayEstimate = computed<SettlementPoolEstimate | null>(() => {
+  if (!summary.value) return null
+  if (selectedCycleId.value != null) {
+    return summary.value.cycles.find(cycle => cycle.id === selectedCycleId.value)?.snapshot ?? null
+  }
+  return summary.value.estimate ?? null
+})
 const participantRows = computed(() => {
-  const fromEstimate = summary.value?.estimate?.participants || []
+  const fromEstimate = displayEstimate.value?.participants || []
+  if (viewingHistory.value) {
+    return fromEstimate
+  }
   const byID = new Map<number, SettlementPoolParticipantEstimate>()
   for (const row of fromEstimate) {
     if (!removedParticipantIds.value.has(row.user_id)) byID.set(row.user_id, row)
@@ -253,16 +280,67 @@ const participantColumns = computed<Column[]>(() => [
   { key: 'fixed_share', label: t('settlementPools.fixedShare'), class: rightAlignedColumnClass },
   { key: 'dynamic_charge', label: t('settlementPools.dynamicCharge'), class: rightAlignedColumnClass },
   { key: 'total_due', label: t('settlementPools.totalDue'), class: rightAlignedColumnClass },
-  { key: 'actions', label: '', class: rightAlignedColumnClass }
+  ...(viewingHistory.value ? [] : [{ key: 'actions', label: '', class: rightAlignedColumnClass }])
 ])
 const cycleColumns = computed<Column[]>(() => [
   { key: 'period', label: t('settlementPools.period'), class: 'min-w-[260px]' },
   { key: 'status', label: t('common.status') },
   { key: 'total_cost', label: t('settlementPools.totalCost'), class: rightAlignedColumnClass },
-  { key: 'owner_loss', label: t('settlementPools.ownerLoss'), class: rightAlignedColumnClass }
+  { key: 'owner_loss', label: t('settlementPools.ownerLoss'), class: rightAlignedColumnClass },
+  { key: 'actions', label: '', class: rightAlignedColumnClass }
 ])
 
+type CycleRow = {
+  id: string
+  cycle_id: number | null
+  group_id: number
+  status: 'active' | 'locked'
+  started_at: string
+  ended_at?: string | null
+  total_cost: number
+  base_ratio: number
+  market_cap: number
+  tiers: SettlementPoolTier[]
+  snapshot?: SettlementPoolEstimate | null
+  created_at: string
+  updated_at: string
+}
+
+const cycleRows = computed<CycleRow[]>(() => {
+  if (!summary.value) return []
+  const rows: CycleRow[] = []
+  if (summary.value.estimate) {
+    rows.push({
+      ...(summary.value.active_cycle ?? {
+        group_id: summary.value.group.id,
+        status: summary.value.estimate.status,
+        started_at: summary.value.estimate.started_at,
+        ended_at: summary.value.estimate.ended_at,
+        total_cost: summary.value.estimate.total_cost,
+        base_ratio: summary.value.estimate.base_ratio,
+        market_cap: summary.value.estimate.market_cap,
+        tiers: summary.value.estimate.tiers,
+        created_at: summary.value.estimate.started_at,
+        updated_at: summary.value.estimate.started_at
+      }),
+      id: `active-${summary.value.group.id}`,
+      cycle_id: null,
+      snapshot: summary.value.estimate
+    } as CycleRow)
+  }
+  const activeCycleID = summary.value.active_cycle?.id
+  return rows.concat((summary.value.cycles || [])
+    .filter(cycle => cycle.status !== 'active' && cycle.id !== activeCycleID)
+    .map(cycle => ({
+      ...cycle,
+      id: String(cycle.id),
+      cycle_id: cycle.id,
+      snapshot: cycle.snapshot ?? null
+    })))
+})
+
 watch(selectedGroupId, () => {
+  selectedCycleId.value = null
   if (selectedGroupId.value) loadSummary()
 })
 
@@ -276,6 +354,7 @@ function syncForm(next: SettlementPoolSummary | null) {
     up_to: tier.up_to == null ? null : roundedInputNumber(tier.up_to),
     weight: roundedInputNumber(tier.weight)
   }))
+  selectedCycleId.value = null
   manualParticipants.value = []
   removedParticipantIds.value = new Set()
 }
@@ -409,8 +488,16 @@ function removeTier(index: number) {
   configForm.tiers.splice(index, 1)
 }
 
-function money(value: number | null | undefined) {
+function selectCycle(cycleId: number | null) {
+  selectedCycleId.value = cycleId
+}
+
+function usdMoney(value: number | null | undefined) {
   return `$${Number(value || 0).toFixed(4)}`
+}
+
+function cnyMoney(value: number | null | undefined) {
+  return `¥${Number(value || 0).toFixed(4)}`
 }
 
 function date(value?: string | null) {
@@ -426,7 +513,7 @@ function tierLabel(tiers: SettlementPoolTier[], index: number) {
 }
 
 function currentTierLabel(index: number) {
-  const tiers = summary.value?.estimate?.tiers || []
+  const tiers = displayEstimate.value?.tiers || []
   const tier = tiers[index]
   if (!tier) return ''
   return `${tierLabel(tiers, index)} x ${tier.weight}`

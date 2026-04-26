@@ -35,6 +35,7 @@
           <SettlementPoolOverview
             :summary="summary"
             :current-user-id="authStore.user?.id ?? null"
+            :display-estimate="displayEstimate(summary)"
           />
 
           <section class="card p-4">
@@ -52,22 +53,22 @@
                 </div>
               </template>
               <template #cell-raw_usage="{ value }">
-                <span class="tabular-nums">{{ money(value) }}</span>
+                <span class="tabular-nums">{{ usdMoney(value) }}</span>
               </template>
               <template #cell-weighted_usage="{ value }">
-                <span class="tabular-nums">{{ money(value) }}</span>
+                <span class="tabular-nums">{{ usdMoney(value) }}</span>
               </template>
               <template #cell-current_tier="{ row }">
                 <span class="tabular-nums">{{ currentTierLabel(summary, row.current_tier) }}</span>
               </template>
               <template #cell-fixed_share="{ value }">
-                <span class="tabular-nums">{{ money(value) }}</span>
+                <span class="tabular-nums">{{ cnyMoney(value) }}</span>
               </template>
               <template #cell-dynamic_charge="{ value }">
-                <span class="tabular-nums">{{ money(value) }}</span>
+                <span class="tabular-nums">{{ cnyMoney(value) }}</span>
               </template>
               <template #cell-total_due="{ value }">
-                <span class="font-medium tabular-nums text-gray-900 dark:text-white">{{ money(value) }}</span>
+                <span class="font-medium tabular-nums text-gray-900 dark:text-white">{{ cnyMoney(value) }}</span>
               </template>
               <template #empty>
                 <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('settlementPools.noActiveEstimate') }}</p>
@@ -94,7 +95,7 @@
                 </span>
               </template>
               <template #cell-total_due="{ row }">
-                <span class="font-medium tabular-nums text-gray-900 dark:text-white">{{ money(cycleTotalDue(row)) }}</span>
+                <span class="font-medium tabular-nums text-gray-900 dark:text-white">{{ cnyMoney(cycleTotalDue(row)) }}</span>
               </template>
               <template #cell-actions="{ row }">
                 <div class="flex justify-end">
@@ -218,8 +219,12 @@ function cycleTotalDue(row: CycleRow): number | null | undefined {
   return row.estimate?.participants.find(participant => participant.user_id === authStore.user?.id)?.total_due
 }
 
-function money(value: number | null | undefined) {
+function usdMoney(value: number | null | undefined) {
   return `$${Number(value || 0).toFixed(4)}`
+}
+
+function cnyMoney(value: number | null | undefined) {
+  return `¥${Number(value || 0).toFixed(4)}`
 }
 
 function date(value?: string | null) {

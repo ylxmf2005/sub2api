@@ -28,7 +28,6 @@
           <div class="min-w-0">
             <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ card.label }}</p>
             <p :class="['mt-1 break-words text-xl font-bold text-gray-900 dark:text-white', card.valueClass]">{{ card.value }}</p>
-            <p v-if="card.meta" class="mt-1 break-words text-xs text-gray-500 dark:text-gray-400">{{ card.meta }}</p>
           </div>
         </div>
       </div>
@@ -47,7 +46,6 @@
           <div class="min-w-0">
             <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ card.label }}</p>
             <p :class="['mt-1 break-words text-xl font-bold text-gray-900 dark:text-white', card.valueClass]">{{ card.value }}</p>
-            <p v-if="card.meta" class="mt-1 break-words text-xs text-gray-500 dark:text-gray-400">{{ card.meta }}</p>
           </div>
         </div>
       </div>
@@ -80,7 +78,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Icon from '@/components/icons/Icon.vue'
-import type { SettlementPoolSummary, SettlementPoolTier } from '@/types'
+import type { SettlementPoolEstimate, SettlementPoolSummary, SettlementPoolTier } from '@/types'
 
 type OverviewIcon = 'bolt' | 'chart' | 'creditCard' | 'database' | 'exclamationTriangle' | 'grid' | 'shield' | 'trendingUp' | 'userCircle' | 'users'
 type OverviewCard = {
@@ -90,26 +88,30 @@ type OverviewCard = {
   icon: OverviewIcon
   iconBgClass: string
   iconClass: string
-  meta?: string
   valueClass?: string
 }
 
 const props = defineProps<{
   summary: SettlementPoolSummary
   currentUserId?: number | null
+  displayEstimate?: SettlementPoolEstimate | null
 }>()
 
 const { t } = useI18n()
 
-const estimate = computed(() => props.summary.estimate ?? props.summary.cycles.find(cycle => cycle.snapshot)?.snapshot ?? null)
+const estimate = computed(() => (
+  props.displayEstimate !== undefined
+    ? props.displayEstimate
+    : props.summary.estimate ?? props.summary.cycles.find(cycle => cycle.snapshot)?.snapshot ?? null
+))
 const myParticipant = computed(() => {
   if (!props.currentUserId || !estimate.value) return null
   return estimate.value.participants.find(row => row.user_id === props.currentUserId) ?? null
 })
-const totalCost = computed(() => props.summary.active_cycle?.total_cost ?? estimate.value?.total_cost ?? 0)
-const baseRatio = computed(() => props.summary.active_cycle?.base_ratio ?? props.summary.config?.base_ratio ?? estimate.value?.base_ratio ?? 0)
-const marketCap = computed(() => props.summary.active_cycle?.market_cap ?? props.summary.config?.market_cap ?? estimate.value?.market_cap ?? 0)
-const tiers = computed<SettlementPoolTier[]>(() => props.summary.active_cycle?.tiers ?? props.summary.config?.tiers ?? estimate.value?.tiers ?? [])
+const totalCost = computed(() => estimate.value?.total_cost ?? props.summary.active_cycle?.total_cost ?? 0)
+const baseRatio = computed(() => estimate.value?.base_ratio ?? props.summary.active_cycle?.base_ratio ?? props.summary.config?.base_ratio ?? 0)
+const marketCap = computed(() => estimate.value?.market_cap ?? props.summary.active_cycle?.market_cap ?? props.summary.config?.market_cap ?? 0)
+const tiers = computed<SettlementPoolTier[]>(() => estimate.value?.tiers ?? props.summary.active_cycle?.tiers ?? props.summary.config?.tiers ?? [])
 const periodLabel = computed(() => {
   if (!estimate.value) return t('settlementPools.noActiveEstimate')
   return `${formatDate(estimate.value.started_at)} - ${estimate.value.ended_at ? formatDate(estimate.value.ended_at) : t('settlementPools.status.active')}`
@@ -118,7 +120,7 @@ const overviewCards = computed<OverviewCard[]>(() => [
   {
     key: 'total_cost',
     label: t('settlementPools.totalCostShort'),
-    value: money(totalCost.value),
+    value: cnyMoney(totalCost.value),
     icon: 'database',
     iconBgClass: 'bg-primary-100 dark:bg-primary-900/20',
     iconClass: 'text-primary-600 dark:text-primary-400'
@@ -134,7 +136,7 @@ const overviewCards = computed<OverviewCard[]>(() => [
   {
     key: 'market_cap',
     label: t('settlementPools.marketCap'),
-    value: money(marketCap.value),
+    value: cnyMoney(marketCap.value),
     icon: 'shield',
     iconBgClass: 'bg-emerald-100 dark:bg-emerald-900/20',
     iconClass: 'text-emerald-600 dark:text-emerald-400'
@@ -142,7 +144,7 @@ const overviewCards = computed<OverviewCard[]>(() => [
   {
     key: 'uncapped_dynamic_rate',
     label: t('settlementPools.uncappedDynamicRate'),
-    value: money(estimate.value?.uncapped_dynamic_rate),
+    value: cnyMoney(estimate.value?.uncapped_dynamic_rate),
     icon: 'trendingUp',
     iconBgClass: 'bg-purple-100 dark:bg-purple-900/20',
     iconClass: 'text-purple-600 dark:text-purple-400'
@@ -150,7 +152,7 @@ const overviewCards = computed<OverviewCard[]>(() => [
   {
     key: 'dynamic_rate',
     label: t('settlementPools.dynamicRate'),
-    value: money(estimate.value?.effective_dynamic_rate),
+    value: cnyMoney(estimate.value?.effective_dynamic_rate),
     icon: 'bolt',
     iconBgClass: 'bg-amber-100 dark:bg-amber-900/20',
     iconClass: 'text-amber-600 dark:text-amber-400'
@@ -166,7 +168,7 @@ const overviewCards = computed<OverviewCard[]>(() => [
   {
     key: 'owner_loss',
     label: t('settlementPools.ownerLoss'),
-    value: money(estimate.value?.owner_covered_loss),
+    value: cnyMoney(estimate.value?.owner_covered_loss),
     icon: 'exclamationTriangle',
     iconBgClass: 'bg-orange-100 dark:bg-orange-900/20',
     iconClass: 'text-orange-600 dark:text-orange-400',
@@ -176,7 +178,6 @@ const overviewCards = computed<OverviewCard[]>(() => [
     key: 'tiers',
     label: t('settlementPools.tiers'),
     value: String(tiers.value.length),
-    meta: tierSummary.value,
     icon: 'grid',
     iconBgClass: 'bg-gray-100 dark:bg-dark-700',
     iconClass: 'text-gray-600 dark:text-gray-300'
@@ -188,7 +189,7 @@ const personalCards = computed<OverviewCard[]>(() => {
     {
       key: 'my_due',
       label: t('settlementPools.myDue'),
-      value: money(myParticipant.value.total_due),
+      value: cnyMoney(myParticipant.value.total_due),
       icon: 'creditCard',
       iconBgClass: 'bg-primary-100 dark:bg-primary-900/20',
       iconClass: 'text-primary-600 dark:text-primary-400',
@@ -197,7 +198,7 @@ const personalCards = computed<OverviewCard[]>(() => {
     {
       key: 'my_fixed_share',
       label: t('settlementPools.myFixedShare'),
-      value: money(myParticipant.value.fixed_share),
+      value: cnyMoney(myParticipant.value.fixed_share),
       icon: 'shield',
       iconBgClass: 'bg-gray-100 dark:bg-dark-700',
       iconClass: 'text-gray-600 dark:text-gray-300'
@@ -205,7 +206,7 @@ const personalCards = computed<OverviewCard[]>(() => {
     {
       key: 'my_dynamic_charge',
       label: t('settlementPools.myDynamicCharge'),
-      value: money(myParticipant.value.dynamic_charge),
+      value: cnyMoney(myParticipant.value.dynamic_charge),
       icon: 'bolt',
       iconBgClass: 'bg-amber-100 dark:bg-amber-900/20',
       iconClass: 'text-amber-600 dark:text-amber-400'
@@ -213,23 +214,19 @@ const personalCards = computed<OverviewCard[]>(() => {
     {
       key: 'my_usage',
       label: t('settlementPools.myUsage'),
-      value: money(myParticipant.value.raw_usage),
-      meta: tierText(myParticipant.value.current_tier),
+      value: usdMoney(myParticipant.value.raw_usage),
       icon: 'userCircle',
       iconBgClass: 'bg-cyan-100 dark:bg-cyan-900/20',
       iconClass: 'text-cyan-600 dark:text-cyan-400'
     }
   ]
 })
-const tierSummary = computed(() => {
-  if (tiers.value.length === 0) return ''
-  const first = tierText(0)
-  const last = tierText(tiers.value.length - 1)
-  return first === last ? first : `${first} / ${last}`
-})
-
-function money(value: number | null | undefined) {
+function usdMoney(value: number | null | undefined) {
   return `$${Number(value || 0).toFixed(4)}`
+}
+
+function cnyMoney(value: number | null | undefined) {
+  return `¥${Number(value || 0).toFixed(4)}`
 }
 
 function percent(value: number | null | undefined) {
@@ -246,11 +243,5 @@ function tierRangeLabel(currentTiers: SettlementPoolTier[], index: number) {
   const current = currentTiers[index]?.up_to
   if (current == null) return `${previous ?? 0}+`
   return `${previous ?? 0}-${current}`
-}
-
-function tierText(index: number) {
-  const tier = tiers.value[index]
-  if (!tier) return ''
-  return `${tierRangeLabel(tiers.value, index)} x ${tier.weight}`
 }
 </script>

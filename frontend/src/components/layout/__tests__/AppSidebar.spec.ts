@@ -30,3 +30,10 @@ describe('AppSidebar header styles', () => {
     expect(sidebarBrandBlockMatch?.[0]).not.toContain('overflow: hidden;')
   })
 })
+
+describe('AppSidebar route targets', () => {
+  it('links channel status to its dedicated user route', () => {
+    expect(componentSource).toContain("path: '/channel-status', label: t('nav.channelStatus')")
+    expect(componentSource).not.toContain("path: '/monitor', label: t('nav.channelStatus')")
+  })
+})
