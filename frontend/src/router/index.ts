@@ -751,7 +751,6 @@ router.beforeEach((to, _from, next) => {
       '/admin/settlement-pools',
       '/admin/redeem',
       '/subscriptions',
-      '/settlement-pools',
       '/redeem'
     ]
 

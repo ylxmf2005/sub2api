@@ -327,6 +327,18 @@ describe('路由守卫逻辑', () => {
       const redirect = simulateGuard('/keys', {}, authState)
       expect(redirect).toBeNull()
     })
+
+    it('普通用户简易模式访问 /settlement-pools 允许通过', () => {
+      const authState: MockAuthState = {
+        isAuthenticated: true,
+        isAdmin: false,
+        isSimpleMode: true,
+        backendModeEnabled: false,
+        hasPendingAuthSession: false,
+      }
+      const redirect = simulateGuard('/settlement-pools', {}, authState)
+      expect(redirect).toBeNull()
+    })
   })
 
   describe('Backend Mode', () => {
