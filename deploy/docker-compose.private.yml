@@ -17,10 +17,6 @@ services:
     # Ensure Docker doesn't try to pull this private image from a registry.
     pull_policy: never
 
-    environment:
-      # Inject the release tag into the container for visibility in logs/UI.
-      - SUB2API_RELEASE_TAG=${SUB2API_RELEASE_TAG:-manual}
-
     labels:
       # Administrative labels for easier container management.
       io.sub2api.deployment: private-fork
