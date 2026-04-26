@@ -174,6 +174,48 @@ func TestSettlementPoolUserSummary_CurrentParticipantIncludesActiveEstimate(t *t
 	require.Equal(t, 1, repo.sumUsageCalls)
 }
 
+func TestSettlementPoolUserSummaries_CurrentParticipantReturnsEmptyCyclesArray(t *testing.T) {
+	userID := int64(7)
+	groupID := int64(11)
+	startedAt := time.Date(2026, 4, 20, 0, 0, 0, 0, time.UTC)
+	repo := &settlementPoolRepoStub{
+		groupIDs: []int64{groupID},
+		currentParticipants: map[int64]bool{
+			groupID: true,
+		},
+		config: &SettlementPoolConfig{
+			GroupID:   groupID,
+			BaseRatio: 0.2,
+			MarketCap: 0.35,
+			Tiers:     DefaultSettlementPoolTiers(),
+		},
+		active: &SettlementPoolCycle{
+			ID:        2,
+			GroupID:   groupID,
+			Status:    SettlementPoolCycleStatusActive,
+			StartedAt: startedAt,
+			TotalCost: 100,
+			BaseRatio: 0.2,
+			MarketCap: 0.35,
+			Tiers:     DefaultSettlementPoolTiers(),
+		},
+		participants: []SettlementPoolParticipant{
+			{UserID: userID, Email: "user@example.com", Status: StatusActive},
+		},
+	}
+	svc := NewSettlementPoolService(repo, &settlementGroupRepoStub{
+		groups: map[int64]*Group{
+			groupID: {ID: groupID, Name: "pool", Status: StatusActive, SubscriptionType: SubscriptionTypeSettlementPool},
+		},
+	}, nil)
+
+	summaries, err := svc.GetUserSummaries(context.Background(), userID)
+	require.NoError(t, err)
+	require.Len(t, summaries, 1)
+	require.NotNil(t, summaries[0].Cycles)
+	require.Empty(t, summaries[0].Cycles)
+}
+
 func TestSettlementPoolUserSummary_DeniesUserWithoutCurrentOrHistory(t *testing.T) {
 	userID := int64(7)
 	groupID := int64(11)

@@ -199,7 +199,7 @@ func (s *SettlementPoolService) GetAdminSummary(ctx context.Context, groupID int
 		Config:      config,
 		ActiveCycle: active,
 		Estimate:    estimate,
-		Cycles:      cycles,
+		Cycles:      nonNilSettlementCycles(cycles),
 	}, nil
 }
 
@@ -314,9 +314,10 @@ func (s *SettlementPoolService) GetUserSummaries(ctx context.Context, userID int
 			return nil, fmt.Errorf("check settlement participant: %w", err)
 		}
 
+		cycles := cyclesByGroup[groupID]
 		summary := SettlementPoolSummary{
 			Group:  settlementPoolGroupFromGroup(group),
-			Cycles: cyclesByGroup[groupID],
+			Cycles: nonNilSettlementCycles(cycles),
 		}
 		if isCurrentParticipant {
 			config, active, err := s.getConfigAndActiveCycle(ctx, groupID)
@@ -600,6 +601,13 @@ func settlementCyclesByGroup(cycles []SettlementPoolCycle) map[int64][]Settlemen
 		out[cycle.GroupID] = append(out[cycle.GroupID], cycle)
 	}
 	return out
+}
+
+func nonNilSettlementCycles(cycles []SettlementPoolCycle) []SettlementPoolCycle {
+	if cycles == nil {
+		return []SettlementPoolCycle{}
+	}
+	return cycles
 }
 
 func normalizeSettlementPoolConfigInput(input SettlementPoolConfigInput) (SettlementPoolConfigInput, error) {
