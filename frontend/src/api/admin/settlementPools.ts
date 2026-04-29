@@ -24,13 +24,34 @@ export async function updateConfig(
   return data
 }
 
-export async function syncParticipants(
+export async function syncCandidates(
   groupId: number,
   userIds: number[]
 ): Promise<SettlementPoolSummary> {
   const { data } = await apiClient.put<SettlementPoolSummary>(
+    `/admin/settlement-pools/groups/${groupId}/candidates`,
+    { user_ids: userIds }
+  )
+  return data
+}
+
+export async function forceJoinCurrentCycle(
+  groupId: number,
+  userIds: number[]
+): Promise<SettlementPoolSummary> {
+  const { data } = await apiClient.post<SettlementPoolSummary>(
     `/admin/settlement-pools/groups/${groupId}/participants`,
     { user_ids: userIds }
+  )
+  return data
+}
+
+export async function removeCurrentParticipant(
+  groupId: number,
+  userId: number
+): Promise<SettlementPoolSummary> {
+  const { data } = await apiClient.delete<SettlementPoolSummary>(
+    `/admin/settlement-pools/groups/${groupId}/participants/${userId}`
   )
   return data
 }
@@ -45,6 +66,8 @@ export async function startNextCycle(groupId: number): Promise<SettlementPoolSum
 export default {
   getSummary,
   updateConfig,
-  syncParticipants,
+  syncCandidates,
+  forceJoinCurrentCycle,
+  removeCurrentParticipant,
   startNextCycle
 }

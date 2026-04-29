@@ -125,6 +125,7 @@ func RegisterUserRoutes(
 		{
 			settlementPools.GET("", h.SettlementPool.List)
 			settlementPools.GET("/:id", h.SettlementPool.GetByGroup)
+			settlementPools.POST("/:id/participation", h.SettlementPool.JoinCurrentCycle)
 		}
 	}
 }

@@ -322,13 +322,13 @@ func (r *settlementPoolRepository) ListCyclesForUser(ctx context.Context, userID
 	return scanSettlementCycles(rows)
 }
 
-func (r *settlementPoolRepository) ListParticipants(ctx context.Context, groupID int64) ([]service.SettlementPoolParticipant, error) {
+func (r *settlementPoolRepository) ListCandidates(ctx context.Context, groupID int64) ([]service.SettlementPoolParticipant, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT p.user_id, u.email, u.username, u.status, p.created_at
-		FROM settlement_pool_participants p
-		JOIN users u ON u.id = p.user_id AND u.deleted_at IS NULL
-		WHERE p.group_id = $1
-		ORDER BY p.created_at ASC, p.user_id ASC
+		SELECT c.user_id, u.email, u.username, u.status, c.created_at
+		FROM settlement_pool_candidates c
+		JOIN users u ON u.id = c.user_id AND u.deleted_at IS NULL
+		WHERE c.group_id = $1
+		ORDER BY c.created_at ASC, c.user_id ASC
 	`, groupID)
 	if err != nil {
 		return nil, err
@@ -345,7 +345,7 @@ func (r *settlementPoolRepository) ListParticipants(ctx context.Context, groupID
 	return participants, rows.Err()
 }
 
-func (r *settlementPoolRepository) SyncParticipants(ctx context.Context, groupID int64, userIDs []int64) error {
+func (r *settlementPoolRepository) SyncCandidates(ctx context.Context, groupID int64, userIDs []int64) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -366,7 +366,17 @@ func (r *settlementPoolRepository) SyncParticipants(ctx context.Context, groupID
 		}
 	}
 
-	if _, err := tx.ExecContext(ctx, `DELETE FROM settlement_pool_participants WHERE group_id = $1`, groupID); err != nil {
+	if _, err := tx.ExecContext(ctx, `
+		DELETE FROM settlement_pool_cycle_participants cp
+		USING settlement_pool_cycles c
+		WHERE cp.cycle_id = c.id
+			AND c.group_id = $1
+			AND c.status = 'active'
+			AND NOT (cp.user_id = ANY($2))
+	`, groupID, pq.Array(userIDs)); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, `DELETE FROM settlement_pool_candidates WHERE group_id = $1`, groupID); err != nil {
 		return err
 	}
 	if _, err := tx.ExecContext(ctx, `DELETE FROM user_allowed_groups WHERE group_id = $1`, groupID); err != nil {
@@ -374,7 +384,7 @@ func (r *settlementPoolRepository) SyncParticipants(ctx context.Context, groupID
 	}
 	if len(userIDs) > 0 {
 		if _, err := tx.ExecContext(ctx, `
-			INSERT INTO settlement_pool_participants (group_id, user_id)
+			INSERT INTO settlement_pool_candidates (group_id, user_id)
 			SELECT $1, unnest($2::bigint[])
 			ON CONFLICT (group_id, user_id) DO NOTHING
 		`, groupID, pq.Array(userIDs)); err != nil {
@@ -391,39 +401,193 @@ func (r *settlementPoolRepository) SyncParticipants(ctx context.Context, groupID
 	return tx.Commit()
 }
 
-func (r *settlementPoolRepository) IsParticipant(ctx context.Context, userID, groupID int64) (bool, error) {
+func (r *settlementPoolRepository) IsCandidate(ctx context.Context, userID, groupID int64) (bool, error) {
 	var exists bool
 	err := r.db.QueryRowContext(ctx, `
 		SELECT EXISTS (
 			SELECT 1
-			FROM settlement_pool_participants p
-			JOIN users u ON u.id = p.user_id AND u.deleted_at IS NULL AND u.status = $3
-			WHERE p.user_id = $1 AND p.group_id = $2
+			FROM settlement_pool_candidates c
+			JOIN users u ON u.id = c.user_id AND u.deleted_at IS NULL AND u.status = $3
+			WHERE c.user_id = $1 AND c.group_id = $2
 		)
 	`, userID, groupID, service.StatusActive).Scan(&exists)
 	return exists, err
 }
 
-func (r *settlementPoolRepository) ListUserPoolGroupIDs(ctx context.Context, userID int64) ([]int64, error) {
-	needle, err := json.Marshal([]map[string]int64{{"user_id": userID}})
+func (r *settlementPoolRepository) ListCandidateGroupIDs(ctx context.Context, userID int64) ([]int64, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT c.group_id
+		FROM settlement_pool_candidates c
+		JOIN users u ON u.id = c.user_id AND u.deleted_at IS NULL AND u.status = $2
+		WHERE c.user_id = $1
+		ORDER BY c.group_id ASC
+	`, userID, service.StatusActive)
 	if err != nil {
 		return nil, err
 	}
+	defer func() { _ = rows.Close() }()
+	groupIDs := make([]int64, 0)
+	for rows.Next() {
+		var groupID int64
+		if err := rows.Scan(&groupID); err != nil {
+			return nil, err
+		}
+		groupIDs = append(groupIDs, groupID)
+	}
+	return groupIDs, rows.Err()
+}
+
+func (r *settlementPoolRepository) ListCycleParticipants(ctx context.Context, cycleID int64) ([]service.SettlementPoolParticipant, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT DISTINCT group_id
-		FROM (
-			SELECT p.group_id
-			FROM settlement_pool_participants p
-			WHERE p.user_id = $1
-			UNION
-			SELECT c.group_id
-			FROM settlement_pool_cycles c
-			WHERE c.status = 'locked'
-				AND c.snapshot IS NOT NULL
-				AND c.snapshot->'participants' @> $2::jsonb
-		) s
-		ORDER BY group_id ASC
-	`, userID, string(needle))
+		SELECT cp.user_id, u.email, u.username, u.status, cp.joined_at
+		FROM settlement_pool_cycle_participants cp
+		JOIN users u ON u.id = cp.user_id AND u.deleted_at IS NULL
+		WHERE cp.cycle_id = $1
+		ORDER BY cp.joined_at ASC, cp.user_id ASC
+	`, cycleID)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	participants := make([]service.SettlementPoolParticipant, 0)
+	for rows.Next() {
+		var participant service.SettlementPoolParticipant
+		if err := rows.Scan(&participant.UserID, &participant.Email, &participant.Username, &participant.Status, &participant.CreatedAt); err != nil {
+			return nil, err
+		}
+		participants = append(participants, participant)
+	}
+	return participants, rows.Err()
+}
+
+func (r *settlementPoolRepository) JoinCurrentCycle(ctx context.Context, groupID, userID int64) error {
+	res, err := r.db.ExecContext(ctx, `
+		INSERT INTO settlement_pool_cycle_participants (cycle_id, user_id, joined_at)
+		SELECT c.id, $2, NOW()
+		FROM settlement_pool_cycles c
+		JOIN settlement_pool_candidates cand ON cand.group_id = c.group_id AND cand.user_id = $2
+		JOIN users u ON u.id = cand.user_id AND u.deleted_at IS NULL AND u.status = $3
+		WHERE c.group_id = $1 AND c.status = 'active'
+		ON CONFLICT (cycle_id, user_id) DO UPDATE
+			SET joined_at = settlement_pool_cycle_participants.joined_at
+	`, groupID, userID, service.StatusActive)
+	if err != nil {
+		return err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return service.ErrSettlementPoolCandidateMissing
+	}
+	return nil
+}
+
+func (r *settlementPoolRepository) ForceJoinCurrentCycle(ctx context.Context, groupID int64, userIDs []int64) error {
+	if len(userIDs) == 0 {
+		return nil
+	}
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	var existing int
+	if err := tx.QueryRowContext(ctx, `
+		SELECT COUNT(*)
+		FROM users
+		WHERE id = ANY($1) AND deleted_at IS NULL
+	`, pq.Array(userIDs)).Scan(&existing); err != nil {
+		return err
+	}
+	if existing != len(userIDs) {
+		return service.ErrUserNotFound
+	}
+	var cycleID int64
+	if err := tx.QueryRowContext(ctx, `
+		SELECT id
+		FROM settlement_pool_cycles
+		WHERE group_id = $1 AND status = 'active'
+		ORDER BY started_at DESC, id DESC
+		LIMIT 1
+		FOR UPDATE
+	`, groupID).Scan(&cycleID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return service.ErrSettlementPoolNotFound
+		}
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, `
+		INSERT INTO settlement_pool_candidates (group_id, user_id)
+		SELECT $1, unnest($2::bigint[])
+		ON CONFLICT (group_id, user_id) DO NOTHING
+	`, groupID, pq.Array(userIDs)); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, `
+		INSERT INTO user_allowed_groups (group_id, user_id)
+		SELECT $1, unnest($2::bigint[])
+		ON CONFLICT (user_id, group_id) DO NOTHING
+	`, groupID, pq.Array(userIDs)); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, `
+		INSERT INTO settlement_pool_cycle_participants (cycle_id, user_id, joined_at)
+		SELECT $1, unnest($2::bigint[]), NOW()
+		ON CONFLICT (cycle_id, user_id) DO NOTHING
+	`, cycleID, pq.Array(userIDs)); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func (r *settlementPoolRepository) RemoveCurrentParticipant(ctx context.Context, groupID, userID int64) error {
+	res, err := r.db.ExecContext(ctx, `
+		DELETE FROM settlement_pool_cycle_participants cp
+		USING settlement_pool_cycles c
+		WHERE cp.cycle_id = c.id
+			AND c.group_id = $1
+			AND c.status = 'active'
+			AND cp.user_id = $2
+	`, groupID, userID)
+	if err != nil {
+		return err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return service.ErrSettlementPoolParticipantMissing
+	}
+	return nil
+}
+
+func (r *settlementPoolRepository) IsCurrentParticipant(ctx context.Context, userID, groupID int64) (bool, error) {
+	var exists bool
+	err := r.db.QueryRowContext(ctx, `
+		SELECT EXISTS (
+			SELECT 1
+			FROM settlement_pool_cycle_participants cp
+			JOIN settlement_pool_cycles c ON c.id = cp.cycle_id AND c.status = 'active'
+			JOIN users u ON u.id = cp.user_id AND u.deleted_at IS NULL AND u.status = $3
+			WHERE cp.user_id = $1 AND c.group_id = $2
+		)
+	`, userID, groupID, service.StatusActive).Scan(&exists)
+	return exists, err
+}
+
+func (r *settlementPoolRepository) ListCurrentParticipantGroupIDs(ctx context.Context, userID int64) ([]int64, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT DISTINCT c.group_id
+		FROM settlement_pool_cycle_participants cp
+		JOIN settlement_pool_cycles c ON c.id = cp.cycle_id AND c.status = 'active'
+		JOIN users u ON u.id = cp.user_id AND u.deleted_at IS NULL AND u.status = $2
+		WHERE cp.user_id = $1
+		ORDER BY c.group_id ASC
+	`, userID, service.StatusActive)
 	if err != nil {
 		return nil, err
 	}

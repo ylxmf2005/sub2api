@@ -87,6 +87,15 @@ func TestMigrationsRunner_IsIdempotent_AndSchemaIsUpToDate(t *testing.T) {
 
 	// user_allowed_groups: created_at should be timestamptz
 	requireColumn(t, tx, "user_allowed_groups", "created_at", "timestamp with time zone", 0, false)
+
+	// settlement pool: candidate eligibility and cycle participation are separate.
+	requireColumn(t, tx, "settlement_pool_candidates", "group_id", "bigint", 0, false)
+	requireColumn(t, tx, "settlement_pool_candidates", "user_id", "bigint", 0, false)
+	requireColumn(t, tx, "settlement_pool_cycle_participants", "cycle_id", "bigint", 0, false)
+	requireColumn(t, tx, "settlement_pool_cycle_participants", "user_id", "bigint", 0, false)
+	requireColumn(t, tx, "settlement_pool_cycle_participants", "joined_at", "timestamp with time zone", 0, false)
+	requireIndex(t, tx, "settlement_pool_candidates", "idx_settlement_pool_candidates_user")
+	requireIndex(t, tx, "settlement_pool_cycle_participants", "idx_settlement_pool_cycle_participants_user")
 }
 
 func TestMigrationsRunner_AuthIdentityAndPaymentSchemaStayAligned(t *testing.T) {

@@ -74,7 +74,7 @@ func APIKeyAuthWithSubscriptionGoogle(apiKeyService *service.APIKeyService, subs
 		if isSettlementPoolType {
 			ok, participantErr := apiKeyService.IsSettlementPoolParticipant(c.Request.Context(), apiKey.User.ID, apiKey.Group.ID)
 			if participantErr != nil || !ok {
-				abortWithGoogleError(c, 403, "No active settlement pool participation found for this group")
+				abortWithGoogleError(c, 403, "Join the current settlement pool cycle before using this group")
 				return
 			}
 		} else if isSubscriptionType && subscriptionService != nil {

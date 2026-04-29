@@ -176,7 +176,7 @@ func apiKeyAuthWithSubscription(apiKeyService *service.APIKeyService, subscripti
 			if isSettlementPoolType {
 				ok, participantErr := apiKeyService.IsSettlementPoolParticipant(c.Request.Context(), apiKey.User.ID, apiKey.Group.ID)
 				if participantErr != nil || !ok {
-					AbortWithError(c, 403, "SETTLEMENT_POOL_PARTICIPANT_REQUIRED", "No active settlement pool participation found for this group")
+					AbortWithError(c, 403, "SETTLEMENT_POOL_PARTICIPANT_REQUIRED", "Join the current settlement pool cycle before using this group")
 					return
 				}
 			} else if subscription != nil {

@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math"
 	"sort"
@@ -21,7 +20,8 @@ var (
 	ErrSettlementPoolNotFound           = infraerrors.NotFound("SETTLEMENT_POOL_NOT_FOUND", "settlement pool not found")
 	ErrSettlementPoolInvalidConfig      = infraerrors.BadRequest("SETTLEMENT_POOL_INVALID_CONFIG", "invalid settlement pool config")
 	ErrSettlementPoolForbidden          = infraerrors.Forbidden("SETTLEMENT_POOL_FORBIDDEN", "not allowed to access settlement pool")
-	ErrSettlementPoolParticipantMissing = infraerrors.Forbidden("SETTLEMENT_POOL_PARTICIPANT_MISSING", "user is not a settlement pool participant")
+	ErrSettlementPoolCandidateMissing   = infraerrors.Forbidden("SETTLEMENT_POOL_CANDIDATE_MISSING", "user is not a settlement pool candidate")
+	ErrSettlementPoolParticipantMissing = infraerrors.Forbidden("SETTLEMENT_POOL_PARTICIPANT_MISSING", "user is not a current settlement pool participant")
 )
 
 type SettlementPoolTier struct {
@@ -108,11 +108,15 @@ type SettlementPoolEstimate struct {
 }
 
 type SettlementPoolSummary struct {
-	Group       *SettlementPoolGroup    `json:"group"`
-	Config      *SettlementPoolConfig   `json:"config,omitempty"`
-	ActiveCycle *SettlementPoolCycle    `json:"active_cycle,omitempty"`
-	Estimate    *SettlementPoolEstimate `json:"estimate,omitempty"`
-	Cycles      []SettlementPoolCycle   `json:"cycles"`
+	Group                *SettlementPoolGroup        `json:"group"`
+	Config               *SettlementPoolConfig       `json:"config,omitempty"`
+	ActiveCycle          *SettlementPoolCycle        `json:"active_cycle,omitempty"`
+	Estimate             *SettlementPoolEstimate     `json:"estimate,omitempty"`
+	Cycles               []SettlementPoolCycle       `json:"cycles"`
+	Candidates           []SettlementPoolParticipant `json:"candidates,omitempty"`
+	IsCandidate          bool                        `json:"is_candidate,omitempty"`
+	IsCurrentParticipant bool                        `json:"is_current_participant,omitempty"`
+	CanJoinActiveCycle   bool                        `json:"can_join_active_cycle,omitempty"`
 }
 
 type SettlementPoolConfigInput struct {
@@ -134,10 +138,16 @@ type SettlementPoolRepository interface {
 	RotateCycle(ctx context.Context, groupID, activeCycleID int64, endedAt time.Time, snapshot *SettlementPoolEstimate, next *SettlementPoolCycle) error
 	ListCycles(ctx context.Context, groupID int64, limit int) ([]SettlementPoolCycle, error)
 	ListCyclesForUser(ctx context.Context, userID int64, limit int) ([]SettlementPoolCycle, error)
-	ListParticipants(ctx context.Context, groupID int64) ([]SettlementPoolParticipant, error)
-	SyncParticipants(ctx context.Context, groupID int64, userIDs []int64) error
-	IsParticipant(ctx context.Context, userID, groupID int64) (bool, error)
-	ListUserPoolGroupIDs(ctx context.Context, userID int64) ([]int64, error)
+	ListCandidates(ctx context.Context, groupID int64) ([]SettlementPoolParticipant, error)
+	SyncCandidates(ctx context.Context, groupID int64, userIDs []int64) error
+	IsCandidate(ctx context.Context, userID, groupID int64) (bool, error)
+	ListCandidateGroupIDs(ctx context.Context, userID int64) ([]int64, error)
+	ListCycleParticipants(ctx context.Context, cycleID int64) ([]SettlementPoolParticipant, error)
+	JoinCurrentCycle(ctx context.Context, groupID, userID int64) error
+	ForceJoinCurrentCycle(ctx context.Context, groupID int64, userIDs []int64) error
+	RemoveCurrentParticipant(ctx context.Context, groupID, userID int64) error
+	IsCurrentParticipant(ctx context.Context, userID, groupID int64) (bool, error)
+	ListCurrentParticipantGroupIDs(ctx context.Context, userID int64) ([]int64, error)
 	SumUsageByUsers(ctx context.Context, groupID int64, userIDs []int64, startedAt time.Time, endedAt *time.Time) (map[int64]float64, error)
 }
 
@@ -170,11 +180,18 @@ func DefaultSettlementPoolConfig(groupID int64) *SettlementPoolConfig {
 	}
 }
 
-func (s *SettlementPoolService) IsParticipant(ctx context.Context, userID, groupID int64) (bool, error) {
+func (s *SettlementPoolService) IsCurrentParticipant(ctx context.Context, userID, groupID int64) (bool, error) {
 	if s == nil || s.repo == nil {
 		return false, ErrSettlementPoolNotFound
 	}
-	return s.repo.IsParticipant(ctx, userID, groupID)
+	return s.repo.IsCurrentParticipant(ctx, userID, groupID)
+}
+
+func (s *SettlementPoolService) ListCurrentParticipantGroupIDs(ctx context.Context, userID int64) ([]int64, error) {
+	if s == nil || s.repo == nil {
+		return nil, ErrSettlementPoolNotFound
+	}
+	return s.repo.ListCurrentParticipantGroupIDs(ctx, userID)
 }
 
 func (s *SettlementPoolService) GetAdminSummary(ctx context.Context, groupID int64) (*SettlementPoolSummary, error) {
@@ -194,12 +211,17 @@ func (s *SettlementPoolService) GetAdminSummary(ctx context.Context, groupID int
 	if err != nil {
 		return nil, fmt.Errorf("list settlement cycles: %w", err)
 	}
+	candidates, err := s.repo.ListCandidates(ctx, groupID)
+	if err != nil {
+		return nil, fmt.Errorf("list settlement candidates: %w", err)
+	}
 	return &SettlementPoolSummary{
 		Group:       settlementPoolGroupFromGroup(group),
 		Config:      config,
 		ActiveCycle: active,
 		Estimate:    estimate,
 		Cycles:      nonNilSettlementCycles(cycles),
+		Candidates:  nonNilSettlementParticipants(candidates),
 	}, nil
 }
 
@@ -232,13 +254,74 @@ func (s *SettlementPoolService) UpdateConfig(ctx context.Context, groupID int64,
 	return s.GetAdminSummary(ctx, groupID)
 }
 
-func (s *SettlementPoolService) SyncParticipants(ctx context.Context, groupID int64, userIDs []int64) (*SettlementPoolSummary, error) {
+func (s *SettlementPoolService) SyncCandidates(ctx context.Context, groupID int64, userIDs []int64) (*SettlementPoolSummary, error) {
 	if _, err := s.requireSettlementPoolGroup(ctx, groupID); err != nil {
 		return nil, err
 	}
 	userIDs = uniquePositiveInt64s(userIDs)
-	if err := s.repo.SyncParticipants(ctx, groupID, userIDs); err != nil {
-		return nil, fmt.Errorf("sync settlement participants: %w", err)
+	if err := s.repo.SyncCandidates(ctx, groupID, userIDs); err != nil {
+		return nil, fmt.Errorf("sync settlement candidates: %w", err)
+	}
+	if s.authCacheInvalidator != nil {
+		s.authCacheInvalidator.InvalidateAuthCacheByGroupID(ctx, groupID)
+	}
+	return s.GetAdminSummary(ctx, groupID)
+}
+
+func (s *SettlementPoolService) JoinCurrentCycle(ctx context.Context, userID, groupID int64) (*SettlementPoolSummary, error) {
+	if userID <= 0 {
+		return nil, ErrSettlementPoolForbidden
+	}
+	if _, err := s.requireSettlementPoolGroup(ctx, groupID); err != nil {
+		return nil, err
+	}
+	isCandidate, err := s.repo.IsCandidate(ctx, userID, groupID)
+	if err != nil {
+		return nil, fmt.Errorf("check settlement candidate: %w", err)
+	}
+	if !isCandidate {
+		return nil, ErrSettlementPoolCandidateMissing
+	}
+	if _, _, err := s.ensureActiveCycle(ctx, groupID); err != nil {
+		return nil, err
+	}
+	if err := s.repo.JoinCurrentCycle(ctx, groupID, userID); err != nil {
+		return nil, fmt.Errorf("join settlement current cycle: %w", err)
+	}
+	if s.authCacheInvalidator != nil {
+		s.authCacheInvalidator.InvalidateAuthCacheByGroupID(ctx, groupID)
+	}
+	return s.GetUserSummary(ctx, userID, groupID)
+}
+
+func (s *SettlementPoolService) ForceJoinCurrentCycle(ctx context.Context, groupID int64, userIDs []int64) (*SettlementPoolSummary, error) {
+	if _, err := s.requireSettlementPoolGroup(ctx, groupID); err != nil {
+		return nil, err
+	}
+	userIDs = uniquePositiveInt64s(userIDs)
+	if len(userIDs) > 0 {
+		if _, _, err := s.ensureActiveCycle(ctx, groupID); err != nil {
+			return nil, err
+		}
+		if err := s.repo.ForceJoinCurrentCycle(ctx, groupID, userIDs); err != nil {
+			return nil, fmt.Errorf("force join settlement current cycle: %w", err)
+		}
+		if s.authCacheInvalidator != nil {
+			s.authCacheInvalidator.InvalidateAuthCacheByGroupID(ctx, groupID)
+		}
+	}
+	return s.GetAdminSummary(ctx, groupID)
+}
+
+func (s *SettlementPoolService) RemoveCurrentParticipant(ctx context.Context, groupID, userID int64) (*SettlementPoolSummary, error) {
+	if _, err := s.requireSettlementPoolGroup(ctx, groupID); err != nil {
+		return nil, err
+	}
+	if userID <= 0 {
+		return nil, ErrSettlementPoolParticipantMissing
+	}
+	if err := s.repo.RemoveCurrentParticipant(ctx, groupID, userID); err != nil {
+		return nil, fmt.Errorf("remove settlement current participant: %w", err)
 	}
 	if s.authCacheInvalidator != nil {
 		s.authCacheInvalidator.InvalidateAuthCacheByGroupID(ctx, groupID)
@@ -289,7 +372,7 @@ func (s *SettlementPoolService) GetUserSummaries(ctx context.Context, userID int
 	if userID <= 0 {
 		return nil, ErrSettlementPoolForbidden
 	}
-	groupIDs, err := s.repo.ListUserPoolGroupIDs(ctx, userID)
+	groupIDs, err := s.repo.ListCandidateGroupIDs(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("list user settlement pools: %w", err)
 	}
@@ -309,39 +392,41 @@ func (s *SettlementPoolService) GetUserSummaries(ctx context.Context, userID int
 			continue
 		}
 
-		isCurrentParticipant, err := s.repo.IsParticipant(ctx, userID, groupID)
+		isCurrentParticipant, err := s.repo.IsCurrentParticipant(ctx, userID, groupID)
 		if err != nil {
 			return nil, fmt.Errorf("check settlement participant: %w", err)
 		}
 
 		cycles := cyclesByGroup[groupID]
 		summary := SettlementPoolSummary{
-			Group:  settlementPoolGroupFromGroup(group),
-			Cycles: nonNilSettlementCycles(cycles),
+			Group:                settlementPoolGroupFromGroup(group),
+			Cycles:               nonNilSettlementCycles(cycles),
+			IsCandidate:          true,
+			IsCurrentParticipant: isCurrentParticipant,
+			CanJoinActiveCycle:   !isCurrentParticipant,
 		}
-		if isCurrentParticipant {
-			config, active, err := s.getConfigAndActiveCycle(ctx, groupID)
+		config, active, err := s.ensureActiveCycle(ctx, groupID)
+		if err != nil {
+			return nil, err
+		}
+		summary.Config = config
+		summary.ActiveCycle = active
+		if active != nil {
+			estimate, err := s.CalculateEstimate(ctx, active)
 			if err != nil {
 				return nil, err
 			}
-			summary.Config = config
-			summary.ActiveCycle = active
-			if active != nil {
-				estimate, err := s.CalculateEstimate(ctx, active)
-				if err != nil {
-					return nil, err
-				}
-				summary.Estimate = estimate
-			}
+			summary.Estimate = estimate
 		}
-		if isCurrentParticipant || len(summary.Cycles) > 0 {
-			out = append(out, summary)
-		}
+		out = append(out, summary)
 	}
 	return out, nil
 }
 
 func (s *SettlementPoolService) GetUserSummary(ctx context.Context, userID, groupID int64) (*SettlementPoolSummary, error) {
+	if userID <= 0 {
+		return nil, ErrSettlementPoolForbidden
+	}
 	group, err := s.groupRepo.GetByIDLite(ctx, groupID)
 	if err != nil {
 		return nil, err
@@ -361,32 +446,38 @@ func (s *SettlementPoolService) GetUserSummary(ctx context.Context, userID, grou
 		}
 	}
 
-	isCurrentParticipant, err := s.repo.IsParticipant(ctx, userID, groupID)
+	isCandidate, err := s.repo.IsCandidate(ctx, userID, groupID)
+	if err != nil {
+		return nil, fmt.Errorf("check settlement candidate: %w", err)
+	}
+	if !isCandidate {
+		return nil, ErrSettlementPoolCandidateMissing
+	}
+
+	isCurrentParticipant, err := s.repo.IsCurrentParticipant(ctx, userID, groupID)
 	if err != nil {
 		return nil, fmt.Errorf("check settlement participant: %w", err)
 	}
-	if !isCurrentParticipant && len(filteredCycles) == 0 {
-		return nil, ErrSettlementPoolParticipantMissing
-	}
 
 	summary := &SettlementPoolSummary{
-		Group:  settlementPoolGroupFromGroup(group),
-		Cycles: filteredCycles,
+		Group:                settlementPoolGroupFromGroup(group),
+		Cycles:               filteredCycles,
+		IsCandidate:          true,
+		IsCurrentParticipant: isCurrentParticipant,
+		CanJoinActiveCycle:   !isCurrentParticipant,
 	}
-	if isCurrentParticipant {
-		config, active, err := s.getConfigAndActiveCycle(ctx, groupID)
+	config, active, err := s.ensureActiveCycle(ctx, groupID)
+	if err != nil {
+		return nil, err
+	}
+	summary.Config = config
+	summary.ActiveCycle = active
+	if active != nil {
+		estimate, err := s.CalculateEstimate(ctx, active)
 		if err != nil {
 			return nil, err
 		}
-		summary.Config = config
-		summary.ActiveCycle = active
-		if active != nil {
-			estimate, err := s.CalculateEstimate(ctx, active)
-			if err != nil {
-				return nil, err
-			}
-			summary.Estimate = estimate
-		}
+		summary.Estimate = estimate
 	}
 	return summary, nil
 }
@@ -399,7 +490,7 @@ func (s *SettlementPoolService) CalculateEstimate(ctx context.Context, cycle *Se
 	if err != nil {
 		return nil, err
 	}
-	participants, err := s.repo.ListParticipants(ctx, cycle.GroupID)
+	participants, err := s.repo.ListCycleParticipants(ctx, cycle.ID)
 	if err != nil {
 		return nil, fmt.Errorf("list settlement participants: %w", err)
 	}
@@ -577,24 +668,6 @@ func (s *SettlementPoolService) ensureActiveCycle(ctx context.Context, groupID i
 	return config, active, nil
 }
 
-func (s *SettlementPoolService) getConfigAndActiveCycle(ctx context.Context, groupID int64) (*SettlementPoolConfig, *SettlementPoolCycle, error) {
-	config, err := s.repo.GetConfig(ctx, groupID)
-	if err != nil {
-		if !errors.Is(err, ErrSettlementPoolNotFound) {
-			return nil, nil, fmt.Errorf("get settlement config: %w", err)
-		}
-		config = nil
-	}
-	active, err := s.repo.GetActiveCycle(ctx, groupID)
-	if err != nil {
-		if !errors.Is(err, ErrSettlementPoolNotFound) {
-			return nil, nil, fmt.Errorf("get active settlement cycle: %w", err)
-		}
-		active = nil
-	}
-	return config, active, nil
-}
-
 func settlementCyclesByGroup(cycles []SettlementPoolCycle) map[int64][]SettlementPoolCycle {
 	out := make(map[int64][]SettlementPoolCycle)
 	for _, cycle := range cycles {
@@ -608,6 +681,13 @@ func nonNilSettlementCycles(cycles []SettlementPoolCycle) []SettlementPoolCycle 
 		return []SettlementPoolCycle{}
 	}
 	return cycles
+}
+
+func nonNilSettlementParticipants(participants []SettlementPoolParticipant) []SettlementPoolParticipant {
+	if participants == nil {
+		return []SettlementPoolParticipant{}
+	}
+	return participants
 }
 
 func normalizeSettlementPoolConfigInput(input SettlementPoolConfigInput) (SettlementPoolConfigInput, error) {

@@ -32,15 +32,15 @@ type apiKeySettlementReaderStub struct {
 	groupIDs []int64
 }
 
-func (s *apiKeySettlementReaderStub) IsParticipant(context.Context, int64, int64) (bool, error) {
+func (s *apiKeySettlementReaderStub) IsCurrentParticipant(context.Context, int64, int64) (bool, error) {
 	return false, nil
 }
 
-func (s *apiKeySettlementReaderStub) ListUserPoolGroupIDs(context.Context, int64) ([]int64, error) {
+func (s *apiKeySettlementReaderStub) ListCurrentParticipantGroupIDs(context.Context, int64) ([]int64, error) {
 	return append([]int64(nil), s.groupIDs...), nil
 }
 
-func TestAPIKeyService_GetAvailableGroups_IncludesSettlementPoolParticipants(t *testing.T) {
+func TestAPIKeyService_GetAvailableGroups_IncludesCurrentSettlementPoolParticipants(t *testing.T) {
 	const (
 		userID              int64 = 42
 		settlementGroupID   int64 = 1001

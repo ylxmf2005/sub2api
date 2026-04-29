@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGroupHandlerCreateSettlementPoolAddsCreatorAsParticipant(t *testing.T) {
+func TestGroupHandlerCreateSettlementPoolAddsCreatorAsCandidate(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	adminSvc := newStubAdminService()
@@ -109,11 +109,11 @@ func (r *createGroupSettlementPoolRepo) ListCyclesForUser(context.Context, int64
 	panic("unexpected ListCyclesForUser")
 }
 
-func (r *createGroupSettlementPoolRepo) ListParticipants(context.Context, int64) ([]service.SettlementPoolParticipant, error) {
+func (r *createGroupSettlementPoolRepo) ListCandidates(context.Context, int64) ([]service.SettlementPoolParticipant, error) {
 	return append([]service.SettlementPoolParticipant(nil), r.participants...), nil
 }
 
-func (r *createGroupSettlementPoolRepo) SyncParticipants(_ context.Context, groupID int64, userIDs []int64) error {
+func (r *createGroupSettlementPoolRepo) SyncCandidates(_ context.Context, groupID int64, userIDs []int64) error {
 	r.syncedGroupID = groupID
 	r.syncedUserIDs = append([]int64(nil), userIDs...)
 	r.participants = r.participants[:0]
@@ -126,12 +126,36 @@ func (r *createGroupSettlementPoolRepo) SyncParticipants(_ context.Context, grou
 	return nil
 }
 
-func (r *createGroupSettlementPoolRepo) IsParticipant(context.Context, int64, int64) (bool, error) {
-	panic("unexpected IsParticipant")
+func (r *createGroupSettlementPoolRepo) IsCandidate(context.Context, int64, int64) (bool, error) {
+	panic("unexpected IsCandidate")
 }
 
-func (r *createGroupSettlementPoolRepo) ListUserPoolGroupIDs(context.Context, int64) ([]int64, error) {
-	panic("unexpected ListUserPoolGroupIDs")
+func (r *createGroupSettlementPoolRepo) ListCandidateGroupIDs(context.Context, int64) ([]int64, error) {
+	panic("unexpected ListCandidateGroupIDs")
+}
+
+func (r *createGroupSettlementPoolRepo) ListCycleParticipants(context.Context, int64) ([]service.SettlementPoolParticipant, error) {
+	return nil, nil
+}
+
+func (r *createGroupSettlementPoolRepo) JoinCurrentCycle(context.Context, int64, int64) error {
+	panic("unexpected JoinCurrentCycle")
+}
+
+func (r *createGroupSettlementPoolRepo) ForceJoinCurrentCycle(context.Context, int64, []int64) error {
+	panic("unexpected ForceJoinCurrentCycle")
+}
+
+func (r *createGroupSettlementPoolRepo) RemoveCurrentParticipant(context.Context, int64, int64) error {
+	panic("unexpected RemoveCurrentParticipant")
+}
+
+func (r *createGroupSettlementPoolRepo) IsCurrentParticipant(context.Context, int64, int64) (bool, error) {
+	panic("unexpected IsCurrentParticipant")
+}
+
+func (r *createGroupSettlementPoolRepo) ListCurrentParticipantGroupIDs(context.Context, int64) ([]int64, error) {
+	panic("unexpected ListCurrentParticipantGroupIDs")
 }
 
 func (r *createGroupSettlementPoolRepo) SumUsageByUsers(context.Context, int64, []int64, time.Time, *time.Time) (map[int64]float64, error) {

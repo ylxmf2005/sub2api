@@ -37,14 +37,14 @@ type fakeSettlementPoolAccessReader struct {
 	listUserPools func(ctx context.Context, userID int64) ([]int64, error)
 }
 
-func (f fakeSettlementPoolAccessReader) IsParticipant(ctx context.Context, userID, groupID int64) (bool, error) {
+func (f fakeSettlementPoolAccessReader) IsCurrentParticipant(ctx context.Context, userID, groupID int64) (bool, error) {
 	if f.isParticipant == nil {
 		return false, nil
 	}
 	return f.isParticipant(ctx, userID, groupID)
 }
 
-func (f fakeSettlementPoolAccessReader) ListUserPoolGroupIDs(ctx context.Context, userID int64) ([]int64, error) {
+func (f fakeSettlementPoolAccessReader) ListCurrentParticipantGroupIDs(ctx context.Context, userID int64) ([]int64, error) {
 	if f.listUserPools == nil {
 		return nil, nil
 	}
@@ -590,7 +590,7 @@ func TestApiKeyAuthWithSubscriptionGoogle_SettlementPoolRejectsNonParticipant(t 
 	require.Equal(t, http.StatusForbidden, rec.Code)
 	var resp googleErrorResponse
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
-	require.Equal(t, "No active settlement pool participation found for this group", resp.Error.Message)
+	require.Equal(t, "Join the current settlement pool cycle before using this group", resp.Error.Message)
 	require.Equal(t, "PERMISSION_DENIED", resp.Error.Status)
 }
 

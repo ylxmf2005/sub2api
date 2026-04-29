@@ -296,7 +296,7 @@ func (h *GroupHandler) Create(c *gin.Context) {
 			response.InternalError(c, "Settlement pool creator is missing")
 			return
 		}
-		if _, err := h.settlementService.SyncParticipants(c.Request.Context(), group.ID, []int64{settlementCreatorID}); err != nil {
+		if _, err := h.settlementService.SyncCandidates(c.Request.Context(), group.ID, []int64{settlementCreatorID}); err != nil {
 			response.ErrorFrom(c, err)
 			return
 		}

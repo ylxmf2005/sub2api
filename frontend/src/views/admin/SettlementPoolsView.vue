@@ -87,18 +87,69 @@
             </div>
           </section>
 
+          <section v-if="!viewingHistory" class="card p-4">
+            <div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ t('settlementPools.candidates') }}</h2>
+              <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                <UserSearchCombobox
+                  class="w-full sm:w-72"
+                  :placeholder="t('admin.usage.searchUserPlaceholder')"
+                  clear-on-select
+                  @select="addCandidate"
+                  @search-error="handleUserSearchError"
+                />
+                <button class="btn btn-primary" :disabled="saving" @click="saveCandidates">{{ t('common.save') }}</button>
+              </div>
+            </div>
+
+            <DataTable
+              :columns="candidateColumns"
+              :data="candidateRows"
+              row-key="user_id"
+              :loading="loading && !!summary"
+            >
+              <template #cell-user="{ row }">
+                <div class="font-medium text-gray-900 dark:text-white">{{ row.email }}</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  #{{ row.user_id }} <span v-if="row.username">{{ row.username }}</span>
+                </div>
+              </template>
+              <template #cell-actions="{ row }">
+                <div class="flex justify-end gap-1">
+                  <button
+                    class="btn btn-secondary btn-sm"
+                    :disabled="saving || actioningUserIds.has(row.user_id)"
+                    @click="forceJoinCandidate(row.user_id)"
+                  >
+                    {{ t('settlementPools.forceJoin') }}
+                  </button>
+                  <button
+                    class="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                    :title="t('common.delete')"
+                    :disabled="saving || actioningUserIds.has(row.user_id)"
+                    @click="removeCandidate(row.user_id)"
+                  >
+                    <Icon name="trash" size="sm" />
+                  </button>
+                </div>
+              </template>
+              <template #empty>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('settlementPools.noCandidates') }}</p>
+              </template>
+            </DataTable>
+          </section>
+
           <section class="card p-4">
             <div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ t('settlementPools.participants') }}</h2>
+              <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ t('settlementPools.currentParticipants') }}</h2>
               <div v-if="!viewingHistory" class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                 <UserSearchCombobox
                   class="w-full sm:w-72"
                   :placeholder="t('admin.usage.searchUserPlaceholder')"
                   clear-on-select
-                  @select="addParticipant"
+                  @select="forceJoinUser"
                   @search-error="handleUserSearchError"
                 />
-                <button class="btn btn-primary" :disabled="saving" @click="saveParticipants">{{ t('common.save') }}</button>
               </div>
             </div>
 
@@ -137,7 +188,8 @@
                   <button
                     class="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
                     :title="t('common.delete')"
-                    @click="removeParticipant(row.user_id)"
+                    :disabled="saving || actioningUserIds.has(row.user_id)"
+                    @click="removeCurrentParticipant(row.user_id)"
                   >
                     <Icon name="trash" size="sm" />
                   </button>
@@ -222,7 +274,7 @@ import * as groupsAPI from '@/api/admin/groups'
 import settlementPoolsAPI from '@/api/admin/settlementPools'
 import type { SimpleUser } from '@/api/admin/usage'
 import type { Column } from '@/components/common/types'
-import type { AdminGroup, SettlementPoolEstimate, SettlementPoolParticipantEstimate, SettlementPoolSummary, SettlementPoolTier } from '@/types'
+import type { AdminGroup, SettlementPoolEstimate, SettlementPoolParticipant, SettlementPoolSummary, SettlementPoolTier } from '@/types'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -235,8 +287,9 @@ const selectedGroupId = ref<number | null>(null)
 const summary = ref<SettlementPoolSummary | null>(null)
 const selectedCycleId = ref<number | null>(null)
 const showStartCycleDialog = ref(false)
-const manualParticipants = ref<SettlementPoolParticipantEstimate[]>([])
-const removedParticipantIds = ref<Set<number>>(new Set())
+const manualCandidates = ref<SettlementPoolParticipant[]>([])
+const removedCandidateIds = ref<Set<number>>(new Set())
+const actioningUserIds = ref<Set<number>>(new Set())
 
 const configForm = reactive({
   total_cost: 0,
@@ -261,17 +314,20 @@ const displayEstimate = computed<SettlementPoolEstimate | null>(() => {
   return summary.value.estimate ?? null
 })
 const participantRows = computed(() => {
-  const fromEstimate = displayEstimate.value?.participants || []
-  if (viewingHistory.value) {
-    return fromEstimate
+  return displayEstimate.value?.participants || []
+})
+const candidateRows = computed<SettlementPoolParticipant[]>(() => {
+  const byID = new Map<number, SettlementPoolParticipant>()
+  for (const row of summary.value?.candidates || []) {
+    if (!removedCandidateIds.value.has(row.user_id)) byID.set(row.user_id, row)
   }
-  const byID = new Map<number, SettlementPoolParticipantEstimate>()
-  for (const row of fromEstimate) {
-    if (!removedParticipantIds.value.has(row.user_id)) byID.set(row.user_id, row)
-  }
-  for (const row of manualParticipants.value) byID.set(row.user_id, row)
+  for (const row of manualCandidates.value) byID.set(row.user_id, row)
   return [...byID.values()].sort((a, b) => a.user_id - b.user_id)
 })
+const candidateColumns = computed<Column[]>(() => [
+  { key: 'user', label: t('settlementPools.user'), class: 'min-w-[220px]' },
+  { key: 'actions', label: '', class: rightAlignedColumnClass }
+])
 const participantColumns = computed<Column[]>(() => [
   { key: 'user', label: t('settlementPools.user'), class: 'min-w-[220px]' },
   { key: 'raw_usage', label: t('settlementPools.rawUsage'), class: rightAlignedColumnClass },
@@ -355,8 +411,9 @@ function syncForm(next: SettlementPoolSummary | null) {
     weight: roundedInputNumber(tier.weight)
   }))
   selectedCycleId.value = null
-  manualParticipants.value = []
-  removedParticipantIds.value = new Set()
+  manualCandidates.value = []
+  removedCandidateIds.value = new Set()
+  actioningUserIds.value = new Set()
 }
 
 function roundedInputNumber(value: number) {
@@ -417,13 +474,13 @@ async function saveConfig() {
   }
 }
 
-async function saveParticipants() {
+async function saveCandidates() {
   if (!selectedGroupId.value) return
   saving.value = true
   try {
-    summary.value = await settlementPoolsAPI.syncParticipants(
+    summary.value = await settlementPoolsAPI.syncCandidates(
       selectedGroupId.value,
-      participantRows.value.map(row => row.user_id)
+      candidateRows.value.map(row => row.user_id)
     )
     syncForm(summary.value)
     appStore.showSuccess(t('settlementPools.saved'))
@@ -453,31 +510,70 @@ function handleUserSearchError() {
   appStore.showError(t('settlementPools.failedToSearchUsers'))
 }
 
-function addParticipant(user: SimpleUser) {
-  if (participantRows.value.some(row => row.user_id === user.id)) return
-  const removed = new Set(removedParticipantIds.value)
+function addCandidate(user: SimpleUser) {
+  if (candidateRows.value.some(row => row.user_id === user.id)) return
+  const removed = new Set(removedCandidateIds.value)
   removed.delete(user.id)
-  removedParticipantIds.value = removed
-  if (summary.value?.estimate?.participants.some(row => row.user_id === user.id)) return
-  manualParticipants.value.push({
+  removedCandidateIds.value = removed
+  if (summary.value?.candidates?.some(row => row.user_id === user.id)) return
+  manualCandidates.value.push({
     user_id: user.id,
     email: user.email,
     username: '',
     status: 'active',
-    raw_usage: 0,
-    weighted_usage: 0,
-    current_tier: 0,
-    fixed_share: 0,
-    dynamic_charge: 0,
-    total_due: 0
+    created_at: new Date().toISOString()
   })
 }
 
-function removeParticipant(userId: number) {
-  manualParticipants.value = manualParticipants.value.filter(row => row.user_id !== userId)
-  const removed = new Set(removedParticipantIds.value)
+function removeCandidate(userId: number) {
+  manualCandidates.value = manualCandidates.value.filter(row => row.user_id !== userId)
+  const removed = new Set(removedCandidateIds.value)
   removed.add(userId)
-  removedParticipantIds.value = removed
+  removedCandidateIds.value = removed
+}
+
+async function forceJoinCandidate(userId: number) {
+  await forceJoinUserId(userId)
+}
+
+async function forceJoinUser(user: SimpleUser) {
+  await forceJoinUserId(user.id)
+}
+
+async function forceJoinUserId(userId: number) {
+  if (!selectedGroupId.value) return
+  actioningUserIds.value = new Set([...actioningUserIds.value, userId])
+  saving.value = true
+  try {
+    summary.value = await settlementPoolsAPI.forceJoinCurrentCycle(selectedGroupId.value, [userId])
+    syncForm(summary.value)
+    appStore.showSuccess(t('settlementPools.joinedCurrentCycle'))
+  } catch (error: any) {
+    appStore.showError(error?.message || t('settlementPools.failedToSave'))
+  } finally {
+    const next = new Set(actioningUserIds.value)
+    next.delete(userId)
+    actioningUserIds.value = next
+    saving.value = false
+  }
+}
+
+async function removeCurrentParticipant(userId: number) {
+  if (!selectedGroupId.value) return
+  actioningUserIds.value = new Set([...actioningUserIds.value, userId])
+  saving.value = true
+  try {
+    summary.value = await settlementPoolsAPI.removeCurrentParticipant(selectedGroupId.value, userId)
+    syncForm(summary.value)
+    appStore.showSuccess(t('settlementPools.saved'))
+  } catch (error: any) {
+    appStore.showError(error?.message || t('settlementPools.failedToSave'))
+  } finally {
+    const next = new Set(actioningUserIds.value)
+    next.delete(userId)
+    actioningUserIds.value = next
+    saving.value = false
+  }
 }
 
 function addTier() {

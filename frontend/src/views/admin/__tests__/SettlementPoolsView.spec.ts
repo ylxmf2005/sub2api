@@ -19,4 +19,13 @@ describe('Admin SettlementPoolsView history selection', () => {
     expect(viewSource).toContain('@click="selectCycle(row.cycle_id)"')
     expect(viewSource).toContain('function selectCycle(cycleId: number | null)')
   })
+
+  it('separates long-term candidates from current-cycle participants', () => {
+    expect(viewSource).toContain('settlementPools.candidates')
+    expect(viewSource).toContain('settlementPools.currentParticipants')
+    expect(viewSource).toContain('settlementPoolsAPI.syncCandidates')
+    expect(viewSource).toContain('settlementPoolsAPI.forceJoinCurrentCycle')
+    expect(viewSource).toContain('settlementPoolsAPI.removeCurrentParticipant')
+    expect(viewSource).not.toContain('syncParticipants')
+  })
 })

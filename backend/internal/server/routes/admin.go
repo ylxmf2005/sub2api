@@ -265,7 +265,9 @@ func registerSettlementPoolRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 	{
 		settlementPools.GET("/groups/:id", h.Admin.SettlementPool.GetSummary)
 		settlementPools.PUT("/groups/:id/config", h.Admin.SettlementPool.UpdateConfig)
-		settlementPools.PUT("/groups/:id/participants", h.Admin.SettlementPool.SyncParticipants)
+		settlementPools.PUT("/groups/:id/candidates", h.Admin.SettlementPool.SyncCandidates)
+		settlementPools.POST("/groups/:id/participants", h.Admin.SettlementPool.ForceJoinCurrentCycle)
+		settlementPools.DELETE("/groups/:id/participants/:user_id", h.Admin.SettlementPool.RemoveCurrentParticipant)
 		settlementPools.POST("/groups/:id/start-cycle", h.Admin.SettlementPool.StartNextCycle)
 	}
 }

@@ -26,9 +26,20 @@
                   <span :class="['badge', displayEstimate(summary)?.status === 'active' ? 'badge-success' : 'badge-secondary']">
                     {{ t(`settlementPools.status.${displayEstimate(summary)?.status === 'active' ? 'active' : 'history'}`) }}
                   </span>
+                  <span :class="['badge', summary.is_current_participant ? 'badge-success' : 'badge-secondary']">
+                    {{ summary.is_current_participant ? t('settlementPools.joinedCurrentCycle') : t('settlementPools.notJoinedCurrentCycle') }}
+                  </span>
                 </div>
                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ date(displayEstimate(summary)?.started_at) }}</p>
               </div>
+              <button
+                v-if="summary.can_join_active_cycle"
+                class="btn btn-primary"
+                :disabled="joiningGroupIds.has(summary.group.id)"
+                @click="joinCurrentCycle(summary)"
+              >
+                {{ joiningGroupIds.has(summary.group.id) ? t('settlementPools.joiningCurrentCycle') : t('settlementPools.joinCurrentCycle') }}
+              </button>
             </div>
           </div>
 
@@ -139,6 +150,7 @@ const authStore = useAuthStore()
 const loading = ref(false)
 const summaries = ref<SettlementPoolSummary[]>([])
 const selectedCycleIds = ref<Record<number, number | null>>({})
+const joiningGroupIds = ref<Set<number>>(new Set())
 const rightAlignedColumnClass = 'text-right [&>div]:justify-end'
 const participantColumns = computed<Column[]>(() => [
   { key: 'user', label: t('settlementPools.user'), class: 'min-w-[220px]' },
@@ -254,6 +266,23 @@ async function load() {
     appStore.showError(error?.message || t('settlementPools.failedToLoad'))
   } finally {
     loading.value = false
+  }
+}
+
+async function joinCurrentCycle(summary: SettlementPoolSummary) {
+  const groupId = summary.group.id
+  joiningGroupIds.value = new Set([...joiningGroupIds.value, groupId])
+  try {
+    const updated = await settlementPoolsAPI.joinCurrentCycle(groupId)
+    summaries.value = summaries.value.map(row => row.group.id === groupId ? updated : row)
+    selectedCycleIds.value[groupId] = null
+    appStore.showSuccess(t('settlementPools.joinedCurrentCycle'))
+  } catch (error: any) {
+    appStore.showError(error?.message || t('settlementPools.failedToJoin'))
+  } finally {
+    const next = new Set(joiningGroupIds.value)
+    next.delete(groupId)
+    joiningGroupIds.value = next
   }
 }
 

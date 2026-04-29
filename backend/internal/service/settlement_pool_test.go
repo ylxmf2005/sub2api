@@ -75,14 +75,23 @@ func TestWeightedSettlementUsage_AddsOpenEndedTier(t *testing.T) {
 	require.InDelta(t, 150, WeightedSettlementUsage(150, tiers), 1e-9)
 }
 
-func TestSettlementPoolUserSummary_HistoryOnlyOmitsActiveEstimate(t *testing.T) {
+func TestSettlementPoolUserSummary_CandidateOnlyIncludesActiveEstimate(t *testing.T) {
 	userID := int64(7)
 	groupID := int64(11)
 	lockedAt := time.Date(2026, 4, 20, 0, 0, 0, 0, time.UTC)
 	repo := &settlementPoolRepoStub{
-		groupIDs: []int64{groupID},
+		candidateGroupIDs: []int64{groupID},
+		candidates: map[int64]bool{
+			groupID: true,
+		},
 		currentParticipants: map[int64]bool{
 			groupID: false,
+		},
+		config: &SettlementPoolConfig{
+			GroupID:   groupID,
+			BaseRatio: 0.2,
+			MarketCap: 0.35,
+			Tiers:     DefaultSettlementPoolTiers(),
 		},
 		userCycles: []SettlementPoolCycle{
 			{
@@ -109,6 +118,9 @@ func TestSettlementPoolUserSummary_HistoryOnlyOmitsActiveEstimate(t *testing.T) 
 			MarketCap: 0.35,
 			Tiers:     DefaultSettlementPoolTiers(),
 		},
+		participants: []SettlementPoolParticipant{
+			{UserID: 8, Email: "other@example.com", Status: StatusActive},
+		},
 	}
 	svc := NewSettlementPoolService(repo, &settlementGroupRepoStub{
 		groups: map[int64]*Group{
@@ -119,11 +131,16 @@ func TestSettlementPoolUserSummary_HistoryOnlyOmitsActiveEstimate(t *testing.T) 
 	summaries, err := svc.GetUserSummaries(context.Background(), userID)
 	require.NoError(t, err)
 	require.Len(t, summaries, 1)
-	require.Nil(t, summaries[0].ActiveCycle)
-	require.Nil(t, summaries[0].Estimate)
+	require.True(t, summaries[0].IsCandidate)
+	require.False(t, summaries[0].IsCurrentParticipant)
+	require.True(t, summaries[0].CanJoinActiveCycle)
+	require.NotNil(t, summaries[0].ActiveCycle)
+	require.NotNil(t, summaries[0].Estimate)
+	require.Len(t, summaries[0].Estimate.Participants, 1)
+	require.Equal(t, int64(8), summaries[0].Estimate.Participants[0].UserID)
 	require.Len(t, summaries[0].Cycles, 1)
-	require.Zero(t, repo.listParticipantsCalls)
-	require.Zero(t, repo.sumUsageCalls)
+	require.Equal(t, 1, repo.listParticipantsCalls)
+	require.Equal(t, 1, repo.sumUsageCalls)
 }
 
 func TestSettlementPoolUserSummary_CurrentParticipantIncludesActiveEstimate(t *testing.T) {
@@ -131,7 +148,10 @@ func TestSettlementPoolUserSummary_CurrentParticipantIncludesActiveEstimate(t *t
 	groupID := int64(11)
 	startedAt := time.Date(2026, 4, 20, 0, 0, 0, 0, time.UTC)
 	repo := &settlementPoolRepoStub{
-		groupIDs: []int64{groupID},
+		candidateGroupIDs: []int64{groupID},
+		candidates: map[int64]bool{
+			groupID: true,
+		},
 		currentParticipants: map[int64]bool{
 			groupID: true,
 		},
@@ -168,6 +188,9 @@ func TestSettlementPoolUserSummary_CurrentParticipantIncludesActiveEstimate(t *t
 	require.NoError(t, err)
 	require.NotNil(t, summary.ActiveCycle)
 	require.NotNil(t, summary.Estimate)
+	require.True(t, summary.IsCandidate)
+	require.True(t, summary.IsCurrentParticipant)
+	require.False(t, summary.CanJoinActiveCycle)
 	require.Len(t, summary.Estimate.Participants, 1)
 	require.InDelta(t, 40, summary.Estimate.Participants[0].RawUsage, 1e-9)
 	require.Equal(t, 1, repo.listParticipantsCalls)
@@ -179,7 +202,10 @@ func TestSettlementPoolUserSummaries_CurrentParticipantReturnsEmptyCyclesArray(t
 	groupID := int64(11)
 	startedAt := time.Date(2026, 4, 20, 0, 0, 0, 0, time.UTC)
 	repo := &settlementPoolRepoStub{
-		groupIDs: []int64{groupID},
+		candidateGroupIDs: []int64{groupID},
+		candidates: map[int64]bool{
+			groupID: true,
+		},
 		currentParticipants: map[int64]bool{
 			groupID: true,
 		},
@@ -220,6 +246,9 @@ func TestSettlementPoolUserSummary_DeniesUserWithoutCurrentOrHistory(t *testing.
 	userID := int64(7)
 	groupID := int64(11)
 	repo := &settlementPoolRepoStub{
+		candidates: map[int64]bool{
+			groupID: false,
+		},
 		currentParticipants: map[int64]bool{
 			groupID: false,
 		},
@@ -231,7 +260,7 @@ func TestSettlementPoolUserSummary_DeniesUserWithoutCurrentOrHistory(t *testing.
 	}, nil)
 
 	_, err := svc.GetUserSummary(context.Background(), userID, groupID)
-	require.ErrorIs(t, err, ErrSettlementPoolParticipantMissing)
+	require.ErrorIs(t, err, ErrSettlementPoolCandidateMissing)
 }
 
 func TestSettlementPoolStartNextCycle_RotatesWithLockedSnapshot(t *testing.T) {
@@ -286,24 +315,124 @@ func TestSettlementPoolStartNextCycle_RotatesWithLockedSnapshot(t *testing.T) {
 	require.Zero(t, repo.rotatedNext.TotalCost)
 	require.NotNil(t, summary.ActiveCycle)
 	require.Equal(t, repo.rotatedNext.ID, summary.ActiveCycle.ID)
+	require.Empty(t, summary.Estimate.Participants)
+}
+
+func TestSettlementPoolJoinCurrentCycle_AddsCandidateToActiveCycle(t *testing.T) {
+	userID := int64(7)
+	groupID := int64(11)
+	startedAt := time.Date(2026, 4, 20, 0, 0, 0, 0, time.UTC)
+	repo := &settlementPoolRepoStub{
+		candidates: map[int64]bool{
+			groupID: true,
+		},
+		currentParticipants: map[int64]bool{
+			groupID: false,
+		},
+		config: &SettlementPoolConfig{
+			GroupID:   groupID,
+			BaseRatio: 0.2,
+			MarketCap: 0.35,
+			Tiers:     DefaultSettlementPoolTiers(),
+		},
+		active: &SettlementPoolCycle{
+			ID:        2,
+			GroupID:   groupID,
+			Status:    SettlementPoolCycleStatusActive,
+			StartedAt: startedAt,
+			TotalCost: 100,
+			BaseRatio: 0.2,
+			MarketCap: 0.35,
+			Tiers:     DefaultSettlementPoolTiers(),
+		},
+	}
+	cache := &settlementPoolAuthCacheStub{}
+	svc := NewSettlementPoolService(repo, &settlementGroupRepoStub{
+		groups: map[int64]*Group{
+			groupID: {ID: groupID, Name: "pool", Status: StatusActive, SubscriptionType: SubscriptionTypeSettlementPool},
+		},
+	}, cache)
+
+	summary, err := svc.JoinCurrentCycle(context.Background(), userID, groupID)
+	require.NoError(t, err)
+	require.Equal(t, 1, repo.joinCurrentCalls)
+	require.Equal(t, groupID, repo.joinedGroupID)
+	require.Equal(t, userID, repo.joinedUserID)
+	require.True(t, summary.IsCurrentParticipant)
+	require.False(t, summary.CanJoinActiveCycle)
+	require.Equal(t, []int64{groupID}, cache.invalidatedGroupIDs)
+}
+
+func TestSettlementPoolRemoveCurrentParticipant_DoesNotCheckUsage(t *testing.T) {
+	userID := int64(7)
+	groupID := int64(11)
+	repo := &settlementPoolRepoStub{
+		config: &SettlementPoolConfig{
+			GroupID:   groupID,
+			BaseRatio: 0.2,
+			MarketCap: 0.35,
+			Tiers:     DefaultSettlementPoolTiers(),
+		},
+		active: &SettlementPoolCycle{
+			ID:        2,
+			GroupID:   groupID,
+			Status:    SettlementPoolCycleStatusActive,
+			StartedAt: time.Date(2026, 4, 20, 0, 0, 0, 0, time.UTC),
+			TotalCost: 100,
+			BaseRatio: 0.2,
+			MarketCap: 0.35,
+			Tiers:     DefaultSettlementPoolTiers(),
+		},
+		currentParticipants: map[int64]bool{
+			groupID: true,
+		},
+		participants: []SettlementPoolParticipant{
+			{UserID: userID, Email: "user@example.com", Status: StatusActive},
+		},
+		rawUsage: map[int64]float64{userID: 40},
+	}
+	cache := &settlementPoolAuthCacheStub{}
+	svc := NewSettlementPoolService(repo, &settlementGroupRepoStub{
+		groups: map[int64]*Group{
+			groupID: {ID: groupID, Name: "pool", Status: StatusActive, SubscriptionType: SubscriptionTypeSettlementPool},
+		},
+	}, cache)
+
+	summary, err := svc.RemoveCurrentParticipant(context.Background(), groupID, userID)
+	require.NoError(t, err)
+	require.Equal(t, 1, repo.removeCurrentCalls)
+	require.Equal(t, groupID, repo.removedGroupID)
+	require.Equal(t, userID, repo.removedUserID)
+	require.Empty(t, summary.Estimate.Participants)
+	require.Equal(t, []int64{groupID}, cache.invalidatedGroupIDs)
 }
 
 type settlementPoolRepoStub struct {
 	config                *SettlementPoolConfig
 	active                *SettlementPoolCycle
-	groupIDs              []int64
+	candidateGroupIDs     []int64
+	currentGroupIDs       []int64
+	candidates            map[int64]bool
 	currentParticipants   map[int64]bool
 	cycles                []SettlementPoolCycle
 	userCycles            []SettlementPoolCycle
 	participants          []SettlementPoolParticipant
+	candidateRows         []SettlementPoolParticipant
 	rawUsage              map[int64]float64
 	sumUsageEndedAt       *time.Time
 	listParticipantsCalls int
 	sumUsageCalls         int
 	rotateCalls           int
+	joinCurrentCalls      int
+	removeCurrentCalls    int
+	forceJoinCalls        int
 	rotatedActiveID       int64
 	rotatedSnapshot       *SettlementPoolEstimate
 	rotatedNext           *SettlementPoolCycle
+	joinedGroupID         int64
+	joinedUserID          int64
+	removedGroupID        int64
+	removedUserID         int64
 }
 
 func (s *settlementPoolRepoStub) GetConfig(context.Context, int64) (*SettlementPoolConfig, error) {
@@ -369,6 +498,7 @@ func (s *settlementPoolRepoStub) RotateCycle(_ context.Context, groupID, activeC
 	s.rotatedNext = next
 	s.active = next
 	s.cycles = []SettlementPoolCycle{*next}
+	s.participants = nil
 	return nil
 }
 
@@ -380,21 +510,75 @@ func (s *settlementPoolRepoStub) ListCyclesForUser(context.Context, int64, int) 
 	return s.userCycles, nil
 }
 
-func (s *settlementPoolRepoStub) ListParticipants(context.Context, int64) ([]SettlementPoolParticipant, error) {
+func (s *settlementPoolRepoStub) ListCandidates(context.Context, int64) ([]SettlementPoolParticipant, error) {
+	return s.candidateRows, nil
+}
+
+func (s *settlementPoolRepoStub) SyncCandidates(context.Context, int64, []int64) error {
+	panic("unexpected SyncCandidates call")
+}
+
+func (s *settlementPoolRepoStub) IsCandidate(_ context.Context, _ int64, groupID int64) (bool, error) {
+	if s.candidates != nil {
+		return s.candidates[groupID], nil
+	}
+	for _, candidateGroupID := range s.candidateGroupIDs {
+		if candidateGroupID == groupID {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (s *settlementPoolRepoStub) ListCandidateGroupIDs(context.Context, int64) ([]int64, error) {
+	return s.candidateGroupIDs, nil
+}
+
+func (s *settlementPoolRepoStub) ListCycleParticipants(context.Context, int64) ([]SettlementPoolParticipant, error) {
 	s.listParticipantsCalls++
 	return s.participants, nil
 }
 
-func (s *settlementPoolRepoStub) SyncParticipants(context.Context, int64, []int64) error {
-	panic("unexpected SyncParticipants call")
+func (s *settlementPoolRepoStub) JoinCurrentCycle(_ context.Context, groupID, userID int64) error {
+	s.joinCurrentCalls++
+	s.joinedGroupID = groupID
+	s.joinedUserID = userID
+	if s.currentParticipants == nil {
+		s.currentParticipants = make(map[int64]bool)
+	}
+	s.currentParticipants[groupID] = true
+	s.participants = append(s.participants, SettlementPoolParticipant{UserID: userID, Email: "user@example.com", Status: StatusActive})
+	return nil
 }
 
-func (s *settlementPoolRepoStub) IsParticipant(_ context.Context, _ int64, groupID int64) (bool, error) {
+func (s *settlementPoolRepoStub) ForceJoinCurrentCycle(context.Context, int64, []int64) error {
+	s.forceJoinCalls++
+	return nil
+}
+
+func (s *settlementPoolRepoStub) RemoveCurrentParticipant(_ context.Context, groupID, userID int64) error {
+	s.removeCurrentCalls++
+	s.removedGroupID = groupID
+	s.removedUserID = userID
+	if s.currentParticipants != nil {
+		s.currentParticipants[groupID] = false
+	}
+	filtered := s.participants[:0]
+	for _, participant := range s.participants {
+		if participant.UserID != userID {
+			filtered = append(filtered, participant)
+		}
+	}
+	s.participants = filtered
+	return nil
+}
+
+func (s *settlementPoolRepoStub) IsCurrentParticipant(_ context.Context, _ int64, groupID int64) (bool, error) {
 	return s.currentParticipants[groupID], nil
 }
 
-func (s *settlementPoolRepoStub) ListUserPoolGroupIDs(context.Context, int64) ([]int64, error) {
-	return s.groupIDs, nil
+func (s *settlementPoolRepoStub) ListCurrentParticipantGroupIDs(context.Context, int64) ([]int64, error) {
+	return s.currentGroupIDs, nil
 }
 
 func (s *settlementPoolRepoStub) SumUsageByUsers(_ context.Context, _ int64, _ []int64, _ time.Time, endedAt *time.Time) (map[int64]float64, error) {
@@ -404,6 +588,18 @@ func (s *settlementPoolRepoStub) SumUsageByUsers(_ context.Context, _ int64, _ [
 		s.sumUsageEndedAt = &capturedEndedAt
 	}
 	return s.rawUsage, nil
+}
+
+type settlementPoolAuthCacheStub struct {
+	invalidatedGroupIDs []int64
+}
+
+func (s *settlementPoolAuthCacheStub) InvalidateAuthCacheByKey(context.Context, string) {}
+
+func (s *settlementPoolAuthCacheStub) InvalidateAuthCacheByUserID(context.Context, int64) {}
+
+func (s *settlementPoolAuthCacheStub) InvalidateAuthCacheByGroupID(_ context.Context, groupID int64) {
+	s.invalidatedGroupIDs = append(s.invalidatedGroupIDs, groupID)
 }
 
 type settlementGroupRepoStub struct {

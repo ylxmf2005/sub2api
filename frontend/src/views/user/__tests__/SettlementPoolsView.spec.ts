@@ -13,4 +13,11 @@ describe('User SettlementPoolsView history selection', () => {
     expect(viewSource).toContain('function displayEstimate(summary: SettlementPoolSummary): SettlementPoolEstimate | null')
     expect(viewSource).toContain('return summaryCycles(summary).find(cycle => cycle.id === cycleId)?.snapshot ?? null')
   })
+
+  it('exposes joining the current cycle instead of exiting it', () => {
+    expect(viewSource).toContain('@click="joinCurrentCycle(summary)"')
+    expect(viewSource).toContain('settlementPoolsAPI.joinCurrentCycle(groupId)')
+    expect(viewSource).toContain('summary.can_join_active_cycle')
+    expect(viewSource).not.toContain('can_exit_active_cycle')
+  })
 })

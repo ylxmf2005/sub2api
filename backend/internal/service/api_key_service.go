@@ -210,8 +210,8 @@ type APIKeyService struct {
 }
 
 type SettlementPoolAccessReader interface {
-	IsParticipant(ctx context.Context, userID, groupID int64) (bool, error)
-	ListUserPoolGroupIDs(ctx context.Context, userID int64) ([]int64, error)
+	IsCurrentParticipant(ctx context.Context, userID, groupID int64) (bool, error)
+	ListCurrentParticipantGroupIDs(ctx context.Context, userID int64) ([]int64, error)
 }
 
 // NewAPIKeyService 创建API Key服务实例
@@ -795,7 +795,7 @@ func (s *APIKeyService) GetAvailableGroups(ctx context.Context, userID int64) ([
 		if s.settlementPoolReader == nil {
 			return nil, fmt.Errorf("settlement pool repository not configured")
 		}
-		groupIDs, err := s.settlementPoolReader.ListUserPoolGroupIDs(ctx, userID)
+		groupIDs, err := s.settlementPoolReader.ListCurrentParticipantGroupIDs(ctx, userID)
 		if err != nil {
 			return nil, fmt.Errorf("list user settlement pools: %w", err)
 		}
@@ -832,7 +832,7 @@ func (s *APIKeyService) IsSettlementPoolParticipant(ctx context.Context, userID,
 	if s == nil || s.settlementPoolReader == nil {
 		return false, ErrSettlementPoolNotFound
 	}
-	return s.settlementPoolReader.IsParticipant(ctx, userID, groupID)
+	return s.settlementPoolReader.IsCurrentParticipant(ctx, userID, groupID)
 }
 
 func (s *APIKeyService) SearchAPIKeys(ctx context.Context, userID int64, keyword string, limit int) ([]APIKey, error) {

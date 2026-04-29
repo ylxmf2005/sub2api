@@ -49,3 +49,22 @@ func (h *SettlementPoolHandler) GetByGroup(c *gin.Context) {
 	}
 	response.Success(c, summary)
 }
+
+func (h *SettlementPoolHandler) JoinCurrentCycle(c *gin.Context) {
+	subject, ok := middleware2.GetAuthSubjectFromContext(c)
+	if !ok {
+		response.Unauthorized(c, "User not authenticated")
+		return
+	}
+	groupID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "Invalid group ID")
+		return
+	}
+	summary, err := h.settlementService.JoinCurrentCycle(c.Request.Context(), subject.UserID, groupID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, summary)
+}

@@ -695,6 +695,14 @@ export interface SettlementPoolParticipantEstimate {
   total_due: number
 }
 
+export interface SettlementPoolParticipant {
+  user_id: number
+  email: string
+  username: string
+  status: string
+  created_at: string
+}
+
 export interface SettlementPoolEstimate {
   group_id: number
   cycle_id: number
@@ -723,6 +731,10 @@ export interface SettlementPoolSummary {
   active_cycle?: SettlementPoolCycle
   estimate?: SettlementPoolEstimate
   cycles: SettlementPoolCycle[]
+  candidates?: SettlementPoolParticipant[]
+  is_candidate?: boolean
+  is_current_participant?: boolean
+  can_join_active_cycle?: boolean
 }
 
 // ==================== Account & Proxy Types ====================

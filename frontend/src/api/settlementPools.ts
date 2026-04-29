@@ -11,7 +11,13 @@ export async function getByGroup(groupId: number): Promise<SettlementPoolSummary
   return data
 }
 
+export async function joinCurrentCycle(groupId: number): Promise<SettlementPoolSummary> {
+  const { data } = await apiClient.post<SettlementPoolSummary>(`/settlement-pools/${groupId}/participation`)
+  return data
+}
+
 export default {
   list,
-  getByGroup
+  getByGroup,
+  joinCurrentCycle
 }
