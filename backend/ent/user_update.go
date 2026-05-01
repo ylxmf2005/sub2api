@@ -20,6 +20,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
+	"github.com/Wei-Shaw/sub2api/ent/resourcesupplybalance"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/userattributevalue"
@@ -590,6 +591,21 @@ func (_u *UserUpdate) AddPendingAuthSessions(v ...*PendingAuthSession) *UserUpda
 	return _u.AddPendingAuthSessionIDs(ids...)
 }
 
+// AddResourceSupplyBalanceIDs adds the "resource_supply_balance" edge to the ResourceSupplyBalance entity by IDs.
+func (_u *UserUpdate) AddResourceSupplyBalanceIDs(ids ...int64) *UserUpdate {
+	_u.mutation.AddResourceSupplyBalanceIDs(ids...)
+	return _u
+}
+
+// AddResourceSupplyBalance adds the "resource_supply_balance" edges to the ResourceSupplyBalance entity.
+func (_u *UserUpdate) AddResourceSupplyBalance(v ...*ResourceSupplyBalance) *UserUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddResourceSupplyBalanceIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (_u *UserUpdate) Mutation() *UserMutation {
 	return _u.mutation
@@ -845,6 +861,27 @@ func (_u *UserUpdate) RemovePendingAuthSessions(v ...*PendingAuthSession) *UserU
 		ids[i] = v[i].ID
 	}
 	return _u.RemovePendingAuthSessionIDs(ids...)
+}
+
+// ClearResourceSupplyBalance clears all "resource_supply_balance" edges to the ResourceSupplyBalance entity.
+func (_u *UserUpdate) ClearResourceSupplyBalance() *UserUpdate {
+	_u.mutation.ClearResourceSupplyBalance()
+	return _u
+}
+
+// RemoveResourceSupplyBalanceIDs removes the "resource_supply_balance" edge to ResourceSupplyBalance entities by IDs.
+func (_u *UserUpdate) RemoveResourceSupplyBalanceIDs(ids ...int64) *UserUpdate {
+	_u.mutation.RemoveResourceSupplyBalanceIDs(ids...)
+	return _u
+}
+
+// RemoveResourceSupplyBalance removes "resource_supply_balance" edges to ResourceSupplyBalance entities.
+func (_u *UserUpdate) RemoveResourceSupplyBalance(v ...*ResourceSupplyBalance) *UserUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveResourceSupplyBalanceIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -1587,6 +1624,51 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.ResourceSupplyBalanceCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ResourceSupplyBalanceTable,
+			Columns: []string{user.ResourceSupplyBalanceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(resourcesupplybalance.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedResourceSupplyBalanceIDs(); len(nodes) > 0 && !_u.mutation.ResourceSupplyBalanceCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ResourceSupplyBalanceTable,
+			Columns: []string{user.ResourceSupplyBalanceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(resourcesupplybalance.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ResourceSupplyBalanceIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ResourceSupplyBalanceTable,
+			Columns: []string{user.ResourceSupplyBalanceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(resourcesupplybalance.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{user.Label}
@@ -2158,6 +2240,21 @@ func (_u *UserUpdateOne) AddPendingAuthSessions(v ...*PendingAuthSession) *UserU
 	return _u.AddPendingAuthSessionIDs(ids...)
 }
 
+// AddResourceSupplyBalanceIDs adds the "resource_supply_balance" edge to the ResourceSupplyBalance entity by IDs.
+func (_u *UserUpdateOne) AddResourceSupplyBalanceIDs(ids ...int64) *UserUpdateOne {
+	_u.mutation.AddResourceSupplyBalanceIDs(ids...)
+	return _u
+}
+
+// AddResourceSupplyBalance adds the "resource_supply_balance" edges to the ResourceSupplyBalance entity.
+func (_u *UserUpdateOne) AddResourceSupplyBalance(v ...*ResourceSupplyBalance) *UserUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddResourceSupplyBalanceIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (_u *UserUpdateOne) Mutation() *UserMutation {
 	return _u.mutation
@@ -2413,6 +2510,27 @@ func (_u *UserUpdateOne) RemovePendingAuthSessions(v ...*PendingAuthSession) *Us
 		ids[i] = v[i].ID
 	}
 	return _u.RemovePendingAuthSessionIDs(ids...)
+}
+
+// ClearResourceSupplyBalance clears all "resource_supply_balance" edges to the ResourceSupplyBalance entity.
+func (_u *UserUpdateOne) ClearResourceSupplyBalance() *UserUpdateOne {
+	_u.mutation.ClearResourceSupplyBalance()
+	return _u
+}
+
+// RemoveResourceSupplyBalanceIDs removes the "resource_supply_balance" edge to ResourceSupplyBalance entities by IDs.
+func (_u *UserUpdateOne) RemoveResourceSupplyBalanceIDs(ids ...int64) *UserUpdateOne {
+	_u.mutation.RemoveResourceSupplyBalanceIDs(ids...)
+	return _u
+}
+
+// RemoveResourceSupplyBalance removes "resource_supply_balance" edges to ResourceSupplyBalance entities.
+func (_u *UserUpdateOne) RemoveResourceSupplyBalance(v ...*ResourceSupplyBalance) *UserUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveResourceSupplyBalanceIDs(ids...)
 }
 
 // Where appends a list predicates to the UserUpdate builder.
@@ -3178,6 +3296,51 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(pendingauthsession.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ResourceSupplyBalanceCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ResourceSupplyBalanceTable,
+			Columns: []string{user.ResourceSupplyBalanceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(resourcesupplybalance.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedResourceSupplyBalanceIDs(); len(nodes) > 0 && !_u.mutation.ResourceSupplyBalanceCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ResourceSupplyBalanceTable,
+			Columns: []string{user.ResourceSupplyBalanceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(resourcesupplybalance.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ResourceSupplyBalanceIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ResourceSupplyBalanceTable,
+			Columns: []string{user.ResourceSupplyBalanceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(resourcesupplybalance.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

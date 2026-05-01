@@ -1,6 +1,9 @@
 package schema
 
 import (
+	"fmt"
+	"math"
+
 	"github.com/Wei-Shaw/sub2api/ent/schema/mixins"
 	"github.com/Wei-Shaw/sub2api/internal/domain"
 
@@ -150,6 +153,33 @@ func (Group) Fields() []ent.Field {
 		field.Int("rpm_limit").
 			Default(0).
 			Comment("分组 RPM 上限，0 表示不限制；设置后接管该分组用户的限流"),
+
+		// Resource supply reward configuration.
+		field.Bool("supply_rewards_enabled").
+			Default(false).
+			Comment("是否允许该分组的被供应账号产生奖励"),
+		field.Float("supply_reward_multiplier").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
+			Default(1.0).
+			Validate(func(value float64) error {
+				if math.IsNaN(value) || math.IsInf(value, 0) || value < 0 {
+					return fmt.Errorf("supply reward multiplier must be non-negative")
+				}
+				return nil
+			}).
+			Comment("资源供应奖励倍率 k，奖励 = actual_cost * k"),
+		field.String("supply_self_service_review_policy").
+			MaxLen(32).
+			Default("manual_review").
+			Validate(func(value string) error {
+				switch value {
+				case "manual_review", "auto_online":
+					return nil
+				default:
+					return fmt.Errorf("invalid resource supply review policy")
+				}
+			}).
+			Comment("用户自助接入后的审核策略"),
 	}
 }
 
@@ -179,5 +209,6 @@ func (Group) Indexes() []ent.Index {
 		index.Fields("is_exclusive"),
 		index.Fields("deleted_at"),
 		index.Fields("sort_order"),
+		index.Fields("supply_rewards_enabled"),
 	}
 }

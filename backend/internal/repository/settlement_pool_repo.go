@@ -609,13 +609,34 @@ func (r *settlementPoolRepository) SumUsageByUsers(ctx context.Context, groupID 
 		return out, nil
 	}
 	rows, err := r.db.QueryContext(ctx, `
+		WITH durable_usage AS (
+			SELECT user_id, total_cost
+			FROM usage_billing_events
+			WHERE group_id = $1
+				AND user_id = ANY($2)
+				AND created_at >= $3
+				AND ($4::timestamptz IS NULL OR created_at < $4)
+				AND billing_type = $5
+		),
+		legacy_usage AS (
+			SELECT ul.user_id, ul.total_cost
+			FROM usage_logs ul
+			LEFT JOIN usage_billing_events e
+				ON e.request_id = ul.request_id
+				AND e.api_key_id = ul.api_key_id
+			WHERE ul.group_id = $1
+				AND ul.user_id = ANY($2)
+				AND ul.created_at >= $3
+				AND ($4::timestamptz IS NULL OR ul.created_at < $4)
+				AND ul.billing_type = $5
+				AND e.id IS NULL
+		)
 		SELECT user_id, COALESCE(SUM(total_cost), 0)
-		FROM usage_logs
-		WHERE group_id = $1
-			AND user_id = ANY($2)
-			AND created_at >= $3
-			AND ($4::timestamptz IS NULL OR created_at < $4)
-			AND billing_type = $5
+		FROM (
+			SELECT * FROM durable_usage
+			UNION ALL
+			SELECT * FROM legacy_usage
+		) usage_source
 		GROUP BY user_id
 	`, groupID, pq.Array(userIDs), startedAt, endedAt, service.BillingTypeSettlementPool)
 	if err != nil {

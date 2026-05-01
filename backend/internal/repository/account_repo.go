@@ -93,6 +93,7 @@ func (r *accountRepository) Create(ctx context.Context, account *service.Account
 		SetStatus(account.Status).
 		SetErrorMessage(account.ErrorMessage).
 		SetSchedulable(account.Schedulable).
+		SetSupplyStatus(normalizeResourceSupplyStatus(account.SupplyStatus)).
 		SetAutoPauseOnExpired(account.AutoPauseOnExpired)
 
 	if account.RateMultiplier != nil {
@@ -119,6 +120,24 @@ func (r *accountRepository) Create(ctx context.Context, account *service.Account
 	}
 	if account.OverloadUntil != nil {
 		builder.SetOverloadUntil(*account.OverloadUntil)
+	}
+	if account.SupplyOwnerUserID != nil {
+		builder.SetSupplyOwnerUserID(*account.SupplyOwnerUserID)
+	}
+	if account.SupplySource != nil {
+		builder.SetSupplySource(*account.SupplySource)
+	}
+	if account.SupplyStatusReason != nil {
+		builder.SetSupplyStatusReason(*account.SupplyStatusReason)
+	}
+	if account.SupplySubmittedBy != nil {
+		builder.SetSupplySubmittedBy(*account.SupplySubmittedBy)
+	}
+	if account.SupplyReviewedBy != nil {
+		builder.SetSupplyReviewedBy(*account.SupplyReviewedBy)
+	}
+	if account.SupplyReviewedAt != nil {
+		builder.SetSupplyReviewedAt(*account.SupplyReviewedAt)
 	}
 	if account.SessionWindowStart != nil {
 		builder.SetSessionWindowStart(*account.SessionWindowStart)
@@ -330,6 +349,7 @@ func (r *accountRepository) Update(ctx context.Context, account *service.Account
 		SetStatus(account.Status).
 		SetErrorMessage(account.ErrorMessage).
 		SetSchedulable(account.Schedulable).
+		SetSupplyStatus(normalizeResourceSupplyStatus(account.SupplyStatus)).
 		SetAutoPauseOnExpired(account.AutoPauseOnExpired)
 
 	if account.RateMultiplier != nil {
@@ -370,6 +390,36 @@ func (r *accountRepository) Update(ctx context.Context, account *service.Account
 		builder.SetOverloadUntil(*account.OverloadUntil)
 	} else {
 		builder.ClearOverloadUntil()
+	}
+	if account.SupplyOwnerUserID != nil {
+		builder.SetSupplyOwnerUserID(*account.SupplyOwnerUserID)
+	} else {
+		builder.ClearSupplyOwnerUserID()
+	}
+	if account.SupplySource != nil {
+		builder.SetSupplySource(*account.SupplySource)
+	} else {
+		builder.ClearSupplySource()
+	}
+	if account.SupplyStatusReason != nil {
+		builder.SetSupplyStatusReason(*account.SupplyStatusReason)
+	} else {
+		builder.ClearSupplyStatusReason()
+	}
+	if account.SupplySubmittedBy != nil {
+		builder.SetSupplySubmittedBy(*account.SupplySubmittedBy)
+	} else {
+		builder.ClearSupplySubmittedBy()
+	}
+	if account.SupplyReviewedBy != nil {
+		builder.SetSupplyReviewedBy(*account.SupplyReviewedBy)
+	} else {
+		builder.ClearSupplyReviewedBy()
+	}
+	if account.SupplyReviewedAt != nil {
+		builder.SetSupplyReviewedAt(*account.SupplyReviewedAt)
+	} else {
+		builder.ClearSupplyReviewedAt()
 	}
 	if account.SessionWindowStart != nil {
 		builder.SetSessionWindowStart(*account.SessionWindowStart)
@@ -914,6 +964,7 @@ func (r *accountRepository) ListSchedulable(ctx context.Context) ([]service.Acco
 		Where(
 			dbaccount.StatusEQ(service.StatusActive),
 			dbaccount.SchedulableEQ(true),
+			supplySchedulablePredicate(),
 			tempUnschedulablePredicate(),
 			notExpiredPredicate(now),
 			dbaccount.Or(dbaccount.OverloadUntilIsNil(), dbaccount.OverloadUntilLTE(now)),
@@ -941,6 +992,7 @@ func (r *accountRepository) ListSchedulableByPlatform(ctx context.Context, platf
 			dbaccount.PlatformEQ(platform),
 			dbaccount.StatusEQ(service.StatusActive),
 			dbaccount.SchedulableEQ(true),
+			supplySchedulablePredicate(),
 			tempUnschedulablePredicate(),
 			notExpiredPredicate(now),
 			dbaccount.Or(dbaccount.OverloadUntilIsNil(), dbaccount.OverloadUntilLTE(now)),
@@ -975,6 +1027,7 @@ func (r *accountRepository) ListSchedulableByPlatforms(ctx context.Context, plat
 			dbaccount.PlatformIn(platforms...),
 			dbaccount.StatusEQ(service.StatusActive),
 			dbaccount.SchedulableEQ(true),
+			supplySchedulablePredicate(),
 			tempUnschedulablePredicate(),
 			notExpiredPredicate(now),
 			dbaccount.Or(dbaccount.OverloadUntilIsNil(), dbaccount.OverloadUntilLTE(now)),
@@ -995,6 +1048,7 @@ func (r *accountRepository) ListSchedulableUngroupedByPlatform(ctx context.Conte
 			dbaccount.PlatformEQ(platform),
 			dbaccount.StatusEQ(service.StatusActive),
 			dbaccount.SchedulableEQ(true),
+			supplySchedulablePredicate(),
 			dbaccount.Not(dbaccount.HasAccountGroups()),
 			tempUnschedulablePredicate(),
 			notExpiredPredicate(now),
@@ -1019,6 +1073,7 @@ func (r *accountRepository) ListSchedulableUngroupedByPlatforms(ctx context.Cont
 			dbaccount.PlatformIn(platforms...),
 			dbaccount.StatusEQ(service.StatusActive),
 			dbaccount.SchedulableEQ(true),
+			supplySchedulablePredicate(),
 			dbaccount.Not(dbaccount.HasAccountGroups()),
 			tempUnschedulablePredicate(),
 			notExpiredPredicate(now),
@@ -1500,6 +1555,7 @@ func (r *accountRepository) queryAccountsByGroup(ctx context.Context, groupID in
 		now := time.Now()
 		preds = append(preds,
 			dbaccount.SchedulableEQ(true),
+			supplySchedulablePredicate(),
 			tempUnschedulablePredicate(),
 			notExpiredPredicate(now),
 			dbaccount.Or(dbaccount.OverloadUntilIsNil(), dbaccount.OverloadUntilLTE(now)),
@@ -1609,6 +1665,13 @@ func notExpiredPredicate(now time.Time) dbpredicate.Account {
 		dbaccount.ExpiresAtIsNil(),
 		dbaccount.ExpiresAtGT(now),
 		dbaccount.AutoPauseOnExpiredEQ(false),
+	)
+}
+
+func supplySchedulablePredicate() dbpredicate.Account {
+	return dbaccount.Or(
+		dbaccount.SupplyStatusEQ(service.ResourceSupplyStatusNone),
+		dbaccount.SupplyStatusEQ(service.ResourceSupplyStatusSchedulable),
 	)
 }
 
@@ -1741,6 +1804,13 @@ func accountEntityToService(m *dbent.Account) *service.Account {
 		AutoPauseOnExpired:      m.AutoPauseOnExpired,
 		CreatedAt:               m.CreatedAt,
 		UpdatedAt:               m.UpdatedAt,
+		SupplyOwnerUserID:       m.SupplyOwnerUserID,
+		SupplySource:            m.SupplySource,
+		SupplyStatus:            normalizeResourceSupplyStatus(m.SupplyStatus),
+		SupplyStatusReason:      m.SupplyStatusReason,
+		SupplySubmittedBy:       m.SupplySubmittedBy,
+		SupplyReviewedBy:        m.SupplyReviewedBy,
+		SupplyReviewedAt:        m.SupplyReviewedAt,
 		Schedulable:             m.Schedulable,
 		RateLimitedAt:           m.RateLimitedAt,
 		RateLimitResetAt:        m.RateLimitResetAt,
@@ -1751,6 +1821,14 @@ func accountEntityToService(m *dbent.Account) *service.Account {
 		SessionWindowEnd:        m.SessionWindowEnd,
 		SessionWindowStatus:     derefString(m.SessionWindowStatus),
 	}
+}
+
+func normalizeResourceSupplyStatus(status string) string {
+	status = strings.TrimSpace(status)
+	if status == "" {
+		return service.ResourceSupplyStatusNone
+	}
+	return status
 }
 
 func normalizeJSONMap(in map[string]any) map[string]any {

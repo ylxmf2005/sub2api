@@ -86,6 +86,13 @@ type APIKeyAuthGroupSnapshot struct {
 
 	// RPMLimit 分组级每分钟请求数上限（0 = 不限制）；用于 billing_cache_service.checkRPM 级联判断。
 	RPMLimit int `json:"rpm_limit"`
+
+	// Resource supply reward configuration is needed by usage billing on the
+	// API-key auth hot path. Omitting it from the snapshot disables rewards
+	// for cached API keys.
+	SupplyRewardsEnabled          bool    `json:"supply_rewards_enabled"`
+	SupplyRewardMultiplier        float64 `json:"supply_reward_multiplier"`
+	SupplySelfServiceReviewPolicy string  `json:"supply_self_service_review_policy"`
 }
 
 // APIKeyAuthCacheEntry 缓存条目，支持负缓存

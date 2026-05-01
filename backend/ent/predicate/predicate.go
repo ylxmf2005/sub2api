@@ -75,6 +75,12 @@ type Proxy func(*sql.Selector)
 // RedeemCode is the predicate function for redeemcode builders.
 type RedeemCode func(*sql.Selector)
 
+// ResourceSupplyBalance is the predicate function for resourcesupplybalance builders.
+type ResourceSupplyBalance func(*sql.Selector)
+
+// ResourceSupplyLedger is the predicate function for resourcesupplyledger builders.
+type ResourceSupplyLedger func(*sql.Selector)
+
 // SecuritySecret is the predicate function for securitysecret builders.
 type SecuritySecret func(*sql.Selector)
 
@@ -86,6 +92,9 @@ type SubscriptionPlan func(*sql.Selector)
 
 // TLSFingerprintProfile is the predicate function for tlsfingerprintprofile builders.
 type TLSFingerprintProfile func(*sql.Selector)
+
+// UsageBillingEvent is the predicate function for usagebillingevent builders.
+type UsageBillingEvent func(*sql.Selector)
 
 // UsageCleanupTask is the predicate function for usagecleanuptask builders.
 type UsageCleanupTask func(*sql.Selector)

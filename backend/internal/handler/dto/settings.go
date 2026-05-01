@@ -199,6 +199,9 @@ type SystemSettings struct {
 	// Affiliate (邀请返利) feature switch
 	AffiliateEnabled bool `json:"affiliate_enabled"`
 
+	// Resource supply user self-service intake switch
+	ResourceSupplySelfServiceEnabled bool `json:"resource_supply_self_service_enabled"`
+
 	// OpenAI fast/flex policy
 	OpenAIFastPolicySettings *OpenAIFastPolicySettings `json:"openai_fast_policy_settings,omitempty"`
 }
@@ -255,6 +258,8 @@ type PublicSettings struct {
 	AvailableChannelsEnabled bool `json:"available_channels_enabled"`
 
 	AffiliateEnabled bool `json:"affiliate_enabled"`
+
+	ResourceSupplySelfServiceEnabled bool `json:"resource_supply_self_service_enabled"`
 }
 
 // OverloadCooldownSettings 529过载冷却配置 DTO

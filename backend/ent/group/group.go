@@ -78,6 +78,12 @@ const (
 	FieldMessagesDispatchModelConfig = "messages_dispatch_model_config"
 	// FieldRpmLimit holds the string denoting the rpm_limit field in the database.
 	FieldRpmLimit = "rpm_limit"
+	// FieldSupplyRewardsEnabled holds the string denoting the supply_rewards_enabled field in the database.
+	FieldSupplyRewardsEnabled = "supply_rewards_enabled"
+	// FieldSupplyRewardMultiplier holds the string denoting the supply_reward_multiplier field in the database.
+	FieldSupplyRewardMultiplier = "supply_reward_multiplier"
+	// FieldSupplySelfServiceReviewPolicy holds the string denoting the supply_self_service_review_policy field in the database.
+	FieldSupplySelfServiceReviewPolicy = "supply_self_service_review_policy"
 	// EdgeAPIKeys holds the string denoting the api_keys edge name in mutations.
 	EdgeAPIKeys = "api_keys"
 	// EdgeRedeemCodes holds the string denoting the redeem_codes edge name in mutations.
@@ -184,6 +190,9 @@ var Columns = []string{
 	FieldDefaultMappedModel,
 	FieldMessagesDispatchModelConfig,
 	FieldRpmLimit,
+	FieldSupplyRewardsEnabled,
+	FieldSupplyRewardMultiplier,
+	FieldSupplySelfServiceReviewPolicy,
 }
 
 var (
@@ -263,6 +272,16 @@ var (
 	DefaultMessagesDispatchModelConfig domain.OpenAIMessagesDispatchModelConfig
 	// DefaultRpmLimit holds the default value on creation for the "rpm_limit" field.
 	DefaultRpmLimit int
+	// DefaultSupplyRewardsEnabled holds the default value on creation for the "supply_rewards_enabled" field.
+	DefaultSupplyRewardsEnabled bool
+	// DefaultSupplyRewardMultiplier holds the default value on creation for the "supply_reward_multiplier" field.
+	DefaultSupplyRewardMultiplier float64
+	// SupplyRewardMultiplierValidator is a validator for the "supply_reward_multiplier" field. It is called by the builders before save.
+	SupplyRewardMultiplierValidator func(float64) error
+	// DefaultSupplySelfServiceReviewPolicy holds the default value on creation for the "supply_self_service_review_policy" field.
+	DefaultSupplySelfServiceReviewPolicy string
+	// SupplySelfServiceReviewPolicyValidator is a validator for the "supply_self_service_review_policy" field. It is called by the builders before save.
+	SupplySelfServiceReviewPolicyValidator func(string) error
 )
 
 // OrderOption defines the ordering options for the Group queries.
@@ -411,6 +430,21 @@ func ByDefaultMappedModel(opts ...sql.OrderTermOption) OrderOption {
 // ByRpmLimit orders the results by the rpm_limit field.
 func ByRpmLimit(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRpmLimit, opts...).ToFunc()
+}
+
+// BySupplyRewardsEnabled orders the results by the supply_rewards_enabled field.
+func BySupplyRewardsEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSupplyRewardsEnabled, opts...).ToFunc()
+}
+
+// BySupplyRewardMultiplier orders the results by the supply_reward_multiplier field.
+func BySupplyRewardMultiplier(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSupplyRewardMultiplier, opts...).ToFunc()
+}
+
+// BySupplySelfServiceReviewPolicy orders the results by the supply_self_service_review_policy field.
+func BySupplySelfServiceReviewPolicy(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSupplySelfServiceReviewPolicy, opts...).ToFunc()
 }
 
 // ByAPIKeysCount orders the results by api_keys count.

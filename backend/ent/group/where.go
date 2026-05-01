@@ -195,6 +195,21 @@ func RpmLimit(v int) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldRpmLimit, v))
 }
 
+// SupplyRewardsEnabled applies equality check predicate on the "supply_rewards_enabled" field. It's identical to SupplyRewardsEnabledEQ.
+func SupplyRewardsEnabled(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldSupplyRewardsEnabled, v))
+}
+
+// SupplyRewardMultiplier applies equality check predicate on the "supply_reward_multiplier" field. It's identical to SupplyRewardMultiplierEQ.
+func SupplyRewardMultiplier(v float64) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldSupplyRewardMultiplier, v))
+}
+
+// SupplySelfServiceReviewPolicy applies equality check predicate on the "supply_self_service_review_policy" field. It's identical to SupplySelfServiceReviewPolicyEQ.
+func SupplySelfServiceReviewPolicy(v string) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldSupplySelfServiceReviewPolicy, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldCreatedAt, v))
@@ -1363,6 +1378,121 @@ func RpmLimitLT(v int) predicate.Group {
 // RpmLimitLTE applies the LTE predicate on the "rpm_limit" field.
 func RpmLimitLTE(v int) predicate.Group {
 	return predicate.Group(sql.FieldLTE(FieldRpmLimit, v))
+}
+
+// SupplyRewardsEnabledEQ applies the EQ predicate on the "supply_rewards_enabled" field.
+func SupplyRewardsEnabledEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldSupplyRewardsEnabled, v))
+}
+
+// SupplyRewardsEnabledNEQ applies the NEQ predicate on the "supply_rewards_enabled" field.
+func SupplyRewardsEnabledNEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldSupplyRewardsEnabled, v))
+}
+
+// SupplyRewardMultiplierEQ applies the EQ predicate on the "supply_reward_multiplier" field.
+func SupplyRewardMultiplierEQ(v float64) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldSupplyRewardMultiplier, v))
+}
+
+// SupplyRewardMultiplierNEQ applies the NEQ predicate on the "supply_reward_multiplier" field.
+func SupplyRewardMultiplierNEQ(v float64) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldSupplyRewardMultiplier, v))
+}
+
+// SupplyRewardMultiplierIn applies the In predicate on the "supply_reward_multiplier" field.
+func SupplyRewardMultiplierIn(vs ...float64) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldSupplyRewardMultiplier, vs...))
+}
+
+// SupplyRewardMultiplierNotIn applies the NotIn predicate on the "supply_reward_multiplier" field.
+func SupplyRewardMultiplierNotIn(vs ...float64) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldSupplyRewardMultiplier, vs...))
+}
+
+// SupplyRewardMultiplierGT applies the GT predicate on the "supply_reward_multiplier" field.
+func SupplyRewardMultiplierGT(v float64) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldSupplyRewardMultiplier, v))
+}
+
+// SupplyRewardMultiplierGTE applies the GTE predicate on the "supply_reward_multiplier" field.
+func SupplyRewardMultiplierGTE(v float64) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldSupplyRewardMultiplier, v))
+}
+
+// SupplyRewardMultiplierLT applies the LT predicate on the "supply_reward_multiplier" field.
+func SupplyRewardMultiplierLT(v float64) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldSupplyRewardMultiplier, v))
+}
+
+// SupplyRewardMultiplierLTE applies the LTE predicate on the "supply_reward_multiplier" field.
+func SupplyRewardMultiplierLTE(v float64) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldSupplyRewardMultiplier, v))
+}
+
+// SupplySelfServiceReviewPolicyEQ applies the EQ predicate on the "supply_self_service_review_policy" field.
+func SupplySelfServiceReviewPolicyEQ(v string) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldSupplySelfServiceReviewPolicy, v))
+}
+
+// SupplySelfServiceReviewPolicyNEQ applies the NEQ predicate on the "supply_self_service_review_policy" field.
+func SupplySelfServiceReviewPolicyNEQ(v string) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldSupplySelfServiceReviewPolicy, v))
+}
+
+// SupplySelfServiceReviewPolicyIn applies the In predicate on the "supply_self_service_review_policy" field.
+func SupplySelfServiceReviewPolicyIn(vs ...string) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldSupplySelfServiceReviewPolicy, vs...))
+}
+
+// SupplySelfServiceReviewPolicyNotIn applies the NotIn predicate on the "supply_self_service_review_policy" field.
+func SupplySelfServiceReviewPolicyNotIn(vs ...string) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldSupplySelfServiceReviewPolicy, vs...))
+}
+
+// SupplySelfServiceReviewPolicyGT applies the GT predicate on the "supply_self_service_review_policy" field.
+func SupplySelfServiceReviewPolicyGT(v string) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldSupplySelfServiceReviewPolicy, v))
+}
+
+// SupplySelfServiceReviewPolicyGTE applies the GTE predicate on the "supply_self_service_review_policy" field.
+func SupplySelfServiceReviewPolicyGTE(v string) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldSupplySelfServiceReviewPolicy, v))
+}
+
+// SupplySelfServiceReviewPolicyLT applies the LT predicate on the "supply_self_service_review_policy" field.
+func SupplySelfServiceReviewPolicyLT(v string) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldSupplySelfServiceReviewPolicy, v))
+}
+
+// SupplySelfServiceReviewPolicyLTE applies the LTE predicate on the "supply_self_service_review_policy" field.
+func SupplySelfServiceReviewPolicyLTE(v string) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldSupplySelfServiceReviewPolicy, v))
+}
+
+// SupplySelfServiceReviewPolicyContains applies the Contains predicate on the "supply_self_service_review_policy" field.
+func SupplySelfServiceReviewPolicyContains(v string) predicate.Group {
+	return predicate.Group(sql.FieldContains(FieldSupplySelfServiceReviewPolicy, v))
+}
+
+// SupplySelfServiceReviewPolicyHasPrefix applies the HasPrefix predicate on the "supply_self_service_review_policy" field.
+func SupplySelfServiceReviewPolicyHasPrefix(v string) predicate.Group {
+	return predicate.Group(sql.FieldHasPrefix(FieldSupplySelfServiceReviewPolicy, v))
+}
+
+// SupplySelfServiceReviewPolicyHasSuffix applies the HasSuffix predicate on the "supply_self_service_review_policy" field.
+func SupplySelfServiceReviewPolicyHasSuffix(v string) predicate.Group {
+	return predicate.Group(sql.FieldHasSuffix(FieldSupplySelfServiceReviewPolicy, v))
+}
+
+// SupplySelfServiceReviewPolicyEqualFold applies the EqualFold predicate on the "supply_self_service_review_policy" field.
+func SupplySelfServiceReviewPolicyEqualFold(v string) predicate.Group {
+	return predicate.Group(sql.FieldEqualFold(FieldSupplySelfServiceReviewPolicy, v))
+}
+
+// SupplySelfServiceReviewPolicyContainsFold applies the ContainsFold predicate on the "supply_self_service_review_policy" field.
+func SupplySelfServiceReviewPolicyContainsFold(v string) predicate.Group {
+	return predicate.Group(sql.FieldContainsFold(FieldSupplySelfServiceReviewPolicy, v))
 }
 
 // HasAPIKeys applies the HasEdge predicate on the "api_keys" edge.

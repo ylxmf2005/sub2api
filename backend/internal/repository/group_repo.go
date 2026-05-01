@@ -64,7 +64,10 @@ func (r *groupRepository) Create(ctx context.Context, groupIn *service.Group) er
 		SetRequirePrivacySet(groupIn.RequirePrivacySet).
 		SetDefaultMappedModel(groupIn.DefaultMappedModel).
 		SetMessagesDispatchModelConfig(groupIn.MessagesDispatchModelConfig).
-		SetRpmLimit(groupIn.RPMLimit)
+		SetRpmLimit(groupIn.RPMLimit).
+		SetSupplyRewardsEnabled(groupIn.SupplyRewardsEnabled).
+		SetSupplyRewardMultiplier(normalizeResourceSupplyMultiplier(groupIn)).
+		SetSupplySelfServiceReviewPolicy(normalizeResourceSupplyReviewPolicy(groupIn.SupplySelfServiceReviewPolicy))
 
 	// 设置模型路由配置
 	if groupIn.ModelRouting != nil {
@@ -132,7 +135,10 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		SetRequirePrivacySet(groupIn.RequirePrivacySet).
 		SetDefaultMappedModel(groupIn.DefaultMappedModel).
 		SetMessagesDispatchModelConfig(groupIn.MessagesDispatchModelConfig).
-		SetRpmLimit(groupIn.RPMLimit)
+		SetRpmLimit(groupIn.RPMLimit).
+		SetSupplyRewardsEnabled(groupIn.SupplyRewardsEnabled).
+		SetSupplyRewardMultiplier(normalizeResourceSupplyMultiplier(groupIn)).
+		SetSupplySelfServiceReviewPolicy(normalizeResourceSupplyReviewPolicy(groupIn.SupplySelfServiceReviewPolicy))
 
 	// 显式处理可空字段：nil 需要 clear，非 nil 需要 set。
 	if groupIn.DailyLimitUSD != nil {
@@ -209,6 +215,24 @@ func (r *groupRepository) Delete(ctx context.Context, id int64) error {
 		logger.LegacyPrintf("repository.group", "[SchedulerOutbox] enqueue group delete failed: group=%d err=%v", id, err)
 	}
 	return nil
+}
+
+func normalizeResourceSupplyMultiplier(groupIn *service.Group) float64 {
+	if groupIn == nil {
+		return service.ResourceSupplyRewardMultiplierDefault
+	}
+	if groupIn.SupplyRewardMultiplier == 0 && !groupIn.SupplyRewardsEnabled {
+		return service.ResourceSupplyRewardMultiplierDefault
+	}
+	return groupIn.SupplyRewardMultiplier
+}
+
+func normalizeResourceSupplyReviewPolicy(policy string) string {
+	policy = strings.TrimSpace(policy)
+	if policy == "" {
+		return service.ResourceSupplyReviewPolicyManualReview
+	}
+	return policy
 }
 
 func (r *groupRepository) List(ctx context.Context, params pagination.PaginationParams) ([]service.Group, *pagination.PaginationResult, error) {

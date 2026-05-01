@@ -85,6 +85,8 @@ const (
 	EdgeAuthIdentities = "auth_identities"
 	// EdgePendingAuthSessions holds the string denoting the pending_auth_sessions edge name in mutations.
 	EdgePendingAuthSessions = "pending_auth_sessions"
+	// EdgeResourceSupplyBalance holds the string denoting the resource_supply_balance edge name in mutations.
+	EdgeResourceSupplyBalance = "resource_supply_balance"
 	// EdgeUserAllowedGroups holds the string denoting the user_allowed_groups edge name in mutations.
 	EdgeUserAllowedGroups = "user_allowed_groups"
 	// Table holds the table name of the user in the database.
@@ -171,6 +173,13 @@ const (
 	PendingAuthSessionsInverseTable = "pending_auth_sessions"
 	// PendingAuthSessionsColumn is the table column denoting the pending_auth_sessions relation/edge.
 	PendingAuthSessionsColumn = "target_user_id"
+	// ResourceSupplyBalanceTable is the table that holds the resource_supply_balance relation/edge.
+	ResourceSupplyBalanceTable = "resource_supply_balances"
+	// ResourceSupplyBalanceInverseTable is the table name for the ResourceSupplyBalance entity.
+	// It exists in this package in order to avoid circular dependency with the "resourcesupplybalance" package.
+	ResourceSupplyBalanceInverseTable = "resource_supply_balances"
+	// ResourceSupplyBalanceColumn is the table column denoting the resource_supply_balance relation/edge.
+	ResourceSupplyBalanceColumn = "user_id"
 	// UserAllowedGroupsTable is the table that holds the user_allowed_groups relation/edge.
 	UserAllowedGroupsTable = "user_allowed_groups"
 	// UserAllowedGroupsInverseTable is the table name for the UserAllowedGroup entity.
@@ -569,6 +578,20 @@ func ByPendingAuthSessions(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOpti
 	}
 }
 
+// ByResourceSupplyBalanceCount orders the results by resource_supply_balance count.
+func ByResourceSupplyBalanceCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newResourceSupplyBalanceStep(), opts...)
+	}
+}
+
+// ByResourceSupplyBalance orders the results by resource_supply_balance terms.
+func ByResourceSupplyBalance(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newResourceSupplyBalanceStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByUserAllowedGroupsCount orders the results by user_allowed_groups count.
 func ByUserAllowedGroupsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -664,6 +687,13 @@ func newPendingAuthSessionsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(PendingAuthSessionsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, PendingAuthSessionsTable, PendingAuthSessionsColumn),
+	)
+}
+func newResourceSupplyBalanceStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ResourceSupplyBalanceInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ResourceSupplyBalanceTable, ResourceSupplyBalanceColumn),
 	)
 }
 func newUserAllowedGroupsStep() *sqlgraph.Step {

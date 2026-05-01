@@ -180,6 +180,9 @@ func (r *apiKeyRepository) GetByKeyForAuth(ctx context.Context, key string) (*se
 				group.FieldDefaultMappedModel,
 				group.FieldMessagesDispatchModelConfig,
 				group.FieldRpmLimit,
+				group.FieldSupplyRewardsEnabled,
+				group.FieldSupplyRewardMultiplier,
+				group.FieldSupplySelfServiceReviewPolicy,
 			)
 		}).
 		Only(ctx)
@@ -717,6 +720,9 @@ func groupEntityToService(g *dbent.Group) *service.Group {
 		DefaultMappedModel:              g.DefaultMappedModel,
 		MessagesDispatchModelConfig:     g.MessagesDispatchModelConfig,
 		RPMLimit:                        g.RpmLimit,
+		SupplyRewardsEnabled:            g.SupplyRewardsEnabled,
+		SupplyRewardMultiplier:          g.SupplyRewardMultiplier,
+		SupplySelfServiceReviewPolicy:   g.SupplySelfServiceReviewPolicy,
 		CreatedAt:                       g.CreatedAt,
 		UpdatedAt:                       g.UpdatedAt,
 	}

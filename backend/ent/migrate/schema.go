@@ -114,6 +114,13 @@ var (
 		{Name: "last_used_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "expires_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "auto_pause_on_expired", Type: field.TypeBool, Default: true},
+		{Name: "supply_owner_user_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "supply_source", Type: field.TypeString, Nullable: true, Size: 32},
+		{Name: "supply_status", Type: field.TypeString, Size: 32, Default: "none"},
+		{Name: "supply_status_reason", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "supply_submitted_by", Type: field.TypeInt64, Nullable: true},
+		{Name: "supply_reviewed_by", Type: field.TypeInt64, Nullable: true},
+		{Name: "supply_reviewed_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "schedulable", Type: field.TypeBool, Default: true},
 		{Name: "rate_limited_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "rate_limit_reset_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
@@ -133,7 +140,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "accounts_proxies_proxy",
-				Columns:    []*schema.Column{AccountsColumns[28]},
+				Columns:    []*schema.Column{AccountsColumns[35]},
 				RefColumns: []*schema.Column{ProxiesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -157,7 +164,7 @@ var (
 			{
 				Name:    "account_proxy_id",
 				Unique:  false,
-				Columns: []*schema.Column{AccountsColumns[28]},
+				Columns: []*schema.Column{AccountsColumns[35]},
 			},
 			{
 				Name:    "account_priority",
@@ -172,22 +179,37 @@ var (
 			{
 				Name:    "account_schedulable",
 				Unique:  false,
-				Columns: []*schema.Column{AccountsColumns[19]},
+				Columns: []*schema.Column{AccountsColumns[26]},
 			},
 			{
 				Name:    "account_rate_limited_at",
 				Unique:  false,
-				Columns: []*schema.Column{AccountsColumns[20]},
+				Columns: []*schema.Column{AccountsColumns[27]},
 			},
 			{
 				Name:    "account_rate_limit_reset_at",
 				Unique:  false,
-				Columns: []*schema.Column{AccountsColumns[21]},
+				Columns: []*schema.Column{AccountsColumns[28]},
 			},
 			{
 				Name:    "account_overload_until",
 				Unique:  false,
-				Columns: []*schema.Column{AccountsColumns[22]},
+				Columns: []*schema.Column{AccountsColumns[29]},
+			},
+			{
+				Name:    "account_supply_owner_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{AccountsColumns[19]},
+			},
+			{
+				Name:    "account_supply_status",
+				Unique:  false,
+				Columns: []*schema.Column{AccountsColumns[21]},
+			},
+			{
+				Name:    "account_supply_source",
+				Unique:  false,
+				Columns: []*schema.Column{AccountsColumns[20]},
 			},
 			{
 				Name:    "account_platform_priority",
@@ -655,6 +677,9 @@ var (
 		{Name: "default_mapped_model", Type: field.TypeString, Size: 100, Default: ""},
 		{Name: "messages_dispatch_model_config", Type: field.TypeJSON, SchemaType: map[string]string{"postgres": "jsonb"}},
 		{Name: "rpm_limit", Type: field.TypeInt, Default: 0},
+		{Name: "supply_rewards_enabled", Type: field.TypeBool, Default: false},
+		{Name: "supply_reward_multiplier", Type: field.TypeFloat64, Default: 1, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "supply_self_service_review_policy", Type: field.TypeString, Size: 32, Default: "manual_review"},
 	}
 	// GroupsTable holds the schema information for the "groups" table.
 	GroupsTable = &schema.Table{
@@ -691,6 +716,11 @@ var (
 				Name:    "group_sort_order",
 				Unique:  false,
 				Columns: []*schema.Column{GroupsColumns[25]},
+			},
+			{
+				Name:    "group_supply_rewards_enabled",
+				Unique:  false,
+				Columns: []*schema.Column{GroupsColumns[32]},
 			},
 		},
 	}
@@ -1158,6 +1188,99 @@ var (
 			},
 		},
 	}
+	// ResourceSupplyBalancesColumns holds the columns for the "resource_supply_balances" table.
+	ResourceSupplyBalancesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "available_amount", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "lifetime_earned_amount", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "lifetime_transferred_amount", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "user_id", Type: field.TypeInt64},
+	}
+	// ResourceSupplyBalancesTable holds the schema information for the "resource_supply_balances" table.
+	ResourceSupplyBalancesTable = &schema.Table{
+		Name:       "resource_supply_balances",
+		Columns:    ResourceSupplyBalancesColumns,
+		PrimaryKey: []*schema.Column{ResourceSupplyBalancesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "resource_supply_balances_users_resource_supply_balance",
+				Columns:    []*schema.Column{ResourceSupplyBalancesColumns[6]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// ResourceSupplyLedgerColumns holds the columns for the "resource_supply_ledger" table.
+	ResourceSupplyLedgerColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "owner_user_id", Type: field.TypeInt64},
+		{Name: "caller_user_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "api_key_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "group_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "account_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "usage_billing_event_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "ledger_type", Type: field.TypeString, Size: 32},
+		{Name: "idempotency_key", Type: field.TypeString, Nullable: true, Size: 255},
+		{Name: "amount", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "balance_after", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "actual_cost", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,10)"}},
+		{Name: "reward_multiplier", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "billing_type", Type: field.TypeInt8, Nullable: true},
+		{Name: "model", Type: field.TypeString, Nullable: true, Size: 255},
+		{Name: "request_id", Type: field.TypeString, Nullable: true, Size: 255},
+		{Name: "admin_user_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "note", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+	}
+	// ResourceSupplyLedgerTable holds the schema information for the "resource_supply_ledger" table.
+	ResourceSupplyLedgerTable = &schema.Table{
+		Name:       "resource_supply_ledger",
+		Columns:    ResourceSupplyLedgerColumns,
+		PrimaryKey: []*schema.Column{ResourceSupplyLedgerColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "resourcesupplyledger_owner_user_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{ResourceSupplyLedgerColumns[3], ResourceSupplyLedgerColumns[1]},
+			},
+			{
+				Name:    "resourcesupplyledger_caller_user_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{ResourceSupplyLedgerColumns[4], ResourceSupplyLedgerColumns[1]},
+			},
+			{
+				Name:    "resourcesupplyledger_group_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{ResourceSupplyLedgerColumns[6], ResourceSupplyLedgerColumns[1]},
+			},
+			{
+				Name:    "resourcesupplyledger_account_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{ResourceSupplyLedgerColumns[7], ResourceSupplyLedgerColumns[1]},
+			},
+			{
+				Name:    "resourcesupplyledger_request_id",
+				Unique:  false,
+				Columns: []*schema.Column{ResourceSupplyLedgerColumns[17]},
+			},
+			{
+				Name:    "resourcesupplyledger_usage_billing_event_id",
+				Unique:  true,
+				Columns: []*schema.Column{ResourceSupplyLedgerColumns[8]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "ledger_type = 'reward' AND usage_billing_event_id IS NOT NULL",
+				},
+			},
+			{
+				Name:    "resourcesupplyledger_owner_user_id_idempotency_key",
+				Unique:  true,
+				Columns: []*schema.Column{ResourceSupplyLedgerColumns[3], ResourceSupplyLedgerColumns[10]},
+			},
+		},
+	}
 	// SecuritySecretsColumns holds the columns for the "security_secrets" table.
 	SecuritySecretsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1243,6 +1366,75 @@ var (
 		Name:       "tls_fingerprint_profiles",
 		Columns:    TLSFingerprintProfilesColumns,
 		PrimaryKey: []*schema.Column{TLSFingerprintProfilesColumns[0]},
+	}
+	// UsageBillingEventsColumns holds the columns for the "usage_billing_events" table.
+	UsageBillingEventsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "request_id", Type: field.TypeString, Size: 255},
+		{Name: "api_key_id", Type: field.TypeInt64},
+		{Name: "request_fingerprint", Type: field.TypeString, Size: 128},
+		{Name: "request_payload_hash", Type: field.TypeString, Nullable: true, Size: 128},
+		{Name: "user_id", Type: field.TypeInt64},
+		{Name: "group_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "account_id", Type: field.TypeInt64},
+		{Name: "account_type", Type: field.TypeString, Nullable: true, Size: 32},
+		{Name: "model", Type: field.TypeString, Size: 255, Default: ""},
+		{Name: "service_tier", Type: field.TypeString, Size: 64, Default: ""},
+		{Name: "reasoning_effort", Type: field.TypeString, Size: 64, Default: ""},
+		{Name: "billing_type", Type: field.TypeInt8},
+		{Name: "input_tokens", Type: field.TypeInt, Default: 0},
+		{Name: "output_tokens", Type: field.TypeInt, Default: 0},
+		{Name: "cache_creation_tokens", Type: field.TypeInt, Default: 0},
+		{Name: "cache_read_tokens", Type: field.TypeInt, Default: 0},
+		{Name: "cache_creation_5m_tokens", Type: field.TypeInt, Default: 0},
+		{Name: "cache_creation_1h_tokens", Type: field.TypeInt, Default: 0},
+		{Name: "total_cost", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,10)"}},
+		{Name: "actual_cost", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,10)"}},
+		{Name: "balance_cost", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,10)"}},
+		{Name: "subscription_cost", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,10)"}},
+		{Name: "api_key_quota_cost", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,10)"}},
+		{Name: "api_key_rate_limit_cost", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,10)"}},
+		{Name: "account_quota_cost", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,10)"}},
+		{Name: "supply_reward_eligible", Type: field.TypeBool, Default: false},
+		{Name: "supply_owner_user_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "supply_reward_multiplier", Type: field.TypeFloat64, Default: 1, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "supply_account_status", Type: field.TypeString, Size: 32, Default: "none"},
+		{Name: "supply_source", Type: field.TypeString, Size: 32, Default: "live"},
+	}
+	// UsageBillingEventsTable holds the schema information for the "usage_billing_events" table.
+	UsageBillingEventsTable = &schema.Table{
+		Name:       "usage_billing_events",
+		Columns:    UsageBillingEventsColumns,
+		PrimaryKey: []*schema.Column{UsageBillingEventsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "usagebillingevent_request_id_api_key_id",
+				Unique:  true,
+				Columns: []*schema.Column{UsageBillingEventsColumns[3], UsageBillingEventsColumns[4]},
+			},
+			{
+				Name:    "usagebillingevent_user_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{UsageBillingEventsColumns[7], UsageBillingEventsColumns[1]},
+			},
+			{
+				Name:    "usagebillingevent_group_id_user_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{UsageBillingEventsColumns[8], UsageBillingEventsColumns[7], UsageBillingEventsColumns[1]},
+			},
+			{
+				Name:    "usagebillingevent_billing_type_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{UsageBillingEventsColumns[14], UsageBillingEventsColumns[1]},
+			},
+			{
+				Name:    "usagebillingevent_account_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{UsageBillingEventsColumns[9], UsageBillingEventsColumns[1]},
+			},
+		},
 	}
 	// UsageCleanupTasksColumns holds the columns for the "usage_cleanup_tasks" table.
 	UsageCleanupTasksColumns = []*schema.Column{
@@ -1701,10 +1893,13 @@ var (
 		PromoCodeUsagesTable,
 		ProxiesTable,
 		RedeemCodesTable,
+		ResourceSupplyBalancesTable,
+		ResourceSupplyLedgerTable,
 		SecuritySecretsTable,
 		SettingsTable,
 		SubscriptionPlansTable,
 		TLSFingerprintProfilesTable,
+		UsageBillingEventsTable,
 		UsageCleanupTasksTable,
 		UsageLogsTable,
 		UsersTable,
@@ -1805,6 +2000,13 @@ func init() {
 	RedeemCodesTable.Annotation = &entsql.Annotation{
 		Table: "redeem_codes",
 	}
+	ResourceSupplyBalancesTable.ForeignKeys[0].RefTable = UsersTable
+	ResourceSupplyBalancesTable.Annotation = &entsql.Annotation{
+		Table: "resource_supply_balances",
+	}
+	ResourceSupplyLedgerTable.Annotation = &entsql.Annotation{
+		Table: "resource_supply_ledger",
+	}
 	SecuritySecretsTable.Annotation = &entsql.Annotation{
 		Table: "security_secrets",
 	}
@@ -1816,6 +2018,9 @@ func init() {
 	}
 	TLSFingerprintProfilesTable.Annotation = &entsql.Annotation{
 		Table: "tls_fingerprint_profiles",
+	}
+	UsageBillingEventsTable.Annotation = &entsql.Annotation{
+		Table: "usage_billing_events",
 	}
 	UsageCleanupTasksTable.Annotation = &entsql.Annotation{
 		Table: "usage_cleanup_tasks",

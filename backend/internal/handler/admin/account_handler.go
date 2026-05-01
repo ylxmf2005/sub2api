@@ -110,6 +110,10 @@ type CreateAccountRequest struct {
 	ExpiresAt               *int64         `json:"expires_at"`
 	AutoPauseOnExpired      *bool          `json:"auto_pause_on_expired"`
 	ConfirmMixedChannelRisk *bool          `json:"confirm_mixed_channel_risk"` // 用户确认混合渠道风险
+	SupplyOwnerUserID       *int64         `json:"supply_owner_user_id"`
+	SupplySource            *string        `json:"supply_source" binding:"omitempty,oneof=admin self_service"`
+	SupplyStatus            string         `json:"supply_status" binding:"omitempty,oneof=none testing pending_review schedulable paused rejected revoked"`
+	SupplyStatusReason      *string        `json:"supply_status_reason"`
 }
 
 // UpdateAccountRequest represents update account request
@@ -130,6 +134,10 @@ type UpdateAccountRequest struct {
 	ExpiresAt               *int64         `json:"expires_at"`
 	AutoPauseOnExpired      *bool          `json:"auto_pause_on_expired"`
 	ConfirmMixedChannelRisk *bool          `json:"confirm_mixed_channel_risk"` // 用户确认混合渠道风险
+	SupplyOwnerUserID       *int64         `json:"supply_owner_user_id"`
+	SupplySource            *string        `json:"supply_source" binding:"omitempty,oneof=admin self_service"`
+	SupplyStatus            *string        `json:"supply_status" binding:"omitempty,oneof=none testing pending_review schedulable paused rejected revoked"`
+	SupplyStatusReason      *string        `json:"supply_status_reason"`
 }
 
 // BulkUpdateAccountsRequest represents the payload for bulk editing accounts
@@ -545,6 +553,10 @@ func (h *AccountHandler) Create(c *gin.Context) {
 			ExpiresAt:             req.ExpiresAt,
 			AutoPauseOnExpired:    req.AutoPauseOnExpired,
 			SkipMixedChannelCheck: skipCheck,
+			SupplyOwnerUserID:     req.SupplyOwnerUserID,
+			SupplySource:          req.SupplySource,
+			SupplyStatus:          req.SupplyStatus,
+			SupplyStatusReason:    req.SupplyStatusReason,
 		})
 		if execErr != nil {
 			return nil, execErr
@@ -620,6 +632,10 @@ func (h *AccountHandler) Update(c *gin.Context) {
 		ExpiresAt:             req.ExpiresAt,
 		AutoPauseOnExpired:    req.AutoPauseOnExpired,
 		SkipMixedChannelCheck: skipCheck,
+		SupplyOwnerUserID:     req.SupplyOwnerUserID,
+		SupplySource:          req.SupplySource,
+		SupplyStatus:          req.SupplyStatus,
+		SupplyStatusReason:    req.SupplyStatusReason,
 	})
 	if err != nil {
 		// 检查是否为混合渠道错误

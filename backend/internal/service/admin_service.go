@@ -209,6 +209,10 @@ type CreateGroupInput struct {
 	MessagesDispatchModelConfig OpenAIMessagesDispatchModelConfig
 	// RPMLimit 分组 RPM 上限（0 = 不限制）
 	RPMLimit int
+	// Resource supply reward configuration
+	SupplyRewardsEnabled          bool
+	SupplyRewardMultiplier        *float64
+	SupplySelfServiceReviewPolicy string
 	// 从指定分组复制账号（创建分组后在同一事务内绑定）
 	CopyAccountsFromGroupIDs []int64
 }
@@ -246,6 +250,10 @@ type UpdateGroupInput struct {
 	MessagesDispatchModelConfig *OpenAIMessagesDispatchModelConfig
 	// RPMLimit 分组 RPM 上限（0 = 不限制），nil 表示未提供不改动。
 	RPMLimit *int
+	// Resource supply reward configuration
+	SupplyRewardsEnabled          *bool
+	SupplyRewardMultiplier        *float64
+	SupplySelfServiceReviewPolicy *string
 	// 从指定分组复制账号（同步操作：先清空当前分组的账号绑定，再绑定源分组的账号）
 	CopyAccountsFromGroupIDs []int64
 }
@@ -270,6 +278,10 @@ type CreateAccountInput struct {
 	// SkipMixedChannelCheck skips the mixed channel risk check when binding groups.
 	// This should only be set when the caller has explicitly confirmed the risk.
 	SkipMixedChannelCheck bool
+	SupplyOwnerUserID     *int64
+	SupplySource          *string
+	SupplyStatus          string
+	SupplyStatusReason    *string
 }
 
 type UpdateAccountInput struct {
@@ -288,6 +300,10 @@ type UpdateAccountInput struct {
 	ExpiresAt             *int64
 	AutoPauseOnExpired    *bool
 	SkipMixedChannelCheck bool // 跳过混合渠道检查（用户已确认风险）
+	SupplyOwnerUserID     *int64
+	SupplySource          *string
+	SupplyStatus          *string
+	SupplyStatusReason    *string
 }
 
 // BulkUpdateAccountsInput describes the payload for bulk updating accounts.
@@ -1359,6 +1375,17 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 	imagePrice1K := normalizePrice(input.ImagePrice1K)
 	imagePrice2K := normalizePrice(input.ImagePrice2K)
 	imagePrice4K := normalizePrice(input.ImagePrice4K)
+	supplyRewardMultiplier := ResourceSupplyRewardMultiplierDefault
+	if input.SupplyRewardMultiplier != nil {
+		if *input.SupplyRewardMultiplier < 0 {
+			return nil, errors.New("supply_reward_multiplier must be >= 0")
+		}
+		supplyRewardMultiplier = *input.SupplyRewardMultiplier
+	}
+	supplyReviewPolicy := normalizeResourceSupplyReviewPolicyForWrite(input.SupplySelfServiceReviewPolicy)
+	if !IsValidResourceSupplyReviewPolicy(supplyReviewPolicy) {
+		return nil, errors.New("invalid supply_self_service_review_policy")
+	}
 
 	// 校验降级分组
 	if input.FallbackGroupID != nil {
@@ -1441,6 +1468,9 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		DefaultMappedModel:              input.DefaultMappedModel,
 		MessagesDispatchModelConfig:     normalizeOpenAIMessagesDispatchModelConfig(input.MessagesDispatchModelConfig),
 		RPMLimit:                        input.RPMLimit,
+		SupplyRewardsEnabled:            input.SupplyRewardsEnabled,
+		SupplyRewardMultiplier:          supplyRewardMultiplier,
+		SupplySelfServiceReviewPolicy:   supplyReviewPolicy,
 	}
 	sanitizeGroupMessagesDispatchFields(group)
 	if err := s.groupRepo.Create(ctx, group); err != nil {
@@ -1680,6 +1710,22 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	}
 	if input.RPMLimit != nil {
 		group.RPMLimit = *input.RPMLimit
+	}
+	if input.SupplyRewardsEnabled != nil {
+		group.SupplyRewardsEnabled = *input.SupplyRewardsEnabled
+	}
+	if input.SupplyRewardMultiplier != nil {
+		if *input.SupplyRewardMultiplier < 0 {
+			return nil, errors.New("supply_reward_multiplier must be >= 0")
+		}
+		group.SupplyRewardMultiplier = *input.SupplyRewardMultiplier
+	}
+	if input.SupplySelfServiceReviewPolicy != nil {
+		policy := normalizeResourceSupplyReviewPolicyForWrite(*input.SupplySelfServiceReviewPolicy)
+		if !IsValidResourceSupplyReviewPolicy(policy) {
+			return nil, errors.New("invalid supply_self_service_review_policy")
+		}
+		group.SupplySelfServiceReviewPolicy = policy
 	}
 	sanitizeGroupMessagesDispatchFields(group)
 
@@ -2129,6 +2175,27 @@ func (s *adminServiceImpl) CreateAccount(ctx context.Context, input *CreateAccou
 		Status:      StatusActive,
 		Schedulable: true,
 	}
+	if input.SupplyOwnerUserID != nil && *input.SupplyOwnerUserID > 0 {
+		source := ResourceSupplySourceAdmin
+		if input.SupplySource != nil && strings.TrimSpace(*input.SupplySource) != "" {
+			source = strings.TrimSpace(*input.SupplySource)
+		}
+		if source != ResourceSupplySourceAdmin && source != ResourceSupplySourceSelfService {
+			return nil, errors.New("invalid supply_source")
+		}
+		supplyStatus := normalizeResourceSupplyStatusForWrite(input.SupplyStatus)
+		if supplyStatus == ResourceSupplyStatusNone {
+			supplyStatus = ResourceSupplyStatusSchedulable
+		}
+		if !IsValidResourceSupplyStatus(supplyStatus) {
+			return nil, errors.New("invalid supply_status")
+		}
+		account.SupplyOwnerUserID = input.SupplyOwnerUserID
+		account.SupplySource = &source
+		account.SupplyStatus = supplyStatus
+		account.SupplyStatusReason = input.SupplyStatusReason
+		account.Schedulable = supplyStatus == ResourceSupplyStatusSchedulable
+	}
 	// 预计算固定时间重置的下次重置时间
 	if account.Extra != nil {
 		if err := ValidateQuotaResetConfig(account.Extra); err != nil {
@@ -2276,6 +2343,47 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 	}
 	if input.Status != "" {
 		account.Status = input.Status
+	}
+	if input.SupplyOwnerUserID != nil {
+		if *input.SupplyOwnerUserID <= 0 {
+			account.SupplyOwnerUserID = nil
+			account.SupplySource = nil
+			account.SupplyStatus = ResourceSupplyStatusNone
+			account.SupplyStatusReason = nil
+			account.SupplySubmittedBy = nil
+			account.SupplyReviewedBy = nil
+			account.SupplyReviewedAt = nil
+		} else {
+			account.SupplyOwnerUserID = input.SupplyOwnerUserID
+			if account.SupplySource == nil || strings.TrimSpace(*account.SupplySource) == "" {
+				source := ResourceSupplySourceAdmin
+				account.SupplySource = &source
+			}
+			if strings.TrimSpace(account.SupplyStatus) == "" || account.SupplyStatus == ResourceSupplyStatusNone {
+				account.SupplyStatus = ResourceSupplyStatusSchedulable
+			}
+		}
+	}
+	if input.SupplySource != nil {
+		source := strings.TrimSpace(*input.SupplySource)
+		if source == "" {
+			account.SupplySource = nil
+		} else if source == ResourceSupplySourceAdmin || source == ResourceSupplySourceSelfService {
+			account.SupplySource = &source
+		} else {
+			return nil, errors.New("invalid supply_source")
+		}
+	}
+	if input.SupplyStatus != nil {
+		status := normalizeResourceSupplyStatusForWrite(*input.SupplyStatus)
+		if !IsValidResourceSupplyStatus(status) {
+			return nil, errors.New("invalid supply_status")
+		}
+		account.SupplyStatus = status
+		account.Schedulable = status == ResourceSupplyStatusSchedulable || (status == ResourceSupplyStatusNone && account.Schedulable)
+	}
+	if input.SupplyStatusReason != nil {
+		account.SupplyStatusReason = input.SupplyStatusReason
 	}
 	if input.ExpiresAt != nil {
 		if *input.ExpiresAt <= 0 {

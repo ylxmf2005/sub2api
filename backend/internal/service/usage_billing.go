@@ -19,26 +19,36 @@ type UsageBillingCommand struct {
 	RequestFingerprint string
 	RequestPayloadHash string
 
-	UserID              int64
-	AccountID           int64
-	SubscriptionID      *int64
-	AccountType         string
-	Model               string
-	ServiceTier         string
-	ReasoningEffort     string
-	BillingType         int8
-	InputTokens         int
-	OutputTokens        int
-	CacheCreationTokens int
-	CacheReadTokens     int
-	ImageCount          int
-	MediaType           string
+	UserID                int64
+	AccountID             int64
+	GroupID               *int64
+	SubscriptionID        *int64
+	AccountType           string
+	Model                 string
+	ServiceTier           string
+	ReasoningEffort       string
+	BillingType           int8
+	InputTokens           int
+	OutputTokens          int
+	CacheCreationTokens   int
+	CacheReadTokens       int
+	CacheCreation5mTokens int
+	CacheCreation1hTokens int
+	ImageCount            int
+	MediaType             string
+	TotalCost             float64
+	ActualCost            float64
 
 	BalanceCost         float64
 	SubscriptionCost    float64
 	APIKeyQuotaCost     float64
 	APIKeyRateLimitCost float64
 	AccountQuotaCost    float64
+
+	SupplyRewardEligible   bool
+	SupplyOwnerUserID      *int64
+	SupplyRewardMultiplier float64
+	SupplyAccountStatus    string
 }
 
 func (c *UsageBillingCommand) Normalize() {
@@ -46,6 +56,10 @@ func (c *UsageBillingCommand) Normalize() {
 		return
 	}
 	c.RequestID = strings.TrimSpace(c.RequestID)
+	c.SupplyAccountStatus = strings.TrimSpace(c.SupplyAccountStatus)
+	if c.SupplyAccountStatus == "" {
+		c.SupplyAccountStatus = ResourceSupplyStatusNone
+	}
 	if strings.TrimSpace(c.RequestFingerprint) == "" {
 		c.RequestFingerprint = buildUsageBillingFingerprint(c)
 	}
@@ -56,10 +70,11 @@ func buildUsageBillingFingerprint(c *UsageBillingCommand) string {
 		return ""
 	}
 	raw := fmt.Sprintf(
-		"%d|%d|%d|%s|%s|%s|%s|%d|%d|%d|%d|%d|%d|%s|%d|%0.10f|%0.10f|%0.10f|%0.10f|%0.10f",
+		"%d|%d|%d|%d|%s|%s|%s|%s|%d|%d|%d|%d|%d|%d|%d|%d|%s|%d|%0.10f|%0.10f|%0.10f|%0.10f|%0.10f|%0.10f|%0.10f|%t|%d|%0.8f|%s",
 		c.UserID,
 		c.AccountID,
 		c.APIKeyID,
+		valueOrZero(c.GroupID),
 		strings.TrimSpace(c.AccountType),
 		strings.TrimSpace(c.Model),
 		strings.TrimSpace(c.ServiceTier),
@@ -69,14 +84,22 @@ func buildUsageBillingFingerprint(c *UsageBillingCommand) string {
 		c.OutputTokens,
 		c.CacheCreationTokens,
 		c.CacheReadTokens,
+		c.CacheCreation5mTokens,
+		c.CacheCreation1hTokens,
 		c.ImageCount,
 		strings.TrimSpace(c.MediaType),
 		valueOrZero(c.SubscriptionID),
+		c.TotalCost,
+		c.ActualCost,
 		c.BalanceCost,
 		c.SubscriptionCost,
 		c.APIKeyQuotaCost,
 		c.APIKeyRateLimitCost,
 		c.AccountQuotaCost,
+		c.SupplyRewardEligible,
+		valueOrZero(c.SupplyOwnerUserID),
+		c.SupplyRewardMultiplier,
+		strings.TrimSpace(c.SupplyAccountStatus),
 	)
 	if payloadHash := strings.TrimSpace(c.RequestPayloadHash); payloadHash != "" {
 		raw += "|" + payloadHash

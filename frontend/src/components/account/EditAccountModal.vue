@@ -2062,6 +2062,16 @@
         data-tour="account-form-groups"
       />
 
+      <!-- Resource Supply -->
+      <div>
+        <label class="input-label">{{ t('admin.accounts.form.supplyOwnerUserId') }}</label>
+        <input v-model.number="form.supply_owner_user_id" type="number" min="0" class="input" />
+      </div>
+      <div v-if="account?.supply_status && account.supply_status !== 'none'">
+        <label class="input-label">{{ t('admin.accounts.form.supplyStatus') }}</label>
+        <p class="text-sm text-gray-700 dark:text-gray-300">{{ account.supply_status }}</p>
+      </div>
+
     </form>
 
     <template #footer>
@@ -2403,7 +2413,8 @@ const form = reactive({
   rate_multiplier: 1,
   status: 'active' as 'active' | 'inactive' | 'error',
   group_ids: [] as number[],
-  expires_at: null as number | null
+  expires_at: null as number | null,
+  supply_owner_user_id: null as number | null
 })
 
 const statusOptions = computed(() => {
@@ -2460,6 +2471,7 @@ const syncFormFromAccount = (newAccount: Account | null) => {
     : 'active'
   form.group_ids = newAccount.group_ids || []
   form.expires_at = newAccount.expires_at ?? null
+  form.supply_owner_user_id = newAccount.supply_owner_user_id ?? null
 
   // Load intercept warmup requests setting (applies to all account types)
   const credentials = newAccount.credentials as Record<string, unknown> | undefined
@@ -3217,6 +3229,7 @@ const handleSubmit = async () => {
       updatePayload.load_factor = 0
     }
     updatePayload.auto_pause_on_expired = autoPauseOnExpired.value
+    updatePayload.supply_owner_user_id = form.supply_owner_user_id || null
 
     // For apikey type, handle credentials update
     if (props.account.type === 'apikey') {

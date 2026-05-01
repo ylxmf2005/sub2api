@@ -38,10 +38,13 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
+	"github.com/Wei-Shaw/sub2api/ent/resourcesupplybalance"
+	"github.com/Wei-Shaw/sub2api/ent/resourcesupplyledger"
 	"github.com/Wei-Shaw/sub2api/ent/securitysecret"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
+	"github.com/Wei-Shaw/sub2api/ent/usagebillingevent"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
@@ -104,6 +107,10 @@ type Client struct {
 	Proxy *ProxyClient
 	// RedeemCode is the client for interacting with the RedeemCode builders.
 	RedeemCode *RedeemCodeClient
+	// ResourceSupplyBalance is the client for interacting with the ResourceSupplyBalance builders.
+	ResourceSupplyBalance *ResourceSupplyBalanceClient
+	// ResourceSupplyLedger is the client for interacting with the ResourceSupplyLedger builders.
+	ResourceSupplyLedger *ResourceSupplyLedgerClient
 	// SecuritySecret is the client for interacting with the SecuritySecret builders.
 	SecuritySecret *SecuritySecretClient
 	// Setting is the client for interacting with the Setting builders.
@@ -112,6 +119,8 @@ type Client struct {
 	SubscriptionPlan *SubscriptionPlanClient
 	// TLSFingerprintProfile is the client for interacting with the TLSFingerprintProfile builders.
 	TLSFingerprintProfile *TLSFingerprintProfileClient
+	// UsageBillingEvent is the client for interacting with the UsageBillingEvent builders.
+	UsageBillingEvent *UsageBillingEventClient
 	// UsageCleanupTask is the client for interacting with the UsageCleanupTask builders.
 	UsageCleanupTask *UsageCleanupTaskClient
 	// UsageLog is the client for interacting with the UsageLog builders.
@@ -160,10 +169,13 @@ func (c *Client) init() {
 	c.PromoCodeUsage = NewPromoCodeUsageClient(c.config)
 	c.Proxy = NewProxyClient(c.config)
 	c.RedeemCode = NewRedeemCodeClient(c.config)
+	c.ResourceSupplyBalance = NewResourceSupplyBalanceClient(c.config)
+	c.ResourceSupplyLedger = NewResourceSupplyLedgerClient(c.config)
 	c.SecuritySecret = NewSecuritySecretClient(c.config)
 	c.Setting = NewSettingClient(c.config)
 	c.SubscriptionPlan = NewSubscriptionPlanClient(c.config)
 	c.TLSFingerprintProfile = NewTLSFingerprintProfileClient(c.config)
+	c.UsageBillingEvent = NewUsageBillingEventClient(c.config)
 	c.UsageCleanupTask = NewUsageCleanupTaskClient(c.config)
 	c.UsageLog = NewUsageLogClient(c.config)
 	c.User = NewUserClient(c.config)
@@ -286,10 +298,13 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		PromoCodeUsage:                NewPromoCodeUsageClient(cfg),
 		Proxy:                         NewProxyClient(cfg),
 		RedeemCode:                    NewRedeemCodeClient(cfg),
+		ResourceSupplyBalance:         NewResourceSupplyBalanceClient(cfg),
+		ResourceSupplyLedger:          NewResourceSupplyLedgerClient(cfg),
 		SecuritySecret:                NewSecuritySecretClient(cfg),
 		Setting:                       NewSettingClient(cfg),
 		SubscriptionPlan:              NewSubscriptionPlanClient(cfg),
 		TLSFingerprintProfile:         NewTLSFingerprintProfileClient(cfg),
+		UsageBillingEvent:             NewUsageBillingEventClient(cfg),
 		UsageCleanupTask:              NewUsageCleanupTaskClient(cfg),
 		UsageLog:                      NewUsageLogClient(cfg),
 		User:                          NewUserClient(cfg),
@@ -339,10 +354,13 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		PromoCodeUsage:                NewPromoCodeUsageClient(cfg),
 		Proxy:                         NewProxyClient(cfg),
 		RedeemCode:                    NewRedeemCodeClient(cfg),
+		ResourceSupplyBalance:         NewResourceSupplyBalanceClient(cfg),
+		ResourceSupplyLedger:          NewResourceSupplyLedgerClient(cfg),
 		SecuritySecret:                NewSecuritySecretClient(cfg),
 		Setting:                       NewSettingClient(cfg),
 		SubscriptionPlan:              NewSubscriptionPlanClient(cfg),
 		TLSFingerprintProfile:         NewTLSFingerprintProfileClient(cfg),
+		UsageBillingEvent:             NewUsageBillingEventClient(cfg),
 		UsageCleanupTask:              NewUsageCleanupTaskClient(cfg),
 		UsageLog:                      NewUsageLogClient(cfg),
 		User:                          NewUserClient(cfg),
@@ -385,8 +403,9 @@ func (c *Client) Use(hooks ...Hook) {
 		c.ChannelMonitorRequestTemplate, c.ErrorPassthroughRule, c.Group,
 		c.IdempotencyRecord, c.IdentityAdoptionDecision, c.PaymentAuditLog,
 		c.PaymentOrder, c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode,
-		c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting,
-		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog,
+		c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.ResourceSupplyBalance,
+		c.ResourceSupplyLedger, c.SecuritySecret, c.Setting, c.SubscriptionPlan,
+		c.TLSFingerprintProfile, c.UsageBillingEvent, c.UsageCleanupTask, c.UsageLog,
 		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
 		c.UserSubscription,
 	} {
@@ -404,8 +423,9 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.ChannelMonitorRequestTemplate, c.ErrorPassthroughRule, c.Group,
 		c.IdempotencyRecord, c.IdentityAdoptionDecision, c.PaymentAuditLog,
 		c.PaymentOrder, c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode,
-		c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting,
-		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog,
+		c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.ResourceSupplyBalance,
+		c.ResourceSupplyLedger, c.SecuritySecret, c.Setting, c.SubscriptionPlan,
+		c.TLSFingerprintProfile, c.UsageBillingEvent, c.UsageCleanupTask, c.UsageLog,
 		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
 		c.UserSubscription,
 	} {
@@ -462,6 +482,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Proxy.mutate(ctx, m)
 	case *RedeemCodeMutation:
 		return c.RedeemCode.mutate(ctx, m)
+	case *ResourceSupplyBalanceMutation:
+		return c.ResourceSupplyBalance.mutate(ctx, m)
+	case *ResourceSupplyLedgerMutation:
+		return c.ResourceSupplyLedger.mutate(ctx, m)
 	case *SecuritySecretMutation:
 		return c.SecuritySecret.mutate(ctx, m)
 	case *SettingMutation:
@@ -470,6 +494,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.SubscriptionPlan.mutate(ctx, m)
 	case *TLSFingerprintProfileMutation:
 		return c.TLSFingerprintProfile.mutate(ctx, m)
+	case *UsageBillingEventMutation:
+		return c.UsageBillingEvent.mutate(ctx, m)
 	case *UsageCleanupTaskMutation:
 		return c.UsageCleanupTask.mutate(ctx, m)
 	case *UsageLogMutation:
@@ -4163,6 +4189,288 @@ func (c *RedeemCodeClient) mutate(ctx context.Context, m *RedeemCodeMutation) (V
 	}
 }
 
+// ResourceSupplyBalanceClient is a client for the ResourceSupplyBalance schema.
+type ResourceSupplyBalanceClient struct {
+	config
+}
+
+// NewResourceSupplyBalanceClient returns a client for the ResourceSupplyBalance from the given config.
+func NewResourceSupplyBalanceClient(c config) *ResourceSupplyBalanceClient {
+	return &ResourceSupplyBalanceClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `resourcesupplybalance.Hooks(f(g(h())))`.
+func (c *ResourceSupplyBalanceClient) Use(hooks ...Hook) {
+	c.hooks.ResourceSupplyBalance = append(c.hooks.ResourceSupplyBalance, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `resourcesupplybalance.Intercept(f(g(h())))`.
+func (c *ResourceSupplyBalanceClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ResourceSupplyBalance = append(c.inters.ResourceSupplyBalance, interceptors...)
+}
+
+// Create returns a builder for creating a ResourceSupplyBalance entity.
+func (c *ResourceSupplyBalanceClient) Create() *ResourceSupplyBalanceCreate {
+	mutation := newResourceSupplyBalanceMutation(c.config, OpCreate)
+	return &ResourceSupplyBalanceCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ResourceSupplyBalance entities.
+func (c *ResourceSupplyBalanceClient) CreateBulk(builders ...*ResourceSupplyBalanceCreate) *ResourceSupplyBalanceCreateBulk {
+	return &ResourceSupplyBalanceCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ResourceSupplyBalanceClient) MapCreateBulk(slice any, setFunc func(*ResourceSupplyBalanceCreate, int)) *ResourceSupplyBalanceCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ResourceSupplyBalanceCreateBulk{err: fmt.Errorf("calling to ResourceSupplyBalanceClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ResourceSupplyBalanceCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ResourceSupplyBalanceCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ResourceSupplyBalance.
+func (c *ResourceSupplyBalanceClient) Update() *ResourceSupplyBalanceUpdate {
+	mutation := newResourceSupplyBalanceMutation(c.config, OpUpdate)
+	return &ResourceSupplyBalanceUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ResourceSupplyBalanceClient) UpdateOne(_m *ResourceSupplyBalance) *ResourceSupplyBalanceUpdateOne {
+	mutation := newResourceSupplyBalanceMutation(c.config, OpUpdateOne, withResourceSupplyBalance(_m))
+	return &ResourceSupplyBalanceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ResourceSupplyBalanceClient) UpdateOneID(id int64) *ResourceSupplyBalanceUpdateOne {
+	mutation := newResourceSupplyBalanceMutation(c.config, OpUpdateOne, withResourceSupplyBalanceID(id))
+	return &ResourceSupplyBalanceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ResourceSupplyBalance.
+func (c *ResourceSupplyBalanceClient) Delete() *ResourceSupplyBalanceDelete {
+	mutation := newResourceSupplyBalanceMutation(c.config, OpDelete)
+	return &ResourceSupplyBalanceDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ResourceSupplyBalanceClient) DeleteOne(_m *ResourceSupplyBalance) *ResourceSupplyBalanceDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ResourceSupplyBalanceClient) DeleteOneID(id int64) *ResourceSupplyBalanceDeleteOne {
+	builder := c.Delete().Where(resourcesupplybalance.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ResourceSupplyBalanceDeleteOne{builder}
+}
+
+// Query returns a query builder for ResourceSupplyBalance.
+func (c *ResourceSupplyBalanceClient) Query() *ResourceSupplyBalanceQuery {
+	return &ResourceSupplyBalanceQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeResourceSupplyBalance},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ResourceSupplyBalance entity by its id.
+func (c *ResourceSupplyBalanceClient) Get(ctx context.Context, id int64) (*ResourceSupplyBalance, error) {
+	return c.Query().Where(resourcesupplybalance.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ResourceSupplyBalanceClient) GetX(ctx context.Context, id int64) *ResourceSupplyBalance {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUser queries the user edge of a ResourceSupplyBalance.
+func (c *ResourceSupplyBalanceClient) QueryUser(_m *ResourceSupplyBalance) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(resourcesupplybalance.Table, resourcesupplybalance.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, resourcesupplybalance.UserTable, resourcesupplybalance.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ResourceSupplyBalanceClient) Hooks() []Hook {
+	return c.hooks.ResourceSupplyBalance
+}
+
+// Interceptors returns the client interceptors.
+func (c *ResourceSupplyBalanceClient) Interceptors() []Interceptor {
+	return c.inters.ResourceSupplyBalance
+}
+
+func (c *ResourceSupplyBalanceClient) mutate(ctx context.Context, m *ResourceSupplyBalanceMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ResourceSupplyBalanceCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ResourceSupplyBalanceUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ResourceSupplyBalanceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ResourceSupplyBalanceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ResourceSupplyBalance mutation op: %q", m.Op())
+	}
+}
+
+// ResourceSupplyLedgerClient is a client for the ResourceSupplyLedger schema.
+type ResourceSupplyLedgerClient struct {
+	config
+}
+
+// NewResourceSupplyLedgerClient returns a client for the ResourceSupplyLedger from the given config.
+func NewResourceSupplyLedgerClient(c config) *ResourceSupplyLedgerClient {
+	return &ResourceSupplyLedgerClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `resourcesupplyledger.Hooks(f(g(h())))`.
+func (c *ResourceSupplyLedgerClient) Use(hooks ...Hook) {
+	c.hooks.ResourceSupplyLedger = append(c.hooks.ResourceSupplyLedger, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `resourcesupplyledger.Intercept(f(g(h())))`.
+func (c *ResourceSupplyLedgerClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ResourceSupplyLedger = append(c.inters.ResourceSupplyLedger, interceptors...)
+}
+
+// Create returns a builder for creating a ResourceSupplyLedger entity.
+func (c *ResourceSupplyLedgerClient) Create() *ResourceSupplyLedgerCreate {
+	mutation := newResourceSupplyLedgerMutation(c.config, OpCreate)
+	return &ResourceSupplyLedgerCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ResourceSupplyLedger entities.
+func (c *ResourceSupplyLedgerClient) CreateBulk(builders ...*ResourceSupplyLedgerCreate) *ResourceSupplyLedgerCreateBulk {
+	return &ResourceSupplyLedgerCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ResourceSupplyLedgerClient) MapCreateBulk(slice any, setFunc func(*ResourceSupplyLedgerCreate, int)) *ResourceSupplyLedgerCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ResourceSupplyLedgerCreateBulk{err: fmt.Errorf("calling to ResourceSupplyLedgerClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ResourceSupplyLedgerCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ResourceSupplyLedgerCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ResourceSupplyLedger.
+func (c *ResourceSupplyLedgerClient) Update() *ResourceSupplyLedgerUpdate {
+	mutation := newResourceSupplyLedgerMutation(c.config, OpUpdate)
+	return &ResourceSupplyLedgerUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ResourceSupplyLedgerClient) UpdateOne(_m *ResourceSupplyLedger) *ResourceSupplyLedgerUpdateOne {
+	mutation := newResourceSupplyLedgerMutation(c.config, OpUpdateOne, withResourceSupplyLedger(_m))
+	return &ResourceSupplyLedgerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ResourceSupplyLedgerClient) UpdateOneID(id int64) *ResourceSupplyLedgerUpdateOne {
+	mutation := newResourceSupplyLedgerMutation(c.config, OpUpdateOne, withResourceSupplyLedgerID(id))
+	return &ResourceSupplyLedgerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ResourceSupplyLedger.
+func (c *ResourceSupplyLedgerClient) Delete() *ResourceSupplyLedgerDelete {
+	mutation := newResourceSupplyLedgerMutation(c.config, OpDelete)
+	return &ResourceSupplyLedgerDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ResourceSupplyLedgerClient) DeleteOne(_m *ResourceSupplyLedger) *ResourceSupplyLedgerDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ResourceSupplyLedgerClient) DeleteOneID(id int64) *ResourceSupplyLedgerDeleteOne {
+	builder := c.Delete().Where(resourcesupplyledger.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ResourceSupplyLedgerDeleteOne{builder}
+}
+
+// Query returns a query builder for ResourceSupplyLedger.
+func (c *ResourceSupplyLedgerClient) Query() *ResourceSupplyLedgerQuery {
+	return &ResourceSupplyLedgerQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeResourceSupplyLedger},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ResourceSupplyLedger entity by its id.
+func (c *ResourceSupplyLedgerClient) Get(ctx context.Context, id int64) (*ResourceSupplyLedger, error) {
+	return c.Query().Where(resourcesupplyledger.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ResourceSupplyLedgerClient) GetX(ctx context.Context, id int64) *ResourceSupplyLedger {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ResourceSupplyLedgerClient) Hooks() []Hook {
+	return c.hooks.ResourceSupplyLedger
+}
+
+// Interceptors returns the client interceptors.
+func (c *ResourceSupplyLedgerClient) Interceptors() []Interceptor {
+	return c.inters.ResourceSupplyLedger
+}
+
+func (c *ResourceSupplyLedgerClient) mutate(ctx context.Context, m *ResourceSupplyLedgerMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ResourceSupplyLedgerCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ResourceSupplyLedgerUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ResourceSupplyLedgerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ResourceSupplyLedgerDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ResourceSupplyLedger mutation op: %q", m.Op())
+	}
+}
+
 // SecuritySecretClient is a client for the SecuritySecret schema.
 type SecuritySecretClient struct {
 	config
@@ -4692,6 +5000,139 @@ func (c *TLSFingerprintProfileClient) mutate(ctx context.Context, m *TLSFingerpr
 		return (&TLSFingerprintProfileDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown TLSFingerprintProfile mutation op: %q", m.Op())
+	}
+}
+
+// UsageBillingEventClient is a client for the UsageBillingEvent schema.
+type UsageBillingEventClient struct {
+	config
+}
+
+// NewUsageBillingEventClient returns a client for the UsageBillingEvent from the given config.
+func NewUsageBillingEventClient(c config) *UsageBillingEventClient {
+	return &UsageBillingEventClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `usagebillingevent.Hooks(f(g(h())))`.
+func (c *UsageBillingEventClient) Use(hooks ...Hook) {
+	c.hooks.UsageBillingEvent = append(c.hooks.UsageBillingEvent, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `usagebillingevent.Intercept(f(g(h())))`.
+func (c *UsageBillingEventClient) Intercept(interceptors ...Interceptor) {
+	c.inters.UsageBillingEvent = append(c.inters.UsageBillingEvent, interceptors...)
+}
+
+// Create returns a builder for creating a UsageBillingEvent entity.
+func (c *UsageBillingEventClient) Create() *UsageBillingEventCreate {
+	mutation := newUsageBillingEventMutation(c.config, OpCreate)
+	return &UsageBillingEventCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of UsageBillingEvent entities.
+func (c *UsageBillingEventClient) CreateBulk(builders ...*UsageBillingEventCreate) *UsageBillingEventCreateBulk {
+	return &UsageBillingEventCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *UsageBillingEventClient) MapCreateBulk(slice any, setFunc func(*UsageBillingEventCreate, int)) *UsageBillingEventCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &UsageBillingEventCreateBulk{err: fmt.Errorf("calling to UsageBillingEventClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*UsageBillingEventCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &UsageBillingEventCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for UsageBillingEvent.
+func (c *UsageBillingEventClient) Update() *UsageBillingEventUpdate {
+	mutation := newUsageBillingEventMutation(c.config, OpUpdate)
+	return &UsageBillingEventUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *UsageBillingEventClient) UpdateOne(_m *UsageBillingEvent) *UsageBillingEventUpdateOne {
+	mutation := newUsageBillingEventMutation(c.config, OpUpdateOne, withUsageBillingEvent(_m))
+	return &UsageBillingEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *UsageBillingEventClient) UpdateOneID(id int64) *UsageBillingEventUpdateOne {
+	mutation := newUsageBillingEventMutation(c.config, OpUpdateOne, withUsageBillingEventID(id))
+	return &UsageBillingEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for UsageBillingEvent.
+func (c *UsageBillingEventClient) Delete() *UsageBillingEventDelete {
+	mutation := newUsageBillingEventMutation(c.config, OpDelete)
+	return &UsageBillingEventDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *UsageBillingEventClient) DeleteOne(_m *UsageBillingEvent) *UsageBillingEventDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *UsageBillingEventClient) DeleteOneID(id int64) *UsageBillingEventDeleteOne {
+	builder := c.Delete().Where(usagebillingevent.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &UsageBillingEventDeleteOne{builder}
+}
+
+// Query returns a query builder for UsageBillingEvent.
+func (c *UsageBillingEventClient) Query() *UsageBillingEventQuery {
+	return &UsageBillingEventQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeUsageBillingEvent},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a UsageBillingEvent entity by its id.
+func (c *UsageBillingEventClient) Get(ctx context.Context, id int64) (*UsageBillingEvent, error) {
+	return c.Query().Where(usagebillingevent.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *UsageBillingEventClient) GetX(ctx context.Context, id int64) *UsageBillingEvent {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *UsageBillingEventClient) Hooks() []Hook {
+	return c.hooks.UsageBillingEvent
+}
+
+// Interceptors returns the client interceptors.
+func (c *UsageBillingEventClient) Interceptors() []Interceptor {
+	return c.inters.UsageBillingEvent
+}
+
+func (c *UsageBillingEventClient) mutate(ctx context.Context, m *UsageBillingEventMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&UsageBillingEventCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&UsageBillingEventUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&UsageBillingEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&UsageBillingEventDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown UsageBillingEvent mutation op: %q", m.Op())
 	}
 }
 
@@ -5334,6 +5775,22 @@ func (c *UserClient) QueryPendingAuthSessions(_m *User) *PendingAuthSessionQuery
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(pendingauthsession.Table, pendingauthsession.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.PendingAuthSessionsTable, user.PendingAuthSessionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryResourceSupplyBalance queries the resource_supply_balance edge of a User.
+func (c *UserClient) QueryResourceSupplyBalance(_m *User) *ResourceSupplyBalanceQuery {
+	query := (&ResourceSupplyBalanceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(resourcesupplybalance.Table, resourcesupplybalance.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.ResourceSupplyBalanceTable, user.ResourceSupplyBalanceColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -6023,8 +6480,9 @@ type (
 		ChannelMonitorHistory, ChannelMonitorRequestTemplate, ErrorPassthroughRule,
 		Group, IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog,
 		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
-		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting, SubscriptionPlan,
-		TLSFingerprintProfile, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
+		PromoCodeUsage, Proxy, RedeemCode, ResourceSupplyBalance, ResourceSupplyLedger,
+		SecuritySecret, Setting, SubscriptionPlan, TLSFingerprintProfile,
+		UsageBillingEvent, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
 		UserAttributeDefinition, UserAttributeValue, UserSubscription []ent.Hook
 	}
 	inters struct {
@@ -6033,8 +6491,9 @@ type (
 		ChannelMonitorHistory, ChannelMonitorRequestTemplate, ErrorPassthroughRule,
 		Group, IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog,
 		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
-		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting, SubscriptionPlan,
-		TLSFingerprintProfile, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
+		PromoCodeUsage, Proxy, RedeemCode, ResourceSupplyBalance, ResourceSupplyLedger,
+		SecuritySecret, Setting, SubscriptionPlan, TLSFingerprintProfile,
+		UsageBillingEvent, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
 		UserAttributeDefinition, UserAttributeValue, UserSubscription []ent.Interceptor
 	}
 )

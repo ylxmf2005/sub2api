@@ -4363,6 +4363,21 @@
           </div>
         </div>
 
+        <!-- Resource Supply Self-Service -->
+        <div class="card p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <label class="input-label">
+                {{ t('admin.settings.features.resourceSupply.enabled') }}
+              </label>
+              <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('admin.settings.features.resourceSupply.enabledHint') }}
+              </p>
+            </div>
+            <Toggle v-model="form.resource_supply_self_service_enabled" />
+          </div>
+        </div>
+
         <!-- Affiliate add/edit modal -->
         <div
           v-if="affiliateModal.open"
@@ -5823,6 +5838,8 @@ const form = reactive<SettingsForm>({
   available_channels_enabled: false,
   // Affiliate (邀请返利) feature switch
   affiliate_enabled: false,
+  // Resource Supply Self-Service feature switch
+  resource_supply_self_service_enabled: false,
 });
 
 const authSourceDefaults = reactive<AuthSourceDefaultsState>(
@@ -6763,6 +6780,8 @@ async function saveSettings() {
       available_channels_enabled: form.available_channels_enabled,
       // Affiliate (邀请返利) feature switch
       affiliate_enabled: form.affiliate_enabled,
+      // Resource Supply Self-Service feature switch
+      resource_supply_self_service_enabled: form.resource_supply_self_service_enabled,
     };
 
     // 仅当 openai_fast_policy_settings 已成功从后端加载时才回写，

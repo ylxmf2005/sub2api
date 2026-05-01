@@ -588,6 +588,55 @@ func (_u *GroupUpdate) AddRpmLimit(v int) *GroupUpdate {
 	return _u
 }
 
+// SetSupplyRewardsEnabled sets the "supply_rewards_enabled" field.
+func (_u *GroupUpdate) SetSupplyRewardsEnabled(v bool) *GroupUpdate {
+	_u.mutation.SetSupplyRewardsEnabled(v)
+	return _u
+}
+
+// SetNillableSupplyRewardsEnabled sets the "supply_rewards_enabled" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableSupplyRewardsEnabled(v *bool) *GroupUpdate {
+	if v != nil {
+		_u.SetSupplyRewardsEnabled(*v)
+	}
+	return _u
+}
+
+// SetSupplyRewardMultiplier sets the "supply_reward_multiplier" field.
+func (_u *GroupUpdate) SetSupplyRewardMultiplier(v float64) *GroupUpdate {
+	_u.mutation.ResetSupplyRewardMultiplier()
+	_u.mutation.SetSupplyRewardMultiplier(v)
+	return _u
+}
+
+// SetNillableSupplyRewardMultiplier sets the "supply_reward_multiplier" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableSupplyRewardMultiplier(v *float64) *GroupUpdate {
+	if v != nil {
+		_u.SetSupplyRewardMultiplier(*v)
+	}
+	return _u
+}
+
+// AddSupplyRewardMultiplier adds value to the "supply_reward_multiplier" field.
+func (_u *GroupUpdate) AddSupplyRewardMultiplier(v float64) *GroupUpdate {
+	_u.mutation.AddSupplyRewardMultiplier(v)
+	return _u
+}
+
+// SetSupplySelfServiceReviewPolicy sets the "supply_self_service_review_policy" field.
+func (_u *GroupUpdate) SetSupplySelfServiceReviewPolicy(v string) *GroupUpdate {
+	_u.mutation.SetSupplySelfServiceReviewPolicy(v)
+	return _u
+}
+
+// SetNillableSupplySelfServiceReviewPolicy sets the "supply_self_service_review_policy" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableSupplySelfServiceReviewPolicy(v *string) *GroupUpdate {
+	if v != nil {
+		_u.SetSupplySelfServiceReviewPolicy(*v)
+	}
+	return _u
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_u *GroupUpdate) AddAPIKeyIDs(ids ...int64) *GroupUpdate {
 	_u.mutation.AddAPIKeyIDs(ids...)
@@ -878,6 +927,16 @@ func (_u *GroupUpdate) check() error {
 			return &ValidationError{Name: "default_mapped_model", err: fmt.Errorf(`ent: validator failed for field "Group.default_mapped_model": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.SupplyRewardMultiplier(); ok {
+		if err := group.SupplyRewardMultiplierValidator(v); err != nil {
+			return &ValidationError{Name: "supply_reward_multiplier", err: fmt.Errorf(`ent: validator failed for field "Group.supply_reward_multiplier": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.SupplySelfServiceReviewPolicy(); ok {
+		if err := group.SupplySelfServiceReviewPolicyValidator(v); err != nil {
+			return &ValidationError{Name: "supply_self_service_review_policy", err: fmt.Errorf(`ent: validator failed for field "Group.supply_self_service_review_policy": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -1056,6 +1115,18 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedRpmLimit(); ok {
 		_spec.AddField(group.FieldRpmLimit, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SupplyRewardsEnabled(); ok {
+		_spec.SetField(group.FieldSupplyRewardsEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.SupplyRewardMultiplier(); ok {
+		_spec.SetField(group.FieldSupplyRewardMultiplier, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedSupplyRewardMultiplier(); ok {
+		_spec.AddField(group.FieldSupplyRewardMultiplier, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.SupplySelfServiceReviewPolicy(); ok {
+		_spec.SetField(group.FieldSupplySelfServiceReviewPolicy, field.TypeString, value)
 	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1923,6 +1994,55 @@ func (_u *GroupUpdateOne) AddRpmLimit(v int) *GroupUpdateOne {
 	return _u
 }
 
+// SetSupplyRewardsEnabled sets the "supply_rewards_enabled" field.
+func (_u *GroupUpdateOne) SetSupplyRewardsEnabled(v bool) *GroupUpdateOne {
+	_u.mutation.SetSupplyRewardsEnabled(v)
+	return _u
+}
+
+// SetNillableSupplyRewardsEnabled sets the "supply_rewards_enabled" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableSupplyRewardsEnabled(v *bool) *GroupUpdateOne {
+	if v != nil {
+		_u.SetSupplyRewardsEnabled(*v)
+	}
+	return _u
+}
+
+// SetSupplyRewardMultiplier sets the "supply_reward_multiplier" field.
+func (_u *GroupUpdateOne) SetSupplyRewardMultiplier(v float64) *GroupUpdateOne {
+	_u.mutation.ResetSupplyRewardMultiplier()
+	_u.mutation.SetSupplyRewardMultiplier(v)
+	return _u
+}
+
+// SetNillableSupplyRewardMultiplier sets the "supply_reward_multiplier" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableSupplyRewardMultiplier(v *float64) *GroupUpdateOne {
+	if v != nil {
+		_u.SetSupplyRewardMultiplier(*v)
+	}
+	return _u
+}
+
+// AddSupplyRewardMultiplier adds value to the "supply_reward_multiplier" field.
+func (_u *GroupUpdateOne) AddSupplyRewardMultiplier(v float64) *GroupUpdateOne {
+	_u.mutation.AddSupplyRewardMultiplier(v)
+	return _u
+}
+
+// SetSupplySelfServiceReviewPolicy sets the "supply_self_service_review_policy" field.
+func (_u *GroupUpdateOne) SetSupplySelfServiceReviewPolicy(v string) *GroupUpdateOne {
+	_u.mutation.SetSupplySelfServiceReviewPolicy(v)
+	return _u
+}
+
+// SetNillableSupplySelfServiceReviewPolicy sets the "supply_self_service_review_policy" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableSupplySelfServiceReviewPolicy(v *string) *GroupUpdateOne {
+	if v != nil {
+		_u.SetSupplySelfServiceReviewPolicy(*v)
+	}
+	return _u
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_u *GroupUpdateOne) AddAPIKeyIDs(ids ...int64) *GroupUpdateOne {
 	_u.mutation.AddAPIKeyIDs(ids...)
@@ -2226,6 +2346,16 @@ func (_u *GroupUpdateOne) check() error {
 			return &ValidationError{Name: "default_mapped_model", err: fmt.Errorf(`ent: validator failed for field "Group.default_mapped_model": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.SupplyRewardMultiplier(); ok {
+		if err := group.SupplyRewardMultiplierValidator(v); err != nil {
+			return &ValidationError{Name: "supply_reward_multiplier", err: fmt.Errorf(`ent: validator failed for field "Group.supply_reward_multiplier": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.SupplySelfServiceReviewPolicy(); ok {
+		if err := group.SupplySelfServiceReviewPolicyValidator(v); err != nil {
+			return &ValidationError{Name: "supply_self_service_review_policy", err: fmt.Errorf(`ent: validator failed for field "Group.supply_self_service_review_policy": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -2421,6 +2551,18 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	}
 	if value, ok := _u.mutation.AddedRpmLimit(); ok {
 		_spec.AddField(group.FieldRpmLimit, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SupplyRewardsEnabled(); ok {
+		_spec.SetField(group.FieldSupplyRewardsEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.SupplyRewardMultiplier(); ok {
+		_spec.SetField(group.FieldSupplyRewardMultiplier, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedSupplyRewardMultiplier(); ok {
+		_spec.AddField(group.FieldSupplyRewardMultiplier, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.SupplySelfServiceReviewPolicy(); ok {
+		_spec.SetField(group.FieldSupplySelfServiceReviewPolicy, field.TypeString, value)
 	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -36,6 +36,7 @@ type AdminHandlers struct {
 	ChannelMonitorTemplate *admin.ChannelMonitorRequestTemplateHandler
 	Payment                *admin.PaymentHandler
 	Affiliate              *admin.AffiliateHandler
+	ResourceSupply         *admin.ResourceSupplyHandler
 }
 
 // Handlers contains all HTTP handlers
@@ -58,6 +59,7 @@ type Handlers struct {
 	Payment          *PaymentHandler
 	PaymentWebhook   *PaymentWebhookHandler
 	AvailableChannel *AvailableChannelHandler
+	ResourceSupply   *ResourceSupplyHandler
 }
 
 // BuildInfo contains build-time information

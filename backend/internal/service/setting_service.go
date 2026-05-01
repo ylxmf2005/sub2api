@@ -455,6 +455,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyChannelMonitorDefaultIntervalSeconds,
 		SettingKeyAvailableChannelsEnabled,
 		SettingKeyAffiliateEnabled,
+		SettingKeyResourceSupplySelfServiceEnabled,
 	}
 
 	settings, err := s.settingRepo.GetMultiple(ctx, keys)
@@ -543,7 +544,8 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 
 		AvailableChannelsEnabled: settings[SettingKeyAvailableChannelsEnabled] == "true",
 
-		AffiliateEnabled: settings[SettingKeyAffiliateEnabled] == "true",
+		AffiliateEnabled:                 settings[SettingKeyAffiliateEnabled] == "true",
+		ResourceSupplySelfServiceEnabled: settings[SettingKeyResourceSupplySelfServiceEnabled] == "true",
 	}, nil
 }
 
@@ -691,6 +693,7 @@ type PublicSettingsInjectionPayload struct {
 	ChannelMonitorDefaultIntervalSeconds int  `json:"channel_monitor_default_interval_seconds"`
 	AvailableChannelsEnabled             bool `json:"available_channels_enabled"`
 	AffiliateEnabled                     bool `json:"affiliate_enabled"`
+	ResourceSupplySelfServiceEnabled     bool `json:"resource_supply_self_service_enabled"`
 }
 
 // GetPublicSettingsForInjection returns public settings in a format suitable for HTML injection.
@@ -744,6 +747,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		ChannelMonitorDefaultIntervalSeconds: settings.ChannelMonitorDefaultIntervalSeconds,
 		AvailableChannelsEnabled:             settings.AvailableChannelsEnabled,
 		AffiliateEnabled:                     settings.AffiliateEnabled,
+		ResourceSupplySelfServiceEnabled:     settings.ResourceSupplySelfServiceEnabled,
 	}, nil
 }
 
@@ -1231,6 +1235,9 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 	// Affiliate (邀请返利) feature switch
 	updates[SettingKeyAffiliateEnabled] = strconv.FormatBool(settings.AffiliateEnabled)
 
+	// Resource supply self-service intake switch
+	updates[SettingKeyResourceSupplySelfServiceEnabled] = strconv.FormatBool(settings.ResourceSupplySelfServiceEnabled)
+
 	// Claude Code version check
 	updates[SettingKeyMinClaudeCodeVersion] = settings.MinClaudeCodeVersion
 	updates[SettingKeyMaxClaudeCodeVersion] = settings.MaxClaudeCodeVersion
@@ -1511,6 +1518,14 @@ func (s *SettingService) IsAffiliateEnabled(ctx context.Context) bool {
 	value, err := s.settingRepo.GetValue(ctx, SettingKeyAffiliateEnabled)
 	if err != nil {
 		return false // 默认关闭
+	}
+	return value == "true"
+}
+
+func (s *SettingService) IsResourceSupplySelfServiceEnabled(ctx context.Context) bool {
+	value, err := s.settingRepo.GetValue(ctx, SettingKeyResourceSupplySelfServiceEnabled)
+	if err != nil {
+		return ResourceSupplySelfServiceEnabledDefault
 	}
 	return value == "true"
 }
@@ -1875,6 +1890,9 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		// Affiliate (邀请返利) feature (default disabled; opt-in)
 		SettingKeyAffiliateEnabled: "false",
 
+		// Resource supply self-service intake (default disabled; opt-in)
+		SettingKeyResourceSupplySelfServiceEnabled: "false",
+
 		// Claude Code version check (default: empty = disabled)
 		SettingKeyMinClaudeCodeVersion: "",
 		SettingKeyMaxClaudeCodeVersion: "",
@@ -2212,6 +2230,9 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 
 	// Affiliate (邀请返利) feature (default: disabled; strict true)
 	result.AffiliateEnabled = settings[SettingKeyAffiliateEnabled] == "true"
+
+	// Resource supply self-service intake (default: disabled; strict true)
+	result.ResourceSupplySelfServiceEnabled = settings[SettingKeyResourceSupplySelfServiceEnabled] == "true"
 
 	// Claude Code version check
 	result.MinClaudeCodeVersion = settings[SettingKeyMinClaudeCodeVersion]

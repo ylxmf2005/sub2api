@@ -31,6 +31,30 @@ const (
 	AffiliateRebatePerInviteeCapDefault = 0.0   // 0 = 无上限
 )
 
+// Resource supply settings and state constants.
+const (
+	ResourceSupplySelfServiceEnabledDefault = false
+	ResourceSupplyRewardMultiplierDefault   = 1.0
+
+	ResourceSupplySourceAdmin       = "admin"
+	ResourceSupplySourceSelfService = "self_service"
+
+	ResourceSupplyStatusNone          = "none"
+	ResourceSupplyStatusTesting       = "testing"
+	ResourceSupplyStatusPendingReview = "pending_review"
+	ResourceSupplyStatusSchedulable   = "schedulable"
+	ResourceSupplyStatusPaused        = "paused"
+	ResourceSupplyStatusRejected      = "rejected"
+	ResourceSupplyStatusRevoked       = "revoked"
+
+	ResourceSupplyReviewPolicyManualReview = "manual_review"
+	ResourceSupplyReviewPolicyAutoOnline   = "auto_online"
+
+	ResourceSupplyLedgerTypeReward     = "reward"
+	ResourceSupplyLedgerTypeTransfer   = "transfer"
+	ResourceSupplyLedgerTypeAdjustment = "adjustment"
+)
+
 // Platform constants
 const (
 	PlatformAnthropic   = domain.PlatformAnthropic
@@ -95,18 +119,19 @@ const WeChatConnectSyntheticEmailDomain = "@wechat-connect.invalid"
 // Setting keys
 const (
 	// 注册设置
-	SettingKeyRegistrationEnabled              = "registration_enabled"                // 是否开放注册
-	SettingKeyEmailVerifyEnabled               = "email_verify_enabled"                // 是否开启邮件验证
-	SettingKeyRegistrationEmailSuffixWhitelist = "registration_email_suffix_whitelist" // 注册邮箱后缀白名单（JSON 数组）
-	SettingKeyPromoCodeEnabled                 = "promo_code_enabled"                  // 是否启用优惠码功能
-	SettingKeyPasswordResetEnabled             = "password_reset_enabled"              // 是否启用忘记密码功能（需要先开启邮件验证）
-	SettingKeyFrontendURL                      = "frontend_url"                        // 前端基础URL，用于生成邮件中的重置密码链接
-	SettingKeyInvitationCodeEnabled            = "invitation_code_enabled"             // 是否启用邀请码注册
-	SettingKeyAffiliateEnabled                 = "affiliate_enabled"                   // 邀请返利功能总开关
-	SettingKeyAffiliateRebateRate              = "affiliate_rebate_rate"               // 邀请返利比例（百分比，0-100）
-	SettingKeyAffiliateRebateFreezeHours       = "affiliate_rebate_freeze_hours"       // 返利冻结期（小时，0=不冻结）
-	SettingKeyAffiliateRebateDurationDays      = "affiliate_rebate_duration_days"      // 返利有效期（天，0=永久）
-	SettingKeyAffiliateRebatePerInviteeCap     = "affiliate_rebate_per_invitee_cap"    // 单人返利上限（0=无上限）
+	SettingKeyRegistrationEnabled              = "registration_enabled"                 // 是否开放注册
+	SettingKeyEmailVerifyEnabled               = "email_verify_enabled"                 // 是否开启邮件验证
+	SettingKeyRegistrationEmailSuffixWhitelist = "registration_email_suffix_whitelist"  // 注册邮箱后缀白名单（JSON 数组）
+	SettingKeyPromoCodeEnabled                 = "promo_code_enabled"                   // 是否启用优惠码功能
+	SettingKeyPasswordResetEnabled             = "password_reset_enabled"               // 是否启用忘记密码功能（需要先开启邮件验证）
+	SettingKeyFrontendURL                      = "frontend_url"                         // 前端基础URL，用于生成邮件中的重置密码链接
+	SettingKeyInvitationCodeEnabled            = "invitation_code_enabled"              // 是否启用邀请码注册
+	SettingKeyAffiliateEnabled                 = "affiliate_enabled"                    // 邀请返利功能总开关
+	SettingKeyAffiliateRebateRate              = "affiliate_rebate_rate"                // 邀请返利比例（百分比，0-100）
+	SettingKeyAffiliateRebateFreezeHours       = "affiliate_rebate_freeze_hours"        // 返利冻结期（小时，0=不冻结）
+	SettingKeyAffiliateRebateDurationDays      = "affiliate_rebate_duration_days"       // 返利有效期（天，0=永久）
+	SettingKeyAffiliateRebatePerInviteeCap     = "affiliate_rebate_per_invitee_cap"     // 单人返利上限（0=无上限）
+	SettingKeyResourceSupplySelfServiceEnabled = "resource_supply_self_service_enabled" // 资源供应用户自助接入开关
 
 	// 邮件服务设置
 	SettingKeySMTPHost     = "smtp_host"      // SMTP服务器地址

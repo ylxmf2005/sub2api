@@ -285,6 +285,30 @@ func (f RedeemCodeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, 
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RedeemCodeMutation", m)
 }
 
+// The ResourceSupplyBalanceFunc type is an adapter to allow the use of ordinary
+// function as ResourceSupplyBalance mutator.
+type ResourceSupplyBalanceFunc func(context.Context, *ent.ResourceSupplyBalanceMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ResourceSupplyBalanceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ResourceSupplyBalanceMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ResourceSupplyBalanceMutation", m)
+}
+
+// The ResourceSupplyLedgerFunc type is an adapter to allow the use of ordinary
+// function as ResourceSupplyLedger mutator.
+type ResourceSupplyLedgerFunc func(context.Context, *ent.ResourceSupplyLedgerMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ResourceSupplyLedgerFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ResourceSupplyLedgerMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ResourceSupplyLedgerMutation", m)
+}
+
 // The SecuritySecretFunc type is an adapter to allow the use of ordinary
 // function as SecuritySecret mutator.
 type SecuritySecretFunc func(context.Context, *ent.SecuritySecretMutation) (ent.Value, error)
@@ -331,6 +355,18 @@ func (f TLSFingerprintProfileFunc) Mutate(ctx context.Context, m ent.Mutation) (
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TLSFingerprintProfileMutation", m)
+}
+
+// The UsageBillingEventFunc type is an adapter to allow the use of ordinary
+// function as UsageBillingEvent mutator.
+type UsageBillingEventFunc func(context.Context, *ent.UsageBillingEventMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f UsageBillingEventFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.UsageBillingEventMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UsageBillingEventMutation", m)
 }
 
 // The UsageCleanupTaskFunc type is an adapter to allow the use of ordinary

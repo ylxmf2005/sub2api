@@ -39,6 +39,14 @@ type Account struct {
 	CreatedAt          time.Time
 	UpdatedAt          time.Time
 
+	SupplyOwnerUserID  *int64
+	SupplySource       *string
+	SupplyStatus       string
+	SupplyStatusReason *string
+	SupplySubmittedBy  *int64
+	SupplyReviewedBy   *int64
+	SupplyReviewedAt   *time.Time
+
 	Schedulable bool
 
 	RateLimitedAt    *time.Time
@@ -108,6 +116,9 @@ func (a *Account) IsSchedulable() bool {
 	if !a.IsActive() || !a.Schedulable {
 		return false
 	}
+	if !a.IsResourceSupplySchedulable() {
+		return false
+	}
 	now := time.Now()
 	if a.AutoPauseOnExpired && a.ExpiresAt != nil && !now.Before(*a.ExpiresAt) {
 		return false
@@ -125,6 +136,20 @@ func (a *Account) IsSchedulable() bool {
 		return false
 	}
 	return true
+}
+
+func (a *Account) IsResourceSupplySchedulable() bool {
+	if a == nil {
+		return false
+	}
+	switch strings.TrimSpace(a.SupplyStatus) {
+	case "", ResourceSupplyStatusNone:
+		return true
+	case ResourceSupplyStatusSchedulable:
+		return true
+	default:
+		return false
+	}
 }
 
 func (a *Account) IsRateLimited() bool {

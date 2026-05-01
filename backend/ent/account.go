@@ -57,6 +57,20 @@ type Account struct {
 	ExpiresAt *time.Time `json:"expires_at,omitempty"`
 	// Auto pause scheduling when account expires.
 	AutoPauseOnExpired bool `json:"auto_pause_on_expired,omitempty"`
+	// SupplyOwnerUserID holds the value of the "supply_owner_user_id" field.
+	SupplyOwnerUserID *int64 `json:"supply_owner_user_id,omitempty"`
+	// SupplySource holds the value of the "supply_source" field.
+	SupplySource *string `json:"supply_source,omitempty"`
+	// SupplyStatus holds the value of the "supply_status" field.
+	SupplyStatus string `json:"supply_status,omitempty"`
+	// SupplyStatusReason holds the value of the "supply_status_reason" field.
+	SupplyStatusReason *string `json:"supply_status_reason,omitempty"`
+	// SupplySubmittedBy holds the value of the "supply_submitted_by" field.
+	SupplySubmittedBy *int64 `json:"supply_submitted_by,omitempty"`
+	// SupplyReviewedBy holds the value of the "supply_reviewed_by" field.
+	SupplyReviewedBy *int64 `json:"supply_reviewed_by,omitempty"`
+	// SupplyReviewedAt holds the value of the "supply_reviewed_at" field.
+	SupplyReviewedAt *time.Time `json:"supply_reviewed_at,omitempty"`
 	// Schedulable holds the value of the "schedulable" field.
 	Schedulable bool `json:"schedulable,omitempty"`
 	// RateLimitedAt holds the value of the "rate_limited_at" field.
@@ -145,11 +159,11 @@ func (*Account) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case account.FieldRateMultiplier:
 			values[i] = new(sql.NullFloat64)
-		case account.FieldID, account.FieldProxyID, account.FieldConcurrency, account.FieldLoadFactor, account.FieldPriority:
+		case account.FieldID, account.FieldProxyID, account.FieldConcurrency, account.FieldLoadFactor, account.FieldPriority, account.FieldSupplyOwnerUserID, account.FieldSupplySubmittedBy, account.FieldSupplyReviewedBy:
 			values[i] = new(sql.NullInt64)
-		case account.FieldName, account.FieldNotes, account.FieldPlatform, account.FieldType, account.FieldStatus, account.FieldErrorMessage, account.FieldTempUnschedulableReason, account.FieldSessionWindowStatus:
+		case account.FieldName, account.FieldNotes, account.FieldPlatform, account.FieldType, account.FieldStatus, account.FieldErrorMessage, account.FieldSupplySource, account.FieldSupplyStatus, account.FieldSupplyStatusReason, account.FieldTempUnschedulableReason, account.FieldSessionWindowStatus:
 			values[i] = new(sql.NullString)
-		case account.FieldCreatedAt, account.FieldUpdatedAt, account.FieldDeletedAt, account.FieldLastUsedAt, account.FieldExpiresAt, account.FieldRateLimitedAt, account.FieldRateLimitResetAt, account.FieldOverloadUntil, account.FieldTempUnschedulableUntil, account.FieldSessionWindowStart, account.FieldSessionWindowEnd:
+		case account.FieldCreatedAt, account.FieldUpdatedAt, account.FieldDeletedAt, account.FieldLastUsedAt, account.FieldExpiresAt, account.FieldSupplyReviewedAt, account.FieldRateLimitedAt, account.FieldRateLimitResetAt, account.FieldOverloadUntil, account.FieldTempUnschedulableUntil, account.FieldSessionWindowStart, account.FieldSessionWindowEnd:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -296,6 +310,54 @@ func (_m *Account) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field auto_pause_on_expired", values[i])
 			} else if value.Valid {
 				_m.AutoPauseOnExpired = value.Bool
+			}
+		case account.FieldSupplyOwnerUserID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field supply_owner_user_id", values[i])
+			} else if value.Valid {
+				_m.SupplyOwnerUserID = new(int64)
+				*_m.SupplyOwnerUserID = value.Int64
+			}
+		case account.FieldSupplySource:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field supply_source", values[i])
+			} else if value.Valid {
+				_m.SupplySource = new(string)
+				*_m.SupplySource = value.String
+			}
+		case account.FieldSupplyStatus:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field supply_status", values[i])
+			} else if value.Valid {
+				_m.SupplyStatus = value.String
+			}
+		case account.FieldSupplyStatusReason:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field supply_status_reason", values[i])
+			} else if value.Valid {
+				_m.SupplyStatusReason = new(string)
+				*_m.SupplyStatusReason = value.String
+			}
+		case account.FieldSupplySubmittedBy:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field supply_submitted_by", values[i])
+			} else if value.Valid {
+				_m.SupplySubmittedBy = new(int64)
+				*_m.SupplySubmittedBy = value.Int64
+			}
+		case account.FieldSupplyReviewedBy:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field supply_reviewed_by", values[i])
+			} else if value.Valid {
+				_m.SupplyReviewedBy = new(int64)
+				*_m.SupplyReviewedBy = value.Int64
+			}
+		case account.FieldSupplyReviewedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field supply_reviewed_at", values[i])
+			} else if value.Valid {
+				_m.SupplyReviewedAt = new(time.Time)
+				*_m.SupplyReviewedAt = value.Time
 			}
 		case account.FieldSchedulable:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -485,6 +547,39 @@ func (_m *Account) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("auto_pause_on_expired=")
 	builder.WriteString(fmt.Sprintf("%v", _m.AutoPauseOnExpired))
+	builder.WriteString(", ")
+	if v := _m.SupplyOwnerUserID; v != nil {
+		builder.WriteString("supply_owner_user_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.SupplySource; v != nil {
+		builder.WriteString("supply_source=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	builder.WriteString("supply_status=")
+	builder.WriteString(_m.SupplyStatus)
+	builder.WriteString(", ")
+	if v := _m.SupplyStatusReason; v != nil {
+		builder.WriteString("supply_status_reason=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.SupplySubmittedBy; v != nil {
+		builder.WriteString("supply_submitted_by=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.SupplyReviewedBy; v != nil {
+		builder.WriteString("supply_reviewed_by=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.SupplyReviewedAt; v != nil {
+		builder.WriteString("supply_reviewed_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("schedulable=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Schedulable))

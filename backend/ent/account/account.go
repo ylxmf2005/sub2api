@@ -53,6 +53,20 @@ const (
 	FieldExpiresAt = "expires_at"
 	// FieldAutoPauseOnExpired holds the string denoting the auto_pause_on_expired field in the database.
 	FieldAutoPauseOnExpired = "auto_pause_on_expired"
+	// FieldSupplyOwnerUserID holds the string denoting the supply_owner_user_id field in the database.
+	FieldSupplyOwnerUserID = "supply_owner_user_id"
+	// FieldSupplySource holds the string denoting the supply_source field in the database.
+	FieldSupplySource = "supply_source"
+	// FieldSupplyStatus holds the string denoting the supply_status field in the database.
+	FieldSupplyStatus = "supply_status"
+	// FieldSupplyStatusReason holds the string denoting the supply_status_reason field in the database.
+	FieldSupplyStatusReason = "supply_status_reason"
+	// FieldSupplySubmittedBy holds the string denoting the supply_submitted_by field in the database.
+	FieldSupplySubmittedBy = "supply_submitted_by"
+	// FieldSupplyReviewedBy holds the string denoting the supply_reviewed_by field in the database.
+	FieldSupplyReviewedBy = "supply_reviewed_by"
+	// FieldSupplyReviewedAt holds the string denoting the supply_reviewed_at field in the database.
+	FieldSupplyReviewedAt = "supply_reviewed_at"
 	// FieldSchedulable holds the string denoting the schedulable field in the database.
 	FieldSchedulable = "schedulable"
 	// FieldRateLimitedAt holds the string denoting the rate_limited_at field in the database.
@@ -131,6 +145,13 @@ var Columns = []string{
 	FieldLastUsedAt,
 	FieldExpiresAt,
 	FieldAutoPauseOnExpired,
+	FieldSupplyOwnerUserID,
+	FieldSupplySource,
+	FieldSupplyStatus,
+	FieldSupplyStatusReason,
+	FieldSupplySubmittedBy,
+	FieldSupplyReviewedBy,
+	FieldSupplyReviewedAt,
 	FieldSchedulable,
 	FieldRateLimitedAt,
 	FieldRateLimitResetAt,
@@ -194,6 +215,12 @@ var (
 	StatusValidator func(string) error
 	// DefaultAutoPauseOnExpired holds the default value on creation for the "auto_pause_on_expired" field.
 	DefaultAutoPauseOnExpired bool
+	// SupplySourceValidator is a validator for the "supply_source" field. It is called by the builders before save.
+	SupplySourceValidator func(string) error
+	// DefaultSupplyStatus holds the default value on creation for the "supply_status" field.
+	DefaultSupplyStatus string
+	// SupplyStatusValidator is a validator for the "supply_status" field. It is called by the builders before save.
+	SupplyStatusValidator func(string) error
 	// DefaultSchedulable holds the default value on creation for the "schedulable" field.
 	DefaultSchedulable bool
 	// SessionWindowStatusValidator is a validator for the "session_window_status" field. It is called by the builders before save.
@@ -291,6 +318,41 @@ func ByExpiresAt(opts ...sql.OrderTermOption) OrderOption {
 // ByAutoPauseOnExpired orders the results by the auto_pause_on_expired field.
 func ByAutoPauseOnExpired(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAutoPauseOnExpired, opts...).ToFunc()
+}
+
+// BySupplyOwnerUserID orders the results by the supply_owner_user_id field.
+func BySupplyOwnerUserID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSupplyOwnerUserID, opts...).ToFunc()
+}
+
+// BySupplySource orders the results by the supply_source field.
+func BySupplySource(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSupplySource, opts...).ToFunc()
+}
+
+// BySupplyStatus orders the results by the supply_status field.
+func BySupplyStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSupplyStatus, opts...).ToFunc()
+}
+
+// BySupplyStatusReason orders the results by the supply_status_reason field.
+func BySupplyStatusReason(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSupplyStatusReason, opts...).ToFunc()
+}
+
+// BySupplySubmittedBy orders the results by the supply_submitted_by field.
+func BySupplySubmittedBy(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSupplySubmittedBy, opts...).ToFunc()
+}
+
+// BySupplyReviewedBy orders the results by the supply_reviewed_by field.
+func BySupplyReviewedBy(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSupplyReviewedBy, opts...).ToFunc()
+}
+
+// BySupplyReviewedAt orders the results by the supply_reviewed_at field.
+func BySupplyReviewedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSupplyReviewedAt, opts...).ToFunc()
 }
 
 // BySchedulable orders the results by the schedulable field.

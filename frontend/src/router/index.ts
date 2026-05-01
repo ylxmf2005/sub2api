@@ -222,6 +222,18 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/resource-supply',
+    name: 'ResourceSupply',
+    component: () => import('@/views/user/ResourceSupplyView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Resource Supply',
+      titleKey: 'resourceSupply.title',
+      descriptionKey: 'resourceSupply.description'
+    }
+  },
+  {
     path: '/available-channels',
     name: 'UserAvailableChannels',
     component: () => import('@/views/user/AvailableChannelsView.vue'),

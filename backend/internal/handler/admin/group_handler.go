@@ -115,6 +115,10 @@ type CreateGroupRequest struct {
 	MessagesDispatchModelConfig service.OpenAIMessagesDispatchModelConfig `json:"messages_dispatch_model_config"`
 	// 分组 RPM 上限（0 = 不限制）
 	RPMLimit int `json:"rpm_limit"`
+	// 资源供应奖励配置
+	SupplyRewardsEnabled          bool     `json:"supply_rewards_enabled"`
+	SupplyRewardMultiplier        *float64 `json:"supply_reward_multiplier"`
+	SupplySelfServiceReviewPolicy string   `json:"supply_self_service_review_policy" binding:"omitempty,oneof=manual_review auto_online"`
 	// 从指定分组复制账号（创建后自动绑定）
 	CopyAccountsFromGroupIDs []int64 `json:"copy_accounts_from_group_ids"`
 }
@@ -152,6 +156,10 @@ type UpdateGroupRequest struct {
 	MessagesDispatchModelConfig *service.OpenAIMessagesDispatchModelConfig `json:"messages_dispatch_model_config"`
 	// 分组 RPM 上限（0 = 不限制）；nil 表示未提供不改动
 	RPMLimit *int `json:"rpm_limit"`
+	// 资源供应奖励配置
+	SupplyRewardsEnabled          *bool    `json:"supply_rewards_enabled"`
+	SupplyRewardMultiplier        *float64 `json:"supply_reward_multiplier"`
+	SupplySelfServiceReviewPolicy *string  `json:"supply_self_service_review_policy" binding:"omitempty,oneof=manual_review auto_online"`
 	// 从指定分组复制账号（同步操作：先清空当前分组的账号绑定，再绑定源分组的账号）
 	CopyAccountsFromGroupIDs []int64 `json:"copy_accounts_from_group_ids"`
 }
@@ -284,6 +292,9 @@ func (h *GroupHandler) Create(c *gin.Context) {
 		DefaultMappedModel:              req.DefaultMappedModel,
 		MessagesDispatchModelConfig:     req.MessagesDispatchModelConfig,
 		RPMLimit:                        req.RPMLimit,
+		SupplyRewardsEnabled:            req.SupplyRewardsEnabled,
+		SupplyRewardMultiplier:          req.SupplyRewardMultiplier,
+		SupplySelfServiceReviewPolicy:   req.SupplySelfServiceReviewPolicy,
 		CopyAccountsFromGroupIDs:        req.CopyAccountsFromGroupIDs,
 	})
 	if err != nil {
@@ -347,6 +358,9 @@ func (h *GroupHandler) Update(c *gin.Context) {
 		DefaultMappedModel:              req.DefaultMappedModel,
 		MessagesDispatchModelConfig:     req.MessagesDispatchModelConfig,
 		RPMLimit:                        req.RPMLimit,
+		SupplyRewardsEnabled:            req.SupplyRewardsEnabled,
+		SupplyRewardMultiplier:          req.SupplyRewardMultiplier,
+		SupplySelfServiceReviewPolicy:   req.SupplySelfServiceReviewPolicy,
 		CopyAccountsFromGroupIDs:        req.CopyAccountsFromGroupIDs,
 	})
 	if err != nil {

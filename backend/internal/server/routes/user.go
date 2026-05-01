@@ -127,5 +127,17 @@ func RegisterUserRoutes(
 			settlementPools.GET("/:id", h.SettlementPool.GetByGroup)
 			settlementPools.POST("/:id/participation", h.SettlementPool.JoinCurrentCycle)
 		}
+
+		resourceSupply := authenticated.Group("/user/resource-supply")
+		{
+			resourceSupply.GET("", h.ResourceSupply.Summary)
+			resourceSupply.GET("/ledger", h.ResourceSupply.Ledger)
+			resourceSupply.POST("/accounts/openai-api-key", h.ResourceSupply.SubmitOpenAIAPIKey)
+			resourceSupply.POST("/openai/generate-auth-url", h.ResourceSupply.GenerateOpenAIAuthURL)
+			resourceSupply.POST("/openai/exchange-code", h.ResourceSupply.ExchangeOpenAICode)
+			resourceSupply.POST("/accounts/:id/pause", h.ResourceSupply.PauseAccount)
+			resourceSupply.POST("/accounts/:id/revoke", h.ResourceSupply.RevokeAccount)
+			resourceSupply.POST("/transfer", h.ResourceSupply.Transfer)
+		}
 	}
 }

@@ -283,6 +283,31 @@
               </div>
             </div>
           </template>
+          <template #cell-supply_owner="{ row }">
+            <span class="text-sm text-gray-700 dark:text-gray-300">{{ row.supply_owner_user_id || '-' }}</span>
+          </template>
+          <template #cell-supply_status="{ row }">
+            <div class="flex flex-col items-start gap-1">
+              <span
+                v-if="row.supply_status && row.supply_status !== 'none'"
+                class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                :class="supplyStatusBadgeClass(row.supply_status)"
+              >
+                {{ row.supply_status }}
+              </span>
+              <span v-else class="text-sm text-gray-400 dark:text-dark-500">-</span>
+              <div v-if="row.supply_status === 'pending_review'" class="flex gap-1">
+                <button class="rounded bg-emerald-500 px-2 py-0.5 text-xs text-white hover:bg-emerald-600" @click="handleSupplyApprove(row)">{{ t('admin.accounts.resourceSupplyActions.approve') }}</button>
+                <button class="rounded bg-red-500 px-2 py-0.5 text-xs text-white hover:bg-red-600" @click="handleSupplyReject(row)">{{ t('admin.accounts.resourceSupplyActions.reject') }}</button>
+              </div>
+              <div v-else-if="row.supply_status === 'schedulable'" class="flex gap-1">
+                <button class="rounded bg-amber-500 px-2 py-0.5 text-xs text-white hover:bg-amber-600" @click="handleSupplyPause(row)">{{ t('admin.accounts.resourceSupplyActions.pause') }}</button>
+              </div>
+              <div v-else-if="row.supply_status === 'paused'" class="flex gap-1">
+                <button class="rounded bg-emerald-500 px-2 py-0.5 text-xs text-white hover:bg-emerald-600" @click="handleSupplyResume(row)">{{ t('admin.accounts.resourceSupplyActions.resume') }}</button>
+              </div>
+            </div>
+          </template>
           <template #cell-actions="{ row }">
             <div class="flex items-center gap-1">
               <button @click="handleEdit(row)" class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-primary-600 dark:hover:bg-dark-700 dark:hover:text-primary-400">
@@ -344,6 +369,7 @@ import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 import { adminAPI } from '@/api/admin'
+import { resourceSupplyAPI as adminResourceSupplyAPI } from '@/api/admin/resourceSupply'
 import { useTableLoader } from '@/composables/useTableLoader'
 import { useSwipeSelect, type SwipeSelectVirtualContext } from '@/composables/useSwipeSelect'
 import { useTableSelection } from '@/composables/useTableSelection'
@@ -1052,6 +1078,8 @@ const allColumns = computed(() => {
     { key: 'last_used_at', label: t('admin.accounts.columns.lastUsed'), sortable: true },
     { key: 'expires_at', label: t('admin.accounts.columns.expiresAt'), sortable: true },
     { key: 'notes', label: t('admin.accounts.columns.notes'), sortable: false },
+    { key: 'supply_owner', label: t('admin.accounts.columns.supplyOwner'), sortable: false },
+    { key: 'supply_status', label: t('admin.accounts.columns.supplyStatus'), sortable: false },
     { key: 'actions', label: t('admin.accounts.columns.actions'), sortable: false }
   )
   return c
@@ -1508,6 +1536,61 @@ const handleSetPrivacy = async (a: Account) => {
     appStore.showError(error?.response?.data?.message || t('admin.accounts.privacyFailed'))
   }
 }
+// Resource supply status badge classes
+function supplyStatusBadgeClass(status: string): string {
+  switch (status) {
+    case 'schedulable': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+    case 'pending_review': return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+    case 'testing': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+    case 'paused': return 'bg-gray-100 text-gray-800 dark:bg-gray-700/30 dark:text-gray-400'
+    case 'rejected': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+    case 'revoked': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+    default: return 'bg-gray-100 text-gray-600 dark:bg-gray-700/30 dark:text-gray-400'
+  }
+}
+
+// Resource supply action handlers
+const handleSupplyApprove = async (a: Account) => {
+  try {
+    await adminResourceSupplyAPI.approveAccount(a.id, t('admin.accounts.resourceSupplyActions.approveReason'))
+    appStore.showSuccess(t('admin.accounts.resourceSupplyActions.approveSuccess'))
+    reload()
+  } catch (error) {
+    console.error('Failed to approve supply account:', error)
+    appStore.showError(t('admin.accounts.resourceSupplyActions.approveFailed'))
+  }
+}
+const handleSupplyReject = async (a: Account) => {
+  try {
+    await adminResourceSupplyAPI.rejectAccount(a.id, t('admin.accounts.resourceSupplyActions.rejectReason'))
+    appStore.showSuccess(t('admin.accounts.resourceSupplyActions.rejectSuccess'))
+    reload()
+  } catch (error) {
+    console.error('Failed to reject supply account:', error)
+    appStore.showError(t('admin.accounts.resourceSupplyActions.rejectFailed'))
+  }
+}
+const handleSupplyPause = async (a: Account) => {
+  try {
+    await adminResourceSupplyAPI.pauseAccount(a.id, t('admin.accounts.resourceSupplyActions.pauseReason'))
+    appStore.showSuccess(t('admin.accounts.resourceSupplyActions.pauseSuccess'))
+    reload()
+  } catch (error) {
+    console.error('Failed to pause supply account:', error)
+    appStore.showError(t('admin.accounts.resourceSupplyActions.pauseFailed'))
+  }
+}
+const handleSupplyResume = async (a: Account) => {
+  try {
+    await adminResourceSupplyAPI.resumeAccount(a.id, t('admin.accounts.resourceSupplyActions.resumeReason'))
+    appStore.showSuccess(t('admin.accounts.resourceSupplyActions.resumeSuccess'))
+    reload()
+  } catch (error) {
+    console.error('Failed to resume supply account:', error)
+    appStore.showError(t('admin.accounts.resourceSupplyActions.resumeFailed'))
+  }
+}
+
 const handleDelete = (a: Account) => { deletingAcc.value = a; showDeleteDialog.value = true }
 const confirmDelete = async () => { if(!deletingAcc.value) return; try { await adminAPI.accounts.delete(deletingAcc.value.id); showDeleteDialog.value = false; deletingAcc.value = null; reload() } catch (error) { console.error('Failed to delete account:', error) } }
 const handleToggleSchedulable = async (a: Account) => {

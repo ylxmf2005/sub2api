@@ -21,7 +21,7 @@ func TestSettlementPoolRepositorySumUsageByUsersFiltersSettlementBillingType(t *
 	startedAt := time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC)
 	endedAt := startedAt.Add(24 * time.Hour)
 
-	mock.ExpectQuery(`(?s)SELECT user_id, COALESCE\(SUM\(total_cost\), 0\).*AND billing_type = \$5.*GROUP BY user_id`).
+	mock.ExpectQuery(`(?s)WITH durable_usage AS .*FROM usage_billing_events.*legacy_usage AS .*FROM usage_logs.*LEFT JOIN usage_billing_events.*UNION ALL.*GROUP BY user_id`).
 		WithArgs(groupID, sqlmock.AnyArg(), startedAt, sqlmock.AnyArg(), service.BillingTypeSettlementPool).
 		WillReturnRows(sqlmock.NewRows([]string{"user_id", "usage"}).AddRow(userID, 12.5))
 

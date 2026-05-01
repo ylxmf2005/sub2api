@@ -11,7 +11,7 @@
         v-for="group in filteredGroups"
         :key="group.id"
         class="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 transition-colors hover:bg-white dark:hover:bg-dark-700"
-        :title="t('admin.groups.rateAndAccounts', { rate: group.rate_multiplier, count: group.account_count || 0 })"
+        :title="groupTitle(group)"
       >
         <input
           type="checkbox"
@@ -27,7 +27,7 @@
           :rate-multiplier="group.rate_multiplier"
           class="min-w-0 flex-1"
         />
-        <span class="shrink-0 text-xs text-gray-400">{{ group.account_count || 0 }}</span>
+        <span v-if="showAccountCount" class="shrink-0 text-xs text-gray-400">{{ accountCount(group) }}</span>
       </label>
       <div
         v-if="filteredGroups.length === 0"
@@ -43,18 +43,22 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import GroupBadge from './GroupBadge.vue'
-import type { AdminGroup, GroupPlatform } from '@/types'
+import type { Group, GroupPlatform } from '@/types'
 
 const { t } = useI18n()
 
 interface Props {
   modelValue: number[]
-  groups: AdminGroup[]
+  groups: Group[]
   platform?: GroupPlatform // Optional platform filter
   mixedScheduling?: boolean // For antigravity accounts: allow anthropic/gemini groups
+  maxSelection?: number
+  showAccountCount?: boolean
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  showAccountCount: true,
+})
 const emit = defineEmits<{
   'update:modelValue': [value: number[]]
 }>()
@@ -75,9 +79,26 @@ const filteredGroups = computed(() => {
 })
 
 const handleChange = (groupId: number, checked: boolean) => {
+  if (checked && props.maxSelection === 1) {
+    emit('update:modelValue', [groupId])
+    return
+  }
   const newValue = checked
     ? [...props.modelValue, groupId]
     : props.modelValue.filter((id) => id !== groupId)
   emit('update:modelValue', newValue)
+}
+
+const accountCount = (group: Group) => {
+  return 'account_count' in group && typeof group.account_count === 'number'
+    ? group.account_count
+    : 0
+}
+
+const groupTitle = (group: Group) => {
+  if (!props.showAccountCount) {
+    return group.name
+  }
+  return t('admin.groups.rateAndAccounts', { rate: group.rate_multiplier, count: accountCount(group) })
 }
 </script>

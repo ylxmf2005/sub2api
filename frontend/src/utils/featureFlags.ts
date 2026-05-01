@@ -114,6 +114,11 @@ export const FeatureFlags = {
     mode: 'opt-in',
     label: 'Affiliate',
   }),
+  resourceSupplySelfService: defineFlag({
+    key: 'resource_supply_self_service_enabled',
+    mode: 'opt-in',
+    label: 'Resource Supply Self-Service',
+  }),
 } as const
 
 export type RegisteredFeatureFlag = keyof typeof FeatureFlags

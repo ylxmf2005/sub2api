@@ -35,10 +35,13 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
+	"github.com/Wei-Shaw/sub2api/ent/resourcesupplybalance"
+	"github.com/Wei-Shaw/sub2api/ent/resourcesupplyledger"
 	"github.com/Wei-Shaw/sub2api/ent/securitysecret"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
+	"github.com/Wei-Shaw/sub2api/ent/usagebillingevent"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
@@ -129,10 +132,13 @@ func checkColumn(t, c string) error {
 			promocodeusage.Table:                promocodeusage.ValidColumn,
 			proxy.Table:                         proxy.ValidColumn,
 			redeemcode.Table:                    redeemcode.ValidColumn,
+			resourcesupplybalance.Table:         resourcesupplybalance.ValidColumn,
+			resourcesupplyledger.Table:          resourcesupplyledger.ValidColumn,
 			securitysecret.Table:                securitysecret.ValidColumn,
 			setting.Table:                       setting.ValidColumn,
 			subscriptionplan.Table:              subscriptionplan.ValidColumn,
 			tlsfingerprintprofile.Table:         tlsfingerprintprofile.ValidColumn,
+			usagebillingevent.Table:             usagebillingevent.ValidColumn,
 			usagecleanuptask.Table:              usagecleanuptask.ValidColumn,
 			usagelog.Table:                      usagelog.ValidColumn,
 			user.Table:                          user.ValidColumn,

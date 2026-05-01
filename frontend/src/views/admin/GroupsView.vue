@@ -1237,6 +1237,42 @@
           </div>
         </div>
 
+        <!-- Supply Rewards (all platforms) -->
+        <div class="border-t border-gray-200 dark:border-dark-700 pt-4 mt-4 space-y-4">
+          <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+            {{ t('admin.groups.form.supplyRewards') }}
+          </h4>
+          <div class="flex items-center justify-between">
+            <div>
+              <label class="text-sm text-gray-600 dark:text-gray-400">{{ t('admin.groups.form.supplyRewardsEnabled') }}</label>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                {{ createForm.supply_rewards_enabled ? t('admin.groups.form.supplyRewardsEnabledOn') : t('admin.groups.form.supplyRewardsEnabledOff') }}
+              </p>
+            </div>
+            <button type="button" @click="createForm.supply_rewards_enabled = !createForm.supply_rewards_enabled"
+              class="relative inline-flex h-6 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+              :class="createForm.supply_rewards_enabled ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'">
+              <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                :class="createForm.supply_rewards_enabled ? 'translate-x-6' : 'translate-x-1'" />
+            </button>
+          </div>
+          <div v-if="createForm.supply_rewards_enabled" class="space-y-4">
+            <div>
+              <label class="input-label">{{ t('admin.groups.form.supplyRewardMultiplier') }}</label>
+              <input v-model.number="createForm.supply_reward_multiplier" type="number" min="0" step="0.1" class="input" />
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.groups.form.supplyRewardMultiplierHint') }}</p>
+            </div>
+            <div>
+              <label class="input-label">{{ t('admin.groups.form.supplyReviewPolicy') }}</label>
+              <select v-model="createForm.supply_self_service_review_policy" class="input">
+                <option value="manual_review">{{ t('admin.groups.form.reviewPolicyManual') }}</option>
+                <option value="auto_online">{{ t('admin.groups.form.reviewPolicyAutoOnline') }}</option>
+              </select>
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.groups.form.supplyReviewPolicyHint') }}</p>
+            </div>
+          </div>
+        </div>
+
         <!-- 无效请求兜底（仅 anthropic/antigravity 平台，且标准计费分组） -->
         <div
           v-if="
@@ -2368,6 +2404,42 @@
           </div>
         </div>
 
+        <!-- Supply Rewards (all platforms) -->
+        <div class="border-t border-gray-200 dark:border-dark-700 pt-4 mt-4 space-y-4">
+          <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+            {{ t('admin.groups.form.supplyRewards') }}
+          </h4>
+          <div class="flex items-center justify-between">
+            <div>
+              <label class="text-sm text-gray-600 dark:text-gray-400">{{ t('admin.groups.form.supplyRewardsEnabled') }}</label>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                {{ editForm.supply_rewards_enabled ? t('admin.groups.form.supplyRewardsEnabledOn') : t('admin.groups.form.supplyRewardsEnabledOff') }}
+              </p>
+            </div>
+            <button type="button" @click="editForm.supply_rewards_enabled = !editForm.supply_rewards_enabled"
+              class="relative inline-flex h-6 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+              :class="editForm.supply_rewards_enabled ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'">
+              <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                :class="editForm.supply_rewards_enabled ? 'translate-x-6' : 'translate-x-1'" />
+            </button>
+          </div>
+          <div v-if="editForm.supply_rewards_enabled" class="space-y-4">
+            <div>
+              <label class="input-label">{{ t('admin.groups.form.supplyRewardMultiplier') }}</label>
+              <input v-model.number="editForm.supply_reward_multiplier" type="number" min="0" step="0.1" class="input" />
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.groups.form.supplyRewardMultiplierHint') }}</p>
+            </div>
+            <div>
+              <label class="input-label">{{ t('admin.groups.form.supplyReviewPolicy') }}</label>
+              <select v-model="editForm.supply_self_service_review_policy" class="input">
+                <option value="manual_review">{{ t('admin.groups.form.reviewPolicyManual') }}</option>
+                <option value="auto_online">{{ t('admin.groups.form.reviewPolicyAutoOnline') }}</option>
+              </select>
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.groups.form.supplyReviewPolicyHint') }}</p>
+            </div>
+          </div>
+        </div>
+
         <!-- 无效请求兜底（仅 anthropic/antigravity 平台，且标准计费分组） -->
         <div
           v-if="
@@ -3052,6 +3124,10 @@ const createForm = reactive({
   copy_accounts_from_group_ids: [] as number[],
   // 分组级 RPM 限制（每用户每分钟最大请求数；0 = 不限制）
   rpm_limit: 0 as number,
+  // Supply reward configuration
+  supply_rewards_enabled: false,
+  supply_reward_multiplier: 1,
+  supply_self_service_review_policy: 'manual_review',
 });
 
 // 简单账号类型（用于模型路由选择）
@@ -3335,6 +3411,10 @@ const editForm = reactive({
   copy_accounts_from_group_ids: [] as number[],
   // 分组级 RPM 限制（每用户每分钟最大请求数；0 = 不限制）
   rpm_limit: 0 as number,
+  // Supply reward configuration
+  supply_rewards_enabled: false,
+  supply_reward_multiplier: 1,
+  supply_self_service_review_policy: 'manual_review',
 });
 
 // 根据分组类型返回不同的删除确认消息
@@ -3507,6 +3587,9 @@ const closeCreateModal = () => {
   createForm.supported_model_scopes = ["claude", "gemini_text", "gemini_image"];
   createForm.mcp_xml_inject = true;
   createForm.copy_accounts_from_group_ids = [];
+  createForm.supply_rewards_enabled = false;
+  createForm.supply_reward_multiplier = 1;
+  createForm.supply_self_service_review_policy = 'manual_review';
   createModelRoutingRules.value = [];
 };
 
@@ -3627,6 +3710,9 @@ const handleEdit = async (group: AdminGroup) => {
   editForm.mcp_xml_inject = group.mcp_xml_inject ?? true;
   editForm.copy_accounts_from_group_ids = []; // 复制账号字段每次编辑时重置为空
   editForm.rpm_limit = group.rpm_limit ?? 0;
+  editForm.supply_rewards_enabled = group.supply_rewards_enabled ?? false;
+  editForm.supply_reward_multiplier = group.supply_reward_multiplier ?? 1;
+  editForm.supply_self_service_review_policy = group.supply_self_service_review_policy ?? 'manual_review';
   // 加载模型路由规则（异步加载账号名称）
   editModelRoutingRules.value = await convertApiFormatToRoutingRules(
     group.model_routing,

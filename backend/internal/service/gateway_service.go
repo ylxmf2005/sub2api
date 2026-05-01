@@ -7759,12 +7759,16 @@ func buildUsageBillingCommand(requestID string, usageLog *UsageLog, p *postUsage
 	}
 
 	cmd := &UsageBillingCommand{
-		RequestID:          requestID,
-		APIKeyID:           p.APIKey.ID,
-		UserID:             p.User.ID,
-		AccountID:          p.Account.ID,
-		AccountType:        p.Account.Type,
-		RequestPayloadHash: strings.TrimSpace(p.RequestPayloadHash),
+		RequestID:           requestID,
+		APIKeyID:            p.APIKey.ID,
+		UserID:              p.User.ID,
+		AccountID:           p.Account.ID,
+		AccountType:         p.Account.Type,
+		RequestPayloadHash:  strings.TrimSpace(p.RequestPayloadHash),
+		TotalCost:           p.Cost.TotalCost,
+		ActualCost:          p.Cost.ActualCost,
+		SupplyOwnerUserID:   p.Account.SupplyOwnerUserID,
+		SupplyAccountStatus: normalizeUsageBillingSupplyStatus(p.Account.SupplyStatus),
 	}
 	if usageLog != nil {
 		cmd.Model = usageLog.Model
@@ -7773,6 +7777,8 @@ func buildUsageBillingCommand(requestID string, usageLog *UsageLog, p *postUsage
 		cmd.OutputTokens = usageLog.OutputTokens
 		cmd.CacheCreationTokens = usageLog.CacheCreationTokens
 		cmd.CacheReadTokens = usageLog.CacheReadTokens
+		cmd.CacheCreation5mTokens = usageLog.CacheCreation5mTokens
+		cmd.CacheCreation1hTokens = usageLog.CacheCreation1hTokens
 		cmd.ImageCount = usageLog.ImageCount
 		if usageLog.ServiceTier != nil {
 			cmd.ServiceTier = *usageLog.ServiceTier
@@ -7783,6 +7789,20 @@ func buildUsageBillingCommand(requestID string, usageLog *UsageLog, p *postUsage
 		if usageLog.SubscriptionID != nil {
 			cmd.SubscriptionID = usageLog.SubscriptionID
 		}
+		if usageLog.GroupID != nil {
+			cmd.GroupID = usageLog.GroupID
+		}
+	}
+	if p.APIKey.GroupID != nil && cmd.GroupID == nil {
+		cmd.GroupID = p.APIKey.GroupID
+	}
+
+	if p.APIKey.Group != nil {
+		cmd.SupplyRewardMultiplier = p.APIKey.Group.SupplyRewardMultiplier
+		cmd.SupplyRewardEligible = p.APIKey.Group.SupplyRewardsEnabled &&
+			p.Account.SupplyOwnerUserID != nil &&
+			*p.Account.SupplyOwnerUserID != p.User.ID &&
+			normalizeUsageBillingSupplyStatus(p.Account.SupplyStatus) == ResourceSupplyStatusSchedulable
 	}
 
 	// Record subscription / balance cost using ActualCost so the group (and any
@@ -7808,6 +7828,14 @@ func buildUsageBillingCommand(requestID string, usageLog *UsageLog, p *postUsage
 
 	cmd.Normalize()
 	return cmd
+}
+
+func normalizeUsageBillingSupplyStatus(status string) string {
+	status = strings.TrimSpace(status)
+	if status == "" {
+		return ResourceSupplyStatusNone
+	}
+	return status
 }
 
 func applyUsageBilling(ctx context.Context, requestID string, usageLog *UsageLog, p *postUsageBillingParams, deps *billingDeps, repo UsageBillingRepository) (bool, error) {

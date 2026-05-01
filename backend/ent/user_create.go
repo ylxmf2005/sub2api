@@ -19,6 +19,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/pendingauthsession"
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
+	"github.com/Wei-Shaw/sub2api/ent/resourcesupplybalance"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/userattributevalue"
@@ -519,6 +520,21 @@ func (_c *UserCreate) AddPendingAuthSessions(v ...*PendingAuthSession) *UserCrea
 	return _c.AddPendingAuthSessionIDs(ids...)
 }
 
+// AddResourceSupplyBalanceIDs adds the "resource_supply_balance" edge to the ResourceSupplyBalance entity by IDs.
+func (_c *UserCreate) AddResourceSupplyBalanceIDs(ids ...int64) *UserCreate {
+	_c.mutation.AddResourceSupplyBalanceIDs(ids...)
+	return _c
+}
+
+// AddResourceSupplyBalance adds the "resource_supply_balance" edges to the ResourceSupplyBalance entity.
+func (_c *UserCreate) AddResourceSupplyBalance(v ...*ResourceSupplyBalance) *UserCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddResourceSupplyBalanceIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (_c *UserCreate) Mutation() *UserMutation {
 	return _c.mutation
@@ -1016,6 +1032,22 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(pendingauthsession.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ResourceSupplyBalanceIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ResourceSupplyBalanceTable,
+			Columns: []string{user.ResourceSupplyBalanceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(resourcesupplybalance.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

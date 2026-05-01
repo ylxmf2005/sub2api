@@ -14,7 +14,7 @@ import (
 	"github.com/dgraph-io/ristretto"
 )
 
-const apiKeyAuthSnapshotVersion = 7 // v7: added UserGroupRPMOverride on user snapshot
+const apiKeyAuthSnapshotVersion = 8 // v8: added resource supply reward fields on group snapshot
 
 type apiKeyAuthCacheConfig struct {
 	l1Size        int
@@ -269,6 +269,9 @@ func (s *APIKeyService) snapshotFromAPIKey(ctx context.Context, apiKey *APIKey) 
 			DefaultMappedModel:              apiKey.Group.DefaultMappedModel,
 			MessagesDispatchModelConfig:     apiKey.Group.MessagesDispatchModelConfig,
 			RPMLimit:                        apiKey.Group.RPMLimit,
+			SupplyRewardsEnabled:            apiKey.Group.SupplyRewardsEnabled,
+			SupplyRewardMultiplier:          apiKey.Group.SupplyRewardMultiplier,
+			SupplySelfServiceReviewPolicy:   apiKey.Group.SupplySelfServiceReviewPolicy,
 		}
 	}
 	return snapshot
@@ -335,6 +338,9 @@ func (s *APIKeyService) snapshotToAPIKey(key string, snapshot *APIKeyAuthSnapsho
 			DefaultMappedModel:              snapshot.Group.DefaultMappedModel,
 			MessagesDispatchModelConfig:     snapshot.Group.MessagesDispatchModelConfig,
 			RPMLimit:                        snapshot.Group.RPMLimit,
+			SupplyRewardsEnabled:            snapshot.Group.SupplyRewardsEnabled,
+			SupplyRewardMultiplier:          snapshot.Group.SupplyRewardMultiplier,
+			SupplySelfServiceReviewPolicy:   snapshot.Group.SupplySelfServiceReviewPolicy,
 		}
 	}
 	s.compileAPIKeyIPRules(apiKey)

@@ -1,7 +1,7 @@
 <template>
   <BaseDialog
     :show="show"
-    :title="t('admin.accounts.createAccount')"
+    :title="isResourceSupply ? t('resourceSupply.submit.title') : t('admin.accounts.createAccount')"
     width="wide"
     @close="handleClose"
   >
@@ -50,13 +50,13 @@
         <input
           v-model="form.name"
           type="text"
-          required
+          :required="!isResourceSupply"
           class="input"
-          :placeholder="t('admin.accounts.enterAccountName')"
+          :placeholder="isResourceSupply ? t('resourceSupply.submit.namePlaceholder') : t('admin.accounts.enterAccountName')"
           data-tour="account-form-name"
         />
       </div>
-      <div>
+      <div v-if="!isResourceSupply">
         <label class="input-label">{{ t('admin.accounts.notes') }}</label>
         <textarea
           v-model="form.notes"
@@ -72,6 +72,7 @@
         <label class="input-label">{{ t('admin.accounts.platform') }}</label>
         <div class="mt-2 flex rounded-lg bg-gray-100 p-1 dark:bg-dark-700" data-tour="account-form-platform">
           <button
+            v-if="!isResourceSupply"
             type="button"
             @click="form.platform = 'anthropic'"
             :class="[
@@ -110,6 +111,7 @@
             OpenAI
           </button>
           <button
+            v-if="!isResourceSupply"
             type="button"
             @click="form.platform = 'gemini'"
             :class="[
@@ -135,6 +137,7 @@
             Gemini
           </button>
           <button
+            v-if="!isResourceSupply"
             type="button"
             @click="form.platform = 'antigravity'"
             :class="[
@@ -1054,6 +1057,19 @@
           <p class="input-hint">{{ t('admin.accounts.gemini.tier.aiStudioHint') }}</p>
         </div>
 
+        <!-- Model ID for resource supply mode -->
+        <div v-if="isResourceSupply">
+          <label class="input-label">{{ t('resourceSupply.submit.modelId') }}</label>
+          <input
+            v-model="supplyModelId"
+            type="text"
+            class="input"
+            :placeholder="t('resourceSupply.submit.modelIdPlaceholder')"
+          />
+          <p class="input-hint">{{ t('resourceSupply.submit.modelIdHint') }}</p>
+        </div>
+
+        <template v-if="!isResourceSupply">
         <!-- Model Restriction Section (Antigravity 已在上层条件排除) -->
         <div class="border-t border-gray-200 pt-4 dark:border-dark-600">
           <label class="input-label">{{ t('admin.accounts.modelRestriction') }}</label>
@@ -1389,7 +1405,7 @@
             </div>
           </div>
         </div>
-
+        </template>
       </div>
 
       <!-- Bedrock credentials (only for Anthropic Bedrock type) -->
@@ -1640,7 +1656,7 @@
 
       <!-- 配额控制 (Anthropic apikey/bedrock: 配额限制 + 亲和) -->
       <div
-        v-if="form.platform === 'anthropic' && (form.type === 'apikey' || form.type === 'bedrock')"
+        v-if="!isResourceSupply && form.platform === 'anthropic' && (form.type === 'apikey' || form.type === 'bedrock')"
         class="border-t border-gray-200 pt-4 dark:border-dark-600 space-y-4"
       >
         <div class="mb-3">
@@ -1692,7 +1708,7 @@
 
       <!-- 配额控制 (非 Anthropic apikey/bedrock) -->
       <div
-        v-else-if="form.type === 'apikey' || form.type === 'bedrock'"
+        v-else-if="!isResourceSupply && (form.type === 'apikey' || form.type === 'bedrock')"
         class="border-t border-gray-200 pt-4 dark:border-dark-600 space-y-4"
       >
         <div class="mb-3">
@@ -1744,7 +1760,7 @@
 
       <!-- OpenAI OAuth Model Mapping (OAuth 类型没有 apikey 容器，需要独立的模型映射区域) -->
       <div
-        v-if="form.platform === 'openai' && accountCategory === 'oauth-based'"
+        v-if="!isResourceSupply && form.platform === 'openai' && accountCategory === 'oauth-based'"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
       >
         <label class="input-label">{{ t('admin.accounts.modelRestriction') }}</label>
@@ -1879,7 +1895,7 @@
       </div>
 
       <!-- Temp Unschedulable Rules -->
-      <div class="border-t border-gray-200 pt-4 dark:border-dark-600 space-y-4">
+      <div v-if="!isResourceSupply" class="border-t border-gray-200 pt-4 dark:border-dark-600 space-y-4">
         <div class="mb-3 flex items-center justify-between">
           <div>
             <label class="input-label mb-0">{{ t('admin.accounts.tempUnschedulable.title') }}</label>
@@ -2028,7 +2044,7 @@
 
       <!-- Intercept Warmup Requests (Anthropic/Antigravity) -->
       <div
-        v-if="form.platform === 'anthropic' || form.platform === 'antigravity'"
+        v-if="!isResourceSupply && (form.platform === 'anthropic' || form.platform === 'antigravity')"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
       >
         <div class="flex items-center justify-between">
@@ -2060,7 +2076,7 @@
 
       <!-- 配额控制 (Anthropic OAuth/SetupToken: 亲和 + 窗口费用 + 会话 + RPM 等) -->
       <div
-        v-if="form.platform === 'anthropic' && accountCategory === 'oauth-based'"
+        v-if="!isResourceSupply && form.platform === 'anthropic' && accountCategory === 'oauth-based'"
         class="border-t border-gray-200 pt-4 dark:border-dark-600 space-y-4"
       >
         <div class="mb-3">
@@ -2438,9 +2454,11 @@
         </div>
       </div>
 
+      <!-- Admin-only: proxy, concurrency, expiry, switches, groups, supply owner -->
+      <template v-if="!isResourceSupply">
       <div>
         <label class="input-label">{{ t('admin.accounts.proxy') }}</label>
-        <ProxySelector v-model="form.proxy_id" :proxies="proxies" />
+        <ProxySelector v-model="form.proxy_id" :proxies="resolvedProxies" />
       </div>
 
       <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -2739,12 +2757,46 @@
         <GroupSelector
           v-if="!authStore.isSimpleMode"
           v-model="form.group_ids"
-          :groups="groups"
+          :groups="resolvedGroups"
           :platform="form.platform"
           :mixed-scheduling="mixedScheduling"
           data-tour="account-form-groups"
         />
+
+        <!-- Resource Supply Owner -->
+        <div>
+          <label class="input-label">{{ t('admin.accounts.form.supplyOwnerUserId') }}</label>
+          <input v-model.number="form.supply_owner_user_id" type="number" min="0" class="input" :placeholder="t('admin.accounts.form.supplyOwnerPlaceholder')" />
+          <p class="mt-1 text-xs text-gray-500">{{ t('admin.accounts.form.supplyOwnerHint') }}</p>
+        </div>
       </div>
+      </template>
+
+      <!-- Resource Supply: Group & Model ID (for OAuth mode) -->
+      <template v-if="isResourceSupply">
+        <div>
+          <GroupSelector
+            v-model="form.group_ids"
+            :groups="resolvedSupplyGroups"
+            platform="openai"
+            :max-selection="1"
+            :show-account-count="false"
+          />
+          <p v-if="resolvedSupplyGroups.length === 0" class="mt-1 text-sm text-amber-600 dark:text-amber-400">
+            {{ t('resourceSupply.submit.noGroups') }}
+          </p>
+        </div>
+        <div v-if="isOAuthFlow">
+          <label class="input-label">{{ t('resourceSupply.submit.modelId') }}</label>
+          <input
+            v-model="supplyModelId"
+            type="text"
+            class="input"
+            :placeholder="t('resourceSupply.submit.modelIdPlaceholder')"
+          />
+          <p class="input-hint">{{ t('resourceSupply.submit.modelIdHint') }}</p>
+        </div>
+      </template>
 
     </form>
 
@@ -2760,9 +2812,9 @@
         :show-help="form.platform === 'anthropic'"
         :show-proxy-warning="form.platform !== 'openai' && !!form.proxy_id"
         :allow-multiple="form.platform === 'anthropic'"
-        :show-cookie-option="form.platform === 'anthropic'"
-        :show-refresh-token-option="form.platform === 'openai' || form.platform === 'antigravity'"
-        :show-mobile-refresh-token-option="form.platform === 'openai'"
+        :show-cookie-option="!isResourceSupply && form.platform === 'anthropic'"
+        :show-refresh-token-option="!isResourceSupply && (form.platform === 'openai' || form.platform === 'antigravity')"
+        :show-mobile-refresh-token-option="!isResourceSupply && form.platform === 'openai'"
         :show-session-token-option="false"
         :show-access-token-option="false"
         :platform="form.platform"
@@ -3112,9 +3164,12 @@ import {
 import { useOpenAIOAuth } from '@/composables/useOpenAIOAuth'
 import { useGeminiOAuth } from '@/composables/useGeminiOAuth'
 import { useAntigravityOAuth } from '@/composables/useAntigravityOAuth'
+import { useResourceSupplyOAuth } from '@/composables/useResourceSupplyOAuth'
+import resourceSupplyAPI from '@/api/resourceSupply'
 import type {
   Proxy,
   AdminGroup,
+  Group,
   AccountPlatform,
   AccountType,
   CheckMixedChannelResponse,
@@ -3181,8 +3236,10 @@ const apiKeyHint = computed(() => {
 
 interface Props {
   show: boolean
-  proxies: Proxy[]
-  groups: AdminGroup[]
+  proxies?: Proxy[]
+  groups?: AdminGroup[]
+  mode?: 'admin' | 'resource-supply'
+  supplyGroups?: Group[]
 }
 
 const props = defineProps<Props>()
@@ -3191,6 +3248,18 @@ const emit = defineEmits<{
   created: []
 }>()
 
+const isResourceSupply = computed(() => props.mode === 'resource-supply')
+const resolvedProxies = computed(() => props.proxies ?? [])
+const resolvedGroups = computed(() => props.groups ?? [])
+const resolvedSupplyGroups = computed(() =>
+  (props.supplyGroups ?? []).filter((group) =>
+    group.platform === 'openai' &&
+    group.supply_rewards_enabled &&
+    group.status === 'active'
+  )
+)
+const supplyModelId = ref('')
+
 const appStore = useAppStore()
 
 // OAuth composables
@@ -3198,9 +3267,11 @@ const oauth = useAccountOAuth() // For Anthropic OAuth
 const openaiOAuth = useOpenAIOAuth() // For OpenAI OAuth
 const geminiOAuth = useGeminiOAuth() // For Gemini OAuth
 const antigravityOAuth = useAntigravityOAuth() // For Antigravity OAuth
+const resourceSupplyOAuth = useResourceSupplyOAuth() // For Resource Supply OAuth
 
 // Computed: current OAuth state for template binding
 const currentAuthUrl = computed(() => {
+  if (isResourceSupply.value) return resourceSupplyOAuth.authUrl.value
   if (form.platform === 'openai') return openaiOAuth.authUrl.value
   if (form.platform === 'gemini') return geminiOAuth.authUrl.value
   if (form.platform === 'antigravity') return antigravityOAuth.authUrl.value
@@ -3208,6 +3279,7 @@ const currentAuthUrl = computed(() => {
 })
 
 const currentSessionId = computed(() => {
+  if (isResourceSupply.value) return resourceSupplyOAuth.sessionId.value
   if (form.platform === 'openai') return openaiOAuth.sessionId.value
   if (form.platform === 'gemini') return geminiOAuth.sessionId.value
   if (form.platform === 'antigravity') return antigravityOAuth.sessionId.value
@@ -3215,6 +3287,7 @@ const currentSessionId = computed(() => {
 })
 
 const currentOAuthLoading = computed(() => {
+  if (isResourceSupply.value) return resourceSupplyOAuth.loading.value
   if (form.platform === 'openai') return openaiOAuth.loading.value
   if (form.platform === 'gemini') return geminiOAuth.loading.value
   if (form.platform === 'antigravity') return antigravityOAuth.loading.value
@@ -3222,6 +3295,7 @@ const currentOAuthLoading = computed(() => {
 })
 
 const currentOAuthError = computed(() => {
+  if (isResourceSupply.value) return resourceSupplyOAuth.error.value
   if (form.platform === 'openai') return openaiOAuth.error.value
   if (form.platform === 'gemini') return geminiOAuth.error.value
   if (form.platform === 'antigravity') return antigravityOAuth.error.value
@@ -3288,12 +3362,14 @@ const {
   writeToExtra: writeQuotaNotifyToExtra,
 } = useQuotaNotifyState()
 
-// Load global feature states once
-adminAPI.settings.getWebSearchEmulationConfig().then(cfg => {
-  webSearchGlobalEnabled.value = cfg?.enabled === true && (cfg?.providers?.length ?? 0) > 0
-}).catch(() => { webSearchGlobalEnabled.value = false })
+// Load global feature states once (admin mode only)
+if (!isResourceSupply.value) {
+  adminAPI.settings.getWebSearchEmulationConfig().then(cfg => {
+    webSearchGlobalEnabled.value = cfg?.enabled === true && (cfg?.providers?.length ?? 0) > 0
+  }).catch(() => { webSearchGlobalEnabled.value = false })
 
-loadQuotaNotifyGlobal()
+  loadQuotaNotifyGlobal()
+}
 const mixedScheduling = ref(false) // For antigravity accounts: enable mixed scheduling
 const allowOverages = ref(false) // For antigravity accounts: enable AI Credits overages
 const antigravityAccountType = ref<'oauth' | 'upstream'>('oauth') // For antigravity: oauth or upstream
@@ -3493,7 +3569,8 @@ const form = reactive({
   priority: 1,
   rate_multiplier: 1,
   group_ids: [] as number[],
-  expires_at: null as number | null
+  expires_at: null as number | null,
+  supply_owner_user_id: null as number | null
 })
 
 // Helper to check if current type needs OAuth flow
@@ -3522,6 +3599,9 @@ const expiresAtInput = computed({
 
 const canExchangeCode = computed(() => {
   const authCode = oauthFlowRef.value?.authCode || ''
+  if (isResourceSupply.value) {
+    return authCode.trim() && resourceSupplyOAuth.sessionId.value && !resourceSupplyOAuth.loading.value
+  }
   if (form.platform === 'openai') {
     return authCode.trim() && openaiOAuth.sessionId.value && !openaiOAuth.loading.value
   }
@@ -3539,10 +3619,15 @@ watch(
   () => props.show,
   (newVal) => {
     if (newVal) {
-      // Load TLS fingerprint profiles
-      adminAPI.tlsFingerprintProfiles.list()
-        .then(profiles => { tlsFingerprintProfiles.value = profiles.map(p => ({ id: p.id, name: p.name })) })
-        .catch(() => { tlsFingerprintProfiles.value = [] })
+      if (isResourceSupply.value) {
+        form.platform = 'openai'
+        accountCategory.value = 'oauth-based'
+      } else {
+        // Load TLS fingerprint profiles (admin only)
+        adminAPI.tlsFingerprintProfiles.list()
+          .then(profiles => { tlsFingerprintProfiles.value = profiles.map(p => ({ id: p.id, name: p.name })) })
+          .catch(() => { tlsFingerprintProfiles.value = [] })
+      }
       // Modal opened - fill related models
       allowedModels.value = [...getModelsByPlatform(form.platform)]
       // Antigravity: 默认使用映射模式并填充默认映射
@@ -3996,7 +4081,7 @@ const resetForm = () => {
   step.value = 1
   form.name = ''
   form.notes = ''
-  form.platform = 'anthropic'
+  form.platform = isResourceSupply.value ? 'openai' : 'anthropic'
   form.type = 'oauth'
   form.credentials = {}
   form.proxy_id = null
@@ -4006,9 +4091,10 @@ const resetForm = () => {
   form.rate_multiplier = 1
   form.group_ids = []
   form.expires_at = null
+  form.supply_owner_user_id = null
   accountCategory.value = 'oauth-based'
   addMethod.value = 'oauth'
-  apiKeyBaseUrl.value = 'https://api.anthropic.com'
+  apiKeyBaseUrl.value = isResourceSupply.value ? 'https://api.openai.com' : 'https://api.anthropic.com'
   apiKeyValue.value = ''
   editQuotaLimit.value = null
   editQuotaDailyLimit.value = null
@@ -4026,9 +4112,13 @@ const resetForm = () => {
 
   antigravityModelRestrictionMode.value = 'mapping'
   antigravityWhitelistModels.value = []
-  fetchAntigravityDefaultMappings().then(mappings => {
-    antigravityModelMappings.value = [...mappings]
-  })
+  if (!isResourceSupply.value) {
+    fetchAntigravityDefaultMappings().then(mappings => {
+      antigravityModelMappings.value = [...mappings]
+    })
+  } else {
+    antigravityModelMappings.value = []
+  }
   poolModeEnabled.value = false
   poolModeRetryCount.value = DEFAULT_POOL_MODE_RETRY_COUNT
   customErrorCodesEnabled.value = false
@@ -4076,10 +4166,12 @@ const resetForm = () => {
   geminiTierGoogleOne.value = 'google_one_free'
   geminiTierGcp.value = 'gcp_standard'
   geminiTierAIStudio.value = 'aistudio_free'
+  supplyModelId.value = ''
   oauth.resetState()
   openaiOAuth.resetState()
   geminiOAuth.resetState()
   antigravityOAuth.resetState()
+  resourceSupplyOAuth.resetState()
   oauthFlowRef.value?.reset()
   antigravityMixedChannelConfirmed.value = false
   clearMixedChannelDialog()
@@ -4239,11 +4331,68 @@ const handleVertexServiceAccountDrop = async (event: DragEvent) => {
   applyVertexServiceAccountJson(await file.text())
 }
 
+const handleResourceSupplyApiKeySubmit = async () => {
+  if (!apiKeyValue.value.trim()) {
+    appStore.showError(t('admin.accounts.pleaseEnterApiKey'))
+    return
+  }
+  if (!form.group_ids[0]) {
+    appStore.showError(t('resourceSupply.submit.noGroups'))
+    return
+  }
+  submitting.value = true
+  try {
+    await resourceSupplyAPI.addOpenAIApiKeyAccount({
+      group_id: form.group_ids[0],
+      name: form.name || undefined,
+      api_key: apiKeyValue.value.trim(),
+      base_url: apiKeyBaseUrl.value.trim() || undefined,
+      model_id: supplyModelId.value.trim() || undefined,
+    })
+    appStore.showSuccess(t('resourceSupply.submit.success'))
+    emit('created')
+    handleClose()
+  } catch (error: any) {
+    appStore.showError(error.response?.data?.message || error.response?.data?.detail || t('resourceSupply.submit.failed'))
+  } finally {
+    submitting.value = false
+  }
+}
+
+const handleResourceSupplyExchange = async (authCode: string) => {
+  if (!authCode.trim() || !resourceSupplyOAuth.sessionId.value) return
+  if (!form.group_ids[0]) {
+    appStore.showError(t('resourceSupply.submit.noGroups'))
+    return
+  }
+  const result = await resourceSupplyOAuth.exchangeAuthCode({
+    group_id: form.group_ids[0] ?? 0,
+    name: form.name || undefined,
+    code: authCode.trim(),
+    state: (oauthFlowRef.value?.oauthState || resourceSupplyOAuth.oauthState.value || '').trim(),
+    session_id: resourceSupplyOAuth.sessionId.value,
+    model_id: supplyModelId.value.trim() || undefined,
+  })
+  if (result) {
+    appStore.showSuccess(t('resourceSupply.submit.success'))
+    emit('created')
+    handleClose()
+  }
+}
+
 const handleSubmit = async () => {
   // For OAuth-based type, handle OAuth flow (goes to step 2)
   if (isOAuthFlow.value) {
-    if (!form.name.trim()) {
+    if (!isResourceSupply.value && !form.name.trim()) {
       appStore.showError(t('admin.accounts.pleaseEnterAccountName'))
+      return
+    }
+    if (isResourceSupply.value) {
+      if (!form.group_ids[0]) {
+        appStore.showError(t('resourceSupply.submit.noGroups'))
+        return
+      }
+      step.value = 2
       return
     }
     const canContinue = await ensureAntigravityMixedChannelConfirmed(async () => {
@@ -4253,6 +4402,12 @@ const handleSubmit = async () => {
       return
     }
     step.value = 2
+    return
+  }
+
+  // Resource supply API key submission
+  if (isResourceSupply.value) {
+    await handleResourceSupplyApiKeySubmit()
     return
   }
 
@@ -4446,10 +4601,15 @@ const goBackToBasicInfo = () => {
   openaiOAuth.resetState()
   geminiOAuth.resetState()
   antigravityOAuth.resetState()
+  resourceSupplyOAuth.resetState()
   oauthFlowRef.value?.reset()
 }
 
 const handleGenerateUrl = async () => {
+  if (isResourceSupply.value) {
+    await resourceSupplyOAuth.generateAuthUrl()
+    return
+  }
   if (form.platform === 'openai') {
     await openaiOAuth.generateAuthUrl(form.proxy_id)
   } else if (form.platform === 'gemini') {
@@ -4545,7 +4705,8 @@ const createAccountAndFinish = async (
     rate_multiplier: form.rate_multiplier,
     group_ids: form.group_ids,
     expires_at: form.expires_at,
-    auto_pause_on_expired: autoPauseOnExpired.value
+    auto_pause_on_expired: autoPauseOnExpired.value,
+    ...(form.supply_owner_user_id ? { supply_owner_user_id: form.supply_owner_user_id } : {})
   })
 }
 
@@ -4612,7 +4773,8 @@ const handleOpenAIExchange = async (authCode: string) => {
         rate_multiplier: form.rate_multiplier,
         group_ids: form.group_ids,
         expires_at: form.expires_at,
-        auto_pause_on_expired: autoPauseOnExpired.value
+        auto_pause_on_expired: autoPauseOnExpired.value,
+        ...(form.supply_owner_user_id ? { supply_owner_user_id: form.supply_owner_user_id } : {})
       })
       appStore.showSuccess(t('admin.accounts.accountCreated'))
     }
@@ -4709,7 +4871,8 @@ const handleOpenAIBatchRT = async (refreshTokenInput: string, clientId?: string)
             rate_multiplier: form.rate_multiplier,
             group_ids: form.group_ids,
             expires_at: form.expires_at,
-            auto_pause_on_expired: autoPauseOnExpired.value
+            auto_pause_on_expired: autoPauseOnExpired.value,
+            ...(form.supply_owner_user_id ? { supply_owner_user_id: form.supply_owner_user_id } : {})
           })
         }
 
@@ -4807,7 +4970,8 @@ const handleAntigravityValidateRT = async (refreshTokenInput: string) => {
           rate_multiplier: form.rate_multiplier,
           group_ids: form.group_ids,
           expires_at: form.expires_at,
-          auto_pause_on_expired: autoPauseOnExpired.value
+          auto_pause_on_expired: autoPauseOnExpired.value,
+          ...(form.supply_owner_user_id ? { supply_owner_user_id: form.supply_owner_user_id } : {})
         })
         await adminAPI.accounts.create(createPayload)
         successCount++
@@ -5017,6 +5181,10 @@ const handleAnthropicExchange = async (authCode: string) => {
 const handleExchangeCode = async () => {
   const authCode = oauthFlowRef.value?.authCode || ''
 
+  if (isResourceSupply.value) {
+    return handleResourceSupplyExchange(authCode)
+  }
+
   switch (form.platform) {
     case 'openai':
       return handleOpenAIExchange(authCode)
@@ -5148,7 +5316,8 @@ const handleCookieAuth = async (sessionKey: string) => {
           rate_multiplier: form.rate_multiplier,
           group_ids: form.group_ids,
           expires_at: form.expires_at,
-          auto_pause_on_expired: autoPauseOnExpired.value
+          auto_pause_on_expired: autoPauseOnExpired.value,
+          ...(form.supply_owner_user_id ? { supply_owner_user_id: form.supply_owner_user_id } : {})
         })
 
         successCount++

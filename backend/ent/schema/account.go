@@ -3,6 +3,8 @@
 package schema
 
 import (
+	"fmt"
+
 	"github.com/Wei-Shaw/sub2api/ent/schema/mixins"
 	"github.com/Wei-Shaw/sub2api/internal/domain"
 
@@ -137,6 +139,48 @@ func (Account) Fields() []ent.Field {
 			Default(true).
 			Comment("Auto pause scheduling when account expires."),
 
+		// ========== Resource supply ownership ==========
+		field.Int64("supply_owner_user_id").
+			Optional().
+			Nillable(),
+		field.String("supply_source").
+			Optional().
+			Nillable().
+			MaxLen(32).
+			Validate(func(value string) error {
+				switch value {
+				case "admin", "self_service":
+					return nil
+				default:
+					return fmt.Errorf("invalid supply source")
+				}
+			}),
+		field.String("supply_status").
+			MaxLen(32).
+			Default("none").
+			Validate(func(value string) error {
+				switch value {
+				case "none", "testing", "pending_review", "schedulable", "paused", "rejected", "revoked":
+					return nil
+				default:
+					return fmt.Errorf("invalid supply status")
+				}
+			}),
+		field.String("supply_status_reason").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "text"}),
+		field.Int64("supply_submitted_by").
+			Optional().
+			Nillable(),
+		field.Int64("supply_reviewed_by").
+			Optional().
+			Nillable(),
+		field.Time("supply_reviewed_at").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "timestamptz"}),
+
 		// ========== 调度和速率限制相关字段 ==========
 		// 这些字段在 migrations/005_schema_parity.sql 中添加
 
@@ -228,6 +272,9 @@ func (Account) Indexes() []ent.Index {
 		index.Fields("rate_limited_at"),     // 筛选速率限制账户
 		index.Fields("rate_limit_reset_at"), // 筛选速率限制解除时间
 		index.Fields("overload_until"),      // 筛选过载账户
+		index.Fields("supply_owner_user_id"),
+		index.Fields("supply_status"),
+		index.Fields("supply_source"),
 		// 调度热路径复合索引（线上由 SQL 迁移创建部分索引，schema 仅用于模型可读性对齐）
 		index.Fields("platform", "priority"),
 		index.Fields("priority", "status"),

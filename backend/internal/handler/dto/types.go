@@ -114,6 +114,10 @@ type Group struct {
 	// RPMLimit 分组级每分钟请求数上限（0 = 不限制），设置后覆盖用户级 rpm_limit。
 	RPMLimit int `json:"rpm_limit"`
 
+	SupplyRewardsEnabled          bool    `json:"supply_rewards_enabled"`
+	SupplyRewardMultiplier        float64 `json:"supply_reward_multiplier"`
+	SupplySelfServiceReviewPolicy string  `json:"supply_self_service_review_policy"`
+
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -165,6 +169,14 @@ type Account struct {
 	AutoPauseOnExpired bool           `json:"auto_pause_on_expired"`
 	CreatedAt          time.Time      `json:"created_at"`
 	UpdatedAt          time.Time      `json:"updated_at"`
+
+	SupplyOwnerUserID  *int64     `json:"supply_owner_user_id,omitempty"`
+	SupplySource       *string    `json:"supply_source,omitempty"`
+	SupplyStatus       string     `json:"supply_status"`
+	SupplyStatusReason *string    `json:"supply_status_reason,omitempty"`
+	SupplySubmittedBy  *int64     `json:"supply_submitted_by,omitempty"`
+	SupplyReviewedBy   *int64     `json:"supply_reviewed_by,omitempty"`
+	SupplyReviewedAt   *time.Time `json:"supply_reviewed_at,omitempty"`
 
 	Schedulable bool `json:"schedulable"`
 

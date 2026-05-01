@@ -251,6 +251,104 @@ func (_c *AccountCreate) SetNillableAutoPauseOnExpired(v *bool) *AccountCreate {
 	return _c
 }
 
+// SetSupplyOwnerUserID sets the "supply_owner_user_id" field.
+func (_c *AccountCreate) SetSupplyOwnerUserID(v int64) *AccountCreate {
+	_c.mutation.SetSupplyOwnerUserID(v)
+	return _c
+}
+
+// SetNillableSupplyOwnerUserID sets the "supply_owner_user_id" field if the given value is not nil.
+func (_c *AccountCreate) SetNillableSupplyOwnerUserID(v *int64) *AccountCreate {
+	if v != nil {
+		_c.SetSupplyOwnerUserID(*v)
+	}
+	return _c
+}
+
+// SetSupplySource sets the "supply_source" field.
+func (_c *AccountCreate) SetSupplySource(v string) *AccountCreate {
+	_c.mutation.SetSupplySource(v)
+	return _c
+}
+
+// SetNillableSupplySource sets the "supply_source" field if the given value is not nil.
+func (_c *AccountCreate) SetNillableSupplySource(v *string) *AccountCreate {
+	if v != nil {
+		_c.SetSupplySource(*v)
+	}
+	return _c
+}
+
+// SetSupplyStatus sets the "supply_status" field.
+func (_c *AccountCreate) SetSupplyStatus(v string) *AccountCreate {
+	_c.mutation.SetSupplyStatus(v)
+	return _c
+}
+
+// SetNillableSupplyStatus sets the "supply_status" field if the given value is not nil.
+func (_c *AccountCreate) SetNillableSupplyStatus(v *string) *AccountCreate {
+	if v != nil {
+		_c.SetSupplyStatus(*v)
+	}
+	return _c
+}
+
+// SetSupplyStatusReason sets the "supply_status_reason" field.
+func (_c *AccountCreate) SetSupplyStatusReason(v string) *AccountCreate {
+	_c.mutation.SetSupplyStatusReason(v)
+	return _c
+}
+
+// SetNillableSupplyStatusReason sets the "supply_status_reason" field if the given value is not nil.
+func (_c *AccountCreate) SetNillableSupplyStatusReason(v *string) *AccountCreate {
+	if v != nil {
+		_c.SetSupplyStatusReason(*v)
+	}
+	return _c
+}
+
+// SetSupplySubmittedBy sets the "supply_submitted_by" field.
+func (_c *AccountCreate) SetSupplySubmittedBy(v int64) *AccountCreate {
+	_c.mutation.SetSupplySubmittedBy(v)
+	return _c
+}
+
+// SetNillableSupplySubmittedBy sets the "supply_submitted_by" field if the given value is not nil.
+func (_c *AccountCreate) SetNillableSupplySubmittedBy(v *int64) *AccountCreate {
+	if v != nil {
+		_c.SetSupplySubmittedBy(*v)
+	}
+	return _c
+}
+
+// SetSupplyReviewedBy sets the "supply_reviewed_by" field.
+func (_c *AccountCreate) SetSupplyReviewedBy(v int64) *AccountCreate {
+	_c.mutation.SetSupplyReviewedBy(v)
+	return _c
+}
+
+// SetNillableSupplyReviewedBy sets the "supply_reviewed_by" field if the given value is not nil.
+func (_c *AccountCreate) SetNillableSupplyReviewedBy(v *int64) *AccountCreate {
+	if v != nil {
+		_c.SetSupplyReviewedBy(*v)
+	}
+	return _c
+}
+
+// SetSupplyReviewedAt sets the "supply_reviewed_at" field.
+func (_c *AccountCreate) SetSupplyReviewedAt(v time.Time) *AccountCreate {
+	_c.mutation.SetSupplyReviewedAt(v)
+	return _c
+}
+
+// SetNillableSupplyReviewedAt sets the "supply_reviewed_at" field if the given value is not nil.
+func (_c *AccountCreate) SetNillableSupplyReviewedAt(v *time.Time) *AccountCreate {
+	if v != nil {
+		_c.SetSupplyReviewedAt(*v)
+	}
+	return _c
+}
+
 // SetSchedulable sets the "schedulable" field.
 func (_c *AccountCreate) SetSchedulable(v bool) *AccountCreate {
 	_c.mutation.SetSchedulable(v)
@@ -497,6 +595,10 @@ func (_c *AccountCreate) defaults() error {
 		v := account.DefaultAutoPauseOnExpired
 		_c.mutation.SetAutoPauseOnExpired(v)
 	}
+	if _, ok := _c.mutation.SupplyStatus(); !ok {
+		v := account.DefaultSupplyStatus
+		_c.mutation.SetSupplyStatus(v)
+	}
 	if _, ok := _c.mutation.Schedulable(); !ok {
 		v := account.DefaultSchedulable
 		_c.mutation.SetSchedulable(v)
@@ -561,6 +663,19 @@ func (_c *AccountCreate) check() error {
 	}
 	if _, ok := _c.mutation.AutoPauseOnExpired(); !ok {
 		return &ValidationError{Name: "auto_pause_on_expired", err: errors.New(`ent: missing required field "Account.auto_pause_on_expired"`)}
+	}
+	if v, ok := _c.mutation.SupplySource(); ok {
+		if err := account.SupplySourceValidator(v); err != nil {
+			return &ValidationError{Name: "supply_source", err: fmt.Errorf(`ent: validator failed for field "Account.supply_source": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.SupplyStatus(); !ok {
+		return &ValidationError{Name: "supply_status", err: errors.New(`ent: missing required field "Account.supply_status"`)}
+	}
+	if v, ok := _c.mutation.SupplyStatus(); ok {
+		if err := account.SupplyStatusValidator(v); err != nil {
+			return &ValidationError{Name: "supply_status", err: fmt.Errorf(`ent: validator failed for field "Account.supply_status": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.Schedulable(); !ok {
 		return &ValidationError{Name: "schedulable", err: errors.New(`ent: missing required field "Account.schedulable"`)}
@@ -668,6 +783,34 @@ func (_c *AccountCreate) createSpec() (*Account, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.AutoPauseOnExpired(); ok {
 		_spec.SetField(account.FieldAutoPauseOnExpired, field.TypeBool, value)
 		_node.AutoPauseOnExpired = value
+	}
+	if value, ok := _c.mutation.SupplyOwnerUserID(); ok {
+		_spec.SetField(account.FieldSupplyOwnerUserID, field.TypeInt64, value)
+		_node.SupplyOwnerUserID = &value
+	}
+	if value, ok := _c.mutation.SupplySource(); ok {
+		_spec.SetField(account.FieldSupplySource, field.TypeString, value)
+		_node.SupplySource = &value
+	}
+	if value, ok := _c.mutation.SupplyStatus(); ok {
+		_spec.SetField(account.FieldSupplyStatus, field.TypeString, value)
+		_node.SupplyStatus = value
+	}
+	if value, ok := _c.mutation.SupplyStatusReason(); ok {
+		_spec.SetField(account.FieldSupplyStatusReason, field.TypeString, value)
+		_node.SupplyStatusReason = &value
+	}
+	if value, ok := _c.mutation.SupplySubmittedBy(); ok {
+		_spec.SetField(account.FieldSupplySubmittedBy, field.TypeInt64, value)
+		_node.SupplySubmittedBy = &value
+	}
+	if value, ok := _c.mutation.SupplyReviewedBy(); ok {
+		_spec.SetField(account.FieldSupplyReviewedBy, field.TypeInt64, value)
+		_node.SupplyReviewedBy = &value
+	}
+	if value, ok := _c.mutation.SupplyReviewedAt(); ok {
+		_spec.SetField(account.FieldSupplyReviewedAt, field.TypeTime, value)
+		_node.SupplyReviewedAt = &value
 	}
 	if value, ok := _c.mutation.Schedulable(); ok {
 		_spec.SetField(account.FieldSchedulable, field.TypeBool, value)
@@ -1089,6 +1232,144 @@ func (u *AccountUpsert) SetAutoPauseOnExpired(v bool) *AccountUpsert {
 // UpdateAutoPauseOnExpired sets the "auto_pause_on_expired" field to the value that was provided on create.
 func (u *AccountUpsert) UpdateAutoPauseOnExpired() *AccountUpsert {
 	u.SetExcluded(account.FieldAutoPauseOnExpired)
+	return u
+}
+
+// SetSupplyOwnerUserID sets the "supply_owner_user_id" field.
+func (u *AccountUpsert) SetSupplyOwnerUserID(v int64) *AccountUpsert {
+	u.Set(account.FieldSupplyOwnerUserID, v)
+	return u
+}
+
+// UpdateSupplyOwnerUserID sets the "supply_owner_user_id" field to the value that was provided on create.
+func (u *AccountUpsert) UpdateSupplyOwnerUserID() *AccountUpsert {
+	u.SetExcluded(account.FieldSupplyOwnerUserID)
+	return u
+}
+
+// AddSupplyOwnerUserID adds v to the "supply_owner_user_id" field.
+func (u *AccountUpsert) AddSupplyOwnerUserID(v int64) *AccountUpsert {
+	u.Add(account.FieldSupplyOwnerUserID, v)
+	return u
+}
+
+// ClearSupplyOwnerUserID clears the value of the "supply_owner_user_id" field.
+func (u *AccountUpsert) ClearSupplyOwnerUserID() *AccountUpsert {
+	u.SetNull(account.FieldSupplyOwnerUserID)
+	return u
+}
+
+// SetSupplySource sets the "supply_source" field.
+func (u *AccountUpsert) SetSupplySource(v string) *AccountUpsert {
+	u.Set(account.FieldSupplySource, v)
+	return u
+}
+
+// UpdateSupplySource sets the "supply_source" field to the value that was provided on create.
+func (u *AccountUpsert) UpdateSupplySource() *AccountUpsert {
+	u.SetExcluded(account.FieldSupplySource)
+	return u
+}
+
+// ClearSupplySource clears the value of the "supply_source" field.
+func (u *AccountUpsert) ClearSupplySource() *AccountUpsert {
+	u.SetNull(account.FieldSupplySource)
+	return u
+}
+
+// SetSupplyStatus sets the "supply_status" field.
+func (u *AccountUpsert) SetSupplyStatus(v string) *AccountUpsert {
+	u.Set(account.FieldSupplyStatus, v)
+	return u
+}
+
+// UpdateSupplyStatus sets the "supply_status" field to the value that was provided on create.
+func (u *AccountUpsert) UpdateSupplyStatus() *AccountUpsert {
+	u.SetExcluded(account.FieldSupplyStatus)
+	return u
+}
+
+// SetSupplyStatusReason sets the "supply_status_reason" field.
+func (u *AccountUpsert) SetSupplyStatusReason(v string) *AccountUpsert {
+	u.Set(account.FieldSupplyStatusReason, v)
+	return u
+}
+
+// UpdateSupplyStatusReason sets the "supply_status_reason" field to the value that was provided on create.
+func (u *AccountUpsert) UpdateSupplyStatusReason() *AccountUpsert {
+	u.SetExcluded(account.FieldSupplyStatusReason)
+	return u
+}
+
+// ClearSupplyStatusReason clears the value of the "supply_status_reason" field.
+func (u *AccountUpsert) ClearSupplyStatusReason() *AccountUpsert {
+	u.SetNull(account.FieldSupplyStatusReason)
+	return u
+}
+
+// SetSupplySubmittedBy sets the "supply_submitted_by" field.
+func (u *AccountUpsert) SetSupplySubmittedBy(v int64) *AccountUpsert {
+	u.Set(account.FieldSupplySubmittedBy, v)
+	return u
+}
+
+// UpdateSupplySubmittedBy sets the "supply_submitted_by" field to the value that was provided on create.
+func (u *AccountUpsert) UpdateSupplySubmittedBy() *AccountUpsert {
+	u.SetExcluded(account.FieldSupplySubmittedBy)
+	return u
+}
+
+// AddSupplySubmittedBy adds v to the "supply_submitted_by" field.
+func (u *AccountUpsert) AddSupplySubmittedBy(v int64) *AccountUpsert {
+	u.Add(account.FieldSupplySubmittedBy, v)
+	return u
+}
+
+// ClearSupplySubmittedBy clears the value of the "supply_submitted_by" field.
+func (u *AccountUpsert) ClearSupplySubmittedBy() *AccountUpsert {
+	u.SetNull(account.FieldSupplySubmittedBy)
+	return u
+}
+
+// SetSupplyReviewedBy sets the "supply_reviewed_by" field.
+func (u *AccountUpsert) SetSupplyReviewedBy(v int64) *AccountUpsert {
+	u.Set(account.FieldSupplyReviewedBy, v)
+	return u
+}
+
+// UpdateSupplyReviewedBy sets the "supply_reviewed_by" field to the value that was provided on create.
+func (u *AccountUpsert) UpdateSupplyReviewedBy() *AccountUpsert {
+	u.SetExcluded(account.FieldSupplyReviewedBy)
+	return u
+}
+
+// AddSupplyReviewedBy adds v to the "supply_reviewed_by" field.
+func (u *AccountUpsert) AddSupplyReviewedBy(v int64) *AccountUpsert {
+	u.Add(account.FieldSupplyReviewedBy, v)
+	return u
+}
+
+// ClearSupplyReviewedBy clears the value of the "supply_reviewed_by" field.
+func (u *AccountUpsert) ClearSupplyReviewedBy() *AccountUpsert {
+	u.SetNull(account.FieldSupplyReviewedBy)
+	return u
+}
+
+// SetSupplyReviewedAt sets the "supply_reviewed_at" field.
+func (u *AccountUpsert) SetSupplyReviewedAt(v time.Time) *AccountUpsert {
+	u.Set(account.FieldSupplyReviewedAt, v)
+	return u
+}
+
+// UpdateSupplyReviewedAt sets the "supply_reviewed_at" field to the value that was provided on create.
+func (u *AccountUpsert) UpdateSupplyReviewedAt() *AccountUpsert {
+	u.SetExcluded(account.FieldSupplyReviewedAt)
+	return u
+}
+
+// ClearSupplyReviewedAt clears the value of the "supply_reviewed_at" field.
+func (u *AccountUpsert) ClearSupplyReviewedAt() *AccountUpsert {
+	u.SetNull(account.FieldSupplyReviewedAt)
 	return u
 }
 
@@ -1619,6 +1900,167 @@ func (u *AccountUpsertOne) SetAutoPauseOnExpired(v bool) *AccountUpsertOne {
 func (u *AccountUpsertOne) UpdateAutoPauseOnExpired() *AccountUpsertOne {
 	return u.Update(func(s *AccountUpsert) {
 		s.UpdateAutoPauseOnExpired()
+	})
+}
+
+// SetSupplyOwnerUserID sets the "supply_owner_user_id" field.
+func (u *AccountUpsertOne) SetSupplyOwnerUserID(v int64) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSupplyOwnerUserID(v)
+	})
+}
+
+// AddSupplyOwnerUserID adds v to the "supply_owner_user_id" field.
+func (u *AccountUpsertOne) AddSupplyOwnerUserID(v int64) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.AddSupplyOwnerUserID(v)
+	})
+}
+
+// UpdateSupplyOwnerUserID sets the "supply_owner_user_id" field to the value that was provided on create.
+func (u *AccountUpsertOne) UpdateSupplyOwnerUserID() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSupplyOwnerUserID()
+	})
+}
+
+// ClearSupplyOwnerUserID clears the value of the "supply_owner_user_id" field.
+func (u *AccountUpsertOne) ClearSupplyOwnerUserID() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearSupplyOwnerUserID()
+	})
+}
+
+// SetSupplySource sets the "supply_source" field.
+func (u *AccountUpsertOne) SetSupplySource(v string) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSupplySource(v)
+	})
+}
+
+// UpdateSupplySource sets the "supply_source" field to the value that was provided on create.
+func (u *AccountUpsertOne) UpdateSupplySource() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSupplySource()
+	})
+}
+
+// ClearSupplySource clears the value of the "supply_source" field.
+func (u *AccountUpsertOne) ClearSupplySource() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearSupplySource()
+	})
+}
+
+// SetSupplyStatus sets the "supply_status" field.
+func (u *AccountUpsertOne) SetSupplyStatus(v string) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSupplyStatus(v)
+	})
+}
+
+// UpdateSupplyStatus sets the "supply_status" field to the value that was provided on create.
+func (u *AccountUpsertOne) UpdateSupplyStatus() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSupplyStatus()
+	})
+}
+
+// SetSupplyStatusReason sets the "supply_status_reason" field.
+func (u *AccountUpsertOne) SetSupplyStatusReason(v string) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSupplyStatusReason(v)
+	})
+}
+
+// UpdateSupplyStatusReason sets the "supply_status_reason" field to the value that was provided on create.
+func (u *AccountUpsertOne) UpdateSupplyStatusReason() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSupplyStatusReason()
+	})
+}
+
+// ClearSupplyStatusReason clears the value of the "supply_status_reason" field.
+func (u *AccountUpsertOne) ClearSupplyStatusReason() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearSupplyStatusReason()
+	})
+}
+
+// SetSupplySubmittedBy sets the "supply_submitted_by" field.
+func (u *AccountUpsertOne) SetSupplySubmittedBy(v int64) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSupplySubmittedBy(v)
+	})
+}
+
+// AddSupplySubmittedBy adds v to the "supply_submitted_by" field.
+func (u *AccountUpsertOne) AddSupplySubmittedBy(v int64) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.AddSupplySubmittedBy(v)
+	})
+}
+
+// UpdateSupplySubmittedBy sets the "supply_submitted_by" field to the value that was provided on create.
+func (u *AccountUpsertOne) UpdateSupplySubmittedBy() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSupplySubmittedBy()
+	})
+}
+
+// ClearSupplySubmittedBy clears the value of the "supply_submitted_by" field.
+func (u *AccountUpsertOne) ClearSupplySubmittedBy() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearSupplySubmittedBy()
+	})
+}
+
+// SetSupplyReviewedBy sets the "supply_reviewed_by" field.
+func (u *AccountUpsertOne) SetSupplyReviewedBy(v int64) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSupplyReviewedBy(v)
+	})
+}
+
+// AddSupplyReviewedBy adds v to the "supply_reviewed_by" field.
+func (u *AccountUpsertOne) AddSupplyReviewedBy(v int64) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.AddSupplyReviewedBy(v)
+	})
+}
+
+// UpdateSupplyReviewedBy sets the "supply_reviewed_by" field to the value that was provided on create.
+func (u *AccountUpsertOne) UpdateSupplyReviewedBy() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSupplyReviewedBy()
+	})
+}
+
+// ClearSupplyReviewedBy clears the value of the "supply_reviewed_by" field.
+func (u *AccountUpsertOne) ClearSupplyReviewedBy() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearSupplyReviewedBy()
+	})
+}
+
+// SetSupplyReviewedAt sets the "supply_reviewed_at" field.
+func (u *AccountUpsertOne) SetSupplyReviewedAt(v time.Time) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSupplyReviewedAt(v)
+	})
+}
+
+// UpdateSupplyReviewedAt sets the "supply_reviewed_at" field to the value that was provided on create.
+func (u *AccountUpsertOne) UpdateSupplyReviewedAt() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSupplyReviewedAt()
+	})
+}
+
+// ClearSupplyReviewedAt clears the value of the "supply_reviewed_at" field.
+func (u *AccountUpsertOne) ClearSupplyReviewedAt() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearSupplyReviewedAt()
 	})
 }
 
@@ -2341,6 +2783,167 @@ func (u *AccountUpsertBulk) SetAutoPauseOnExpired(v bool) *AccountUpsertBulk {
 func (u *AccountUpsertBulk) UpdateAutoPauseOnExpired() *AccountUpsertBulk {
 	return u.Update(func(s *AccountUpsert) {
 		s.UpdateAutoPauseOnExpired()
+	})
+}
+
+// SetSupplyOwnerUserID sets the "supply_owner_user_id" field.
+func (u *AccountUpsertBulk) SetSupplyOwnerUserID(v int64) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSupplyOwnerUserID(v)
+	})
+}
+
+// AddSupplyOwnerUserID adds v to the "supply_owner_user_id" field.
+func (u *AccountUpsertBulk) AddSupplyOwnerUserID(v int64) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.AddSupplyOwnerUserID(v)
+	})
+}
+
+// UpdateSupplyOwnerUserID sets the "supply_owner_user_id" field to the value that was provided on create.
+func (u *AccountUpsertBulk) UpdateSupplyOwnerUserID() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSupplyOwnerUserID()
+	})
+}
+
+// ClearSupplyOwnerUserID clears the value of the "supply_owner_user_id" field.
+func (u *AccountUpsertBulk) ClearSupplyOwnerUserID() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearSupplyOwnerUserID()
+	})
+}
+
+// SetSupplySource sets the "supply_source" field.
+func (u *AccountUpsertBulk) SetSupplySource(v string) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSupplySource(v)
+	})
+}
+
+// UpdateSupplySource sets the "supply_source" field to the value that was provided on create.
+func (u *AccountUpsertBulk) UpdateSupplySource() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSupplySource()
+	})
+}
+
+// ClearSupplySource clears the value of the "supply_source" field.
+func (u *AccountUpsertBulk) ClearSupplySource() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearSupplySource()
+	})
+}
+
+// SetSupplyStatus sets the "supply_status" field.
+func (u *AccountUpsertBulk) SetSupplyStatus(v string) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSupplyStatus(v)
+	})
+}
+
+// UpdateSupplyStatus sets the "supply_status" field to the value that was provided on create.
+func (u *AccountUpsertBulk) UpdateSupplyStatus() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSupplyStatus()
+	})
+}
+
+// SetSupplyStatusReason sets the "supply_status_reason" field.
+func (u *AccountUpsertBulk) SetSupplyStatusReason(v string) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSupplyStatusReason(v)
+	})
+}
+
+// UpdateSupplyStatusReason sets the "supply_status_reason" field to the value that was provided on create.
+func (u *AccountUpsertBulk) UpdateSupplyStatusReason() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSupplyStatusReason()
+	})
+}
+
+// ClearSupplyStatusReason clears the value of the "supply_status_reason" field.
+func (u *AccountUpsertBulk) ClearSupplyStatusReason() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearSupplyStatusReason()
+	})
+}
+
+// SetSupplySubmittedBy sets the "supply_submitted_by" field.
+func (u *AccountUpsertBulk) SetSupplySubmittedBy(v int64) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSupplySubmittedBy(v)
+	})
+}
+
+// AddSupplySubmittedBy adds v to the "supply_submitted_by" field.
+func (u *AccountUpsertBulk) AddSupplySubmittedBy(v int64) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.AddSupplySubmittedBy(v)
+	})
+}
+
+// UpdateSupplySubmittedBy sets the "supply_submitted_by" field to the value that was provided on create.
+func (u *AccountUpsertBulk) UpdateSupplySubmittedBy() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSupplySubmittedBy()
+	})
+}
+
+// ClearSupplySubmittedBy clears the value of the "supply_submitted_by" field.
+func (u *AccountUpsertBulk) ClearSupplySubmittedBy() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearSupplySubmittedBy()
+	})
+}
+
+// SetSupplyReviewedBy sets the "supply_reviewed_by" field.
+func (u *AccountUpsertBulk) SetSupplyReviewedBy(v int64) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSupplyReviewedBy(v)
+	})
+}
+
+// AddSupplyReviewedBy adds v to the "supply_reviewed_by" field.
+func (u *AccountUpsertBulk) AddSupplyReviewedBy(v int64) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.AddSupplyReviewedBy(v)
+	})
+}
+
+// UpdateSupplyReviewedBy sets the "supply_reviewed_by" field to the value that was provided on create.
+func (u *AccountUpsertBulk) UpdateSupplyReviewedBy() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSupplyReviewedBy()
+	})
+}
+
+// ClearSupplyReviewedBy clears the value of the "supply_reviewed_by" field.
+func (u *AccountUpsertBulk) ClearSupplyReviewedBy() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearSupplyReviewedBy()
+	})
+}
+
+// SetSupplyReviewedAt sets the "supply_reviewed_at" field.
+func (u *AccountUpsertBulk) SetSupplyReviewedAt(v time.Time) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSupplyReviewedAt(v)
+	})
+}
+
+// UpdateSupplyReviewedAt sets the "supply_reviewed_at" field to the value that was provided on create.
+func (u *AccountUpsertBulk) UpdateSupplyReviewedAt() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSupplyReviewedAt()
+	})
+}
+
+// ClearSupplyReviewedAt clears the value of the "supply_reviewed_at" field.
+func (u *AccountUpsertBulk) ClearSupplyReviewedAt() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearSupplyReviewedAt()
 	})
 }
 

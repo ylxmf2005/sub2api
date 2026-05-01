@@ -439,6 +439,48 @@ func (_c *GroupCreate) SetNillableRpmLimit(v *int) *GroupCreate {
 	return _c
 }
 
+// SetSupplyRewardsEnabled sets the "supply_rewards_enabled" field.
+func (_c *GroupCreate) SetSupplyRewardsEnabled(v bool) *GroupCreate {
+	_c.mutation.SetSupplyRewardsEnabled(v)
+	return _c
+}
+
+// SetNillableSupplyRewardsEnabled sets the "supply_rewards_enabled" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableSupplyRewardsEnabled(v *bool) *GroupCreate {
+	if v != nil {
+		_c.SetSupplyRewardsEnabled(*v)
+	}
+	return _c
+}
+
+// SetSupplyRewardMultiplier sets the "supply_reward_multiplier" field.
+func (_c *GroupCreate) SetSupplyRewardMultiplier(v float64) *GroupCreate {
+	_c.mutation.SetSupplyRewardMultiplier(v)
+	return _c
+}
+
+// SetNillableSupplyRewardMultiplier sets the "supply_reward_multiplier" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableSupplyRewardMultiplier(v *float64) *GroupCreate {
+	if v != nil {
+		_c.SetSupplyRewardMultiplier(*v)
+	}
+	return _c
+}
+
+// SetSupplySelfServiceReviewPolicy sets the "supply_self_service_review_policy" field.
+func (_c *GroupCreate) SetSupplySelfServiceReviewPolicy(v string) *GroupCreate {
+	_c.mutation.SetSupplySelfServiceReviewPolicy(v)
+	return _c
+}
+
+// SetNillableSupplySelfServiceReviewPolicy sets the "supply_self_service_review_policy" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableSupplySelfServiceReviewPolicy(v *string) *GroupCreate {
+	if v != nil {
+		_c.SetSupplySelfServiceReviewPolicy(*v)
+	}
+	return _c
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_c *GroupCreate) AddAPIKeyIDs(ids ...int64) *GroupCreate {
 	_c.mutation.AddAPIKeyIDs(ids...)
@@ -648,6 +690,18 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultRpmLimit
 		_c.mutation.SetRpmLimit(v)
 	}
+	if _, ok := _c.mutation.SupplyRewardsEnabled(); !ok {
+		v := group.DefaultSupplyRewardsEnabled
+		_c.mutation.SetSupplyRewardsEnabled(v)
+	}
+	if _, ok := _c.mutation.SupplyRewardMultiplier(); !ok {
+		v := group.DefaultSupplyRewardMultiplier
+		_c.mutation.SetSupplyRewardMultiplier(v)
+	}
+	if _, ok := _c.mutation.SupplySelfServiceReviewPolicy(); !ok {
+		v := group.DefaultSupplySelfServiceReviewPolicy
+		_c.mutation.SetSupplySelfServiceReviewPolicy(v)
+	}
 	return nil
 }
 
@@ -737,6 +791,25 @@ func (_c *GroupCreate) check() error {
 	}
 	if _, ok := _c.mutation.RpmLimit(); !ok {
 		return &ValidationError{Name: "rpm_limit", err: errors.New(`ent: missing required field "Group.rpm_limit"`)}
+	}
+	if _, ok := _c.mutation.SupplyRewardsEnabled(); !ok {
+		return &ValidationError{Name: "supply_rewards_enabled", err: errors.New(`ent: missing required field "Group.supply_rewards_enabled"`)}
+	}
+	if _, ok := _c.mutation.SupplyRewardMultiplier(); !ok {
+		return &ValidationError{Name: "supply_reward_multiplier", err: errors.New(`ent: missing required field "Group.supply_reward_multiplier"`)}
+	}
+	if v, ok := _c.mutation.SupplyRewardMultiplier(); ok {
+		if err := group.SupplyRewardMultiplierValidator(v); err != nil {
+			return &ValidationError{Name: "supply_reward_multiplier", err: fmt.Errorf(`ent: validator failed for field "Group.supply_reward_multiplier": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.SupplySelfServiceReviewPolicy(); !ok {
+		return &ValidationError{Name: "supply_self_service_review_policy", err: errors.New(`ent: missing required field "Group.supply_self_service_review_policy"`)}
+	}
+	if v, ok := _c.mutation.SupplySelfServiceReviewPolicy(); ok {
+		if err := group.SupplySelfServiceReviewPolicyValidator(v); err != nil {
+			return &ValidationError{Name: "supply_self_service_review_policy", err: fmt.Errorf(`ent: validator failed for field "Group.supply_self_service_review_policy": %w`, err)}
+		}
 	}
 	return nil
 }
@@ -888,6 +961,18 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.RpmLimit(); ok {
 		_spec.SetField(group.FieldRpmLimit, field.TypeInt, value)
 		_node.RpmLimit = value
+	}
+	if value, ok := _c.mutation.SupplyRewardsEnabled(); ok {
+		_spec.SetField(group.FieldSupplyRewardsEnabled, field.TypeBool, value)
+		_node.SupplyRewardsEnabled = value
+	}
+	if value, ok := _c.mutation.SupplyRewardMultiplier(); ok {
+		_spec.SetField(group.FieldSupplyRewardMultiplier, field.TypeFloat64, value)
+		_node.SupplyRewardMultiplier = value
+	}
+	if value, ok := _c.mutation.SupplySelfServiceReviewPolicy(); ok {
+		_spec.SetField(group.FieldSupplySelfServiceReviewPolicy, field.TypeString, value)
+		_node.SupplySelfServiceReviewPolicy = value
 	}
 	if nodes := _c.mutation.APIKeysIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -1543,6 +1628,48 @@ func (u *GroupUpsert) AddRpmLimit(v int) *GroupUpsert {
 	return u
 }
 
+// SetSupplyRewardsEnabled sets the "supply_rewards_enabled" field.
+func (u *GroupUpsert) SetSupplyRewardsEnabled(v bool) *GroupUpsert {
+	u.Set(group.FieldSupplyRewardsEnabled, v)
+	return u
+}
+
+// UpdateSupplyRewardsEnabled sets the "supply_rewards_enabled" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateSupplyRewardsEnabled() *GroupUpsert {
+	u.SetExcluded(group.FieldSupplyRewardsEnabled)
+	return u
+}
+
+// SetSupplyRewardMultiplier sets the "supply_reward_multiplier" field.
+func (u *GroupUpsert) SetSupplyRewardMultiplier(v float64) *GroupUpsert {
+	u.Set(group.FieldSupplyRewardMultiplier, v)
+	return u
+}
+
+// UpdateSupplyRewardMultiplier sets the "supply_reward_multiplier" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateSupplyRewardMultiplier() *GroupUpsert {
+	u.SetExcluded(group.FieldSupplyRewardMultiplier)
+	return u
+}
+
+// AddSupplyRewardMultiplier adds v to the "supply_reward_multiplier" field.
+func (u *GroupUpsert) AddSupplyRewardMultiplier(v float64) *GroupUpsert {
+	u.Add(group.FieldSupplyRewardMultiplier, v)
+	return u
+}
+
+// SetSupplySelfServiceReviewPolicy sets the "supply_self_service_review_policy" field.
+func (u *GroupUpsert) SetSupplySelfServiceReviewPolicy(v string) *GroupUpsert {
+	u.Set(group.FieldSupplySelfServiceReviewPolicy, v)
+	return u
+}
+
+// UpdateSupplySelfServiceReviewPolicy sets the "supply_self_service_review_policy" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateSupplySelfServiceReviewPolicy() *GroupUpsert {
+	u.SetExcluded(group.FieldSupplySelfServiceReviewPolicy)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -2166,6 +2293,55 @@ func (u *GroupUpsertOne) AddRpmLimit(v int) *GroupUpsertOne {
 func (u *GroupUpsertOne) UpdateRpmLimit() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateRpmLimit()
+	})
+}
+
+// SetSupplyRewardsEnabled sets the "supply_rewards_enabled" field.
+func (u *GroupUpsertOne) SetSupplyRewardsEnabled(v bool) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetSupplyRewardsEnabled(v)
+	})
+}
+
+// UpdateSupplyRewardsEnabled sets the "supply_rewards_enabled" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateSupplyRewardsEnabled() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateSupplyRewardsEnabled()
+	})
+}
+
+// SetSupplyRewardMultiplier sets the "supply_reward_multiplier" field.
+func (u *GroupUpsertOne) SetSupplyRewardMultiplier(v float64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetSupplyRewardMultiplier(v)
+	})
+}
+
+// AddSupplyRewardMultiplier adds v to the "supply_reward_multiplier" field.
+func (u *GroupUpsertOne) AddSupplyRewardMultiplier(v float64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddSupplyRewardMultiplier(v)
+	})
+}
+
+// UpdateSupplyRewardMultiplier sets the "supply_reward_multiplier" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateSupplyRewardMultiplier() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateSupplyRewardMultiplier()
+	})
+}
+
+// SetSupplySelfServiceReviewPolicy sets the "supply_self_service_review_policy" field.
+func (u *GroupUpsertOne) SetSupplySelfServiceReviewPolicy(v string) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetSupplySelfServiceReviewPolicy(v)
+	})
+}
+
+// UpdateSupplySelfServiceReviewPolicy sets the "supply_self_service_review_policy" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateSupplySelfServiceReviewPolicy() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateSupplySelfServiceReviewPolicy()
 	})
 }
 
@@ -2958,6 +3134,55 @@ func (u *GroupUpsertBulk) AddRpmLimit(v int) *GroupUpsertBulk {
 func (u *GroupUpsertBulk) UpdateRpmLimit() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateRpmLimit()
+	})
+}
+
+// SetSupplyRewardsEnabled sets the "supply_rewards_enabled" field.
+func (u *GroupUpsertBulk) SetSupplyRewardsEnabled(v bool) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetSupplyRewardsEnabled(v)
+	})
+}
+
+// UpdateSupplyRewardsEnabled sets the "supply_rewards_enabled" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateSupplyRewardsEnabled() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateSupplyRewardsEnabled()
+	})
+}
+
+// SetSupplyRewardMultiplier sets the "supply_reward_multiplier" field.
+func (u *GroupUpsertBulk) SetSupplyRewardMultiplier(v float64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetSupplyRewardMultiplier(v)
+	})
+}
+
+// AddSupplyRewardMultiplier adds v to the "supply_reward_multiplier" field.
+func (u *GroupUpsertBulk) AddSupplyRewardMultiplier(v float64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddSupplyRewardMultiplier(v)
+	})
+}
+
+// UpdateSupplyRewardMultiplier sets the "supply_reward_multiplier" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateSupplyRewardMultiplier() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateSupplyRewardMultiplier()
+	})
+}
+
+// SetSupplySelfServiceReviewPolicy sets the "supply_self_service_review_policy" field.
+func (u *GroupUpsertBulk) SetSupplySelfServiceReviewPolicy(v string) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetSupplySelfServiceReviewPolicy(v)
+	})
+}
+
+// UpdateSupplySelfServiceReviewPolicy sets the "supply_self_service_review_policy" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateSupplySelfServiceReviewPolicy() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateSupplySelfServiceReviewPolicy()
 	})
 }
 

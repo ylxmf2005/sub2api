@@ -32,10 +32,13 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
+	"github.com/Wei-Shaw/sub2api/ent/resourcesupplybalance"
+	"github.com/Wei-Shaw/sub2api/ent/resourcesupplyledger"
 	"github.com/Wei-Shaw/sub2api/ent/securitysecret"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
+	"github.com/Wei-Shaw/sub2api/ent/usagebillingevent"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
@@ -722,6 +725,60 @@ func (f TraverseRedeemCode) Traverse(ctx context.Context, q ent.Query) error {
 	return fmt.Errorf("unexpected query type %T. expect *ent.RedeemCodeQuery", q)
 }
 
+// The ResourceSupplyBalanceFunc type is an adapter to allow the use of ordinary function as a Querier.
+type ResourceSupplyBalanceFunc func(context.Context, *ent.ResourceSupplyBalanceQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f ResourceSupplyBalanceFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.ResourceSupplyBalanceQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.ResourceSupplyBalanceQuery", q)
+}
+
+// The TraverseResourceSupplyBalance type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseResourceSupplyBalance func(context.Context, *ent.ResourceSupplyBalanceQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseResourceSupplyBalance) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseResourceSupplyBalance) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.ResourceSupplyBalanceQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.ResourceSupplyBalanceQuery", q)
+}
+
+// The ResourceSupplyLedgerFunc type is an adapter to allow the use of ordinary function as a Querier.
+type ResourceSupplyLedgerFunc func(context.Context, *ent.ResourceSupplyLedgerQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f ResourceSupplyLedgerFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.ResourceSupplyLedgerQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.ResourceSupplyLedgerQuery", q)
+}
+
+// The TraverseResourceSupplyLedger type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseResourceSupplyLedger func(context.Context, *ent.ResourceSupplyLedgerQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseResourceSupplyLedger) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseResourceSupplyLedger) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.ResourceSupplyLedgerQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.ResourceSupplyLedgerQuery", q)
+}
+
 // The SecuritySecretFunc type is an adapter to allow the use of ordinary function as a Querier.
 type SecuritySecretFunc func(context.Context, *ent.SecuritySecretQuery) (ent.Value, error)
 
@@ -828,6 +885,33 @@ func (f TraverseTLSFingerprintProfile) Traverse(ctx context.Context, q ent.Query
 		return f(ctx, q)
 	}
 	return fmt.Errorf("unexpected query type %T. expect *ent.TLSFingerprintProfileQuery", q)
+}
+
+// The UsageBillingEventFunc type is an adapter to allow the use of ordinary function as a Querier.
+type UsageBillingEventFunc func(context.Context, *ent.UsageBillingEventQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f UsageBillingEventFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.UsageBillingEventQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.UsageBillingEventQuery", q)
+}
+
+// The TraverseUsageBillingEvent type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseUsageBillingEvent func(context.Context, *ent.UsageBillingEventQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseUsageBillingEvent) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseUsageBillingEvent) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.UsageBillingEventQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.UsageBillingEventQuery", q)
 }
 
 // The UsageCleanupTaskFunc type is an adapter to allow the use of ordinary function as a Querier.
@@ -1068,6 +1152,10 @@ func NewQuery(q ent.Query) (Query, error) {
 		return &query[*ent.ProxyQuery, predicate.Proxy, proxy.OrderOption]{typ: ent.TypeProxy, tq: q}, nil
 	case *ent.RedeemCodeQuery:
 		return &query[*ent.RedeemCodeQuery, predicate.RedeemCode, redeemcode.OrderOption]{typ: ent.TypeRedeemCode, tq: q}, nil
+	case *ent.ResourceSupplyBalanceQuery:
+		return &query[*ent.ResourceSupplyBalanceQuery, predicate.ResourceSupplyBalance, resourcesupplybalance.OrderOption]{typ: ent.TypeResourceSupplyBalance, tq: q}, nil
+	case *ent.ResourceSupplyLedgerQuery:
+		return &query[*ent.ResourceSupplyLedgerQuery, predicate.ResourceSupplyLedger, resourcesupplyledger.OrderOption]{typ: ent.TypeResourceSupplyLedger, tq: q}, nil
 	case *ent.SecuritySecretQuery:
 		return &query[*ent.SecuritySecretQuery, predicate.SecuritySecret, securitysecret.OrderOption]{typ: ent.TypeSecuritySecret, tq: q}, nil
 	case *ent.SettingQuery:
@@ -1076,6 +1164,8 @@ func NewQuery(q ent.Query) (Query, error) {
 		return &query[*ent.SubscriptionPlanQuery, predicate.SubscriptionPlan, subscriptionplan.OrderOption]{typ: ent.TypeSubscriptionPlan, tq: q}, nil
 	case *ent.TLSFingerprintProfileQuery:
 		return &query[*ent.TLSFingerprintProfileQuery, predicate.TLSFingerprintProfile, tlsfingerprintprofile.OrderOption]{typ: ent.TypeTLSFingerprintProfile, tq: q}, nil
+	case *ent.UsageBillingEventQuery:
+		return &query[*ent.UsageBillingEventQuery, predicate.UsageBillingEvent, usagebillingevent.OrderOption]{typ: ent.TypeUsageBillingEvent, tq: q}, nil
 	case *ent.UsageCleanupTaskQuery:
 		return &query[*ent.UsageCleanupTaskQuery, predicate.UsageCleanupTask, usagecleanuptask.OrderOption]{typ: ent.TypeUsageCleanupTask, tq: q}, nil
 	case *ent.UsageLogQuery:

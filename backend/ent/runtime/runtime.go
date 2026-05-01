@@ -28,11 +28,14 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
+	"github.com/Wei-Shaw/sub2api/ent/resourcesupplybalance"
+	"github.com/Wei-Shaw/sub2api/ent/resourcesupplyledger"
 	"github.com/Wei-Shaw/sub2api/ent/schema"
 	"github.com/Wei-Shaw/sub2api/ent/securitysecret"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
+	"github.com/Wei-Shaw/sub2api/ent/usagebillingevent"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
@@ -243,12 +246,50 @@ func init() {
 	accountDescAutoPauseOnExpired := accountFields[15].Descriptor()
 	// account.DefaultAutoPauseOnExpired holds the default value on creation for the auto_pause_on_expired field.
 	account.DefaultAutoPauseOnExpired = accountDescAutoPauseOnExpired.Default.(bool)
+	// accountDescSupplySource is the schema descriptor for supply_source field.
+	accountDescSupplySource := accountFields[17].Descriptor()
+	// account.SupplySourceValidator is a validator for the "supply_source" field. It is called by the builders before save.
+	account.SupplySourceValidator = func() func(string) error {
+		validators := accountDescSupplySource.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(supply_source string) error {
+			for _, fn := range fns {
+				if err := fn(supply_source); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// accountDescSupplyStatus is the schema descriptor for supply_status field.
+	accountDescSupplyStatus := accountFields[18].Descriptor()
+	// account.DefaultSupplyStatus holds the default value on creation for the supply_status field.
+	account.DefaultSupplyStatus = accountDescSupplyStatus.Default.(string)
+	// account.SupplyStatusValidator is a validator for the "supply_status" field. It is called by the builders before save.
+	account.SupplyStatusValidator = func() func(string) error {
+		validators := accountDescSupplyStatus.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(supply_status string) error {
+			for _, fn := range fns {
+				if err := fn(supply_status); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	// accountDescSchedulable is the schema descriptor for schedulable field.
-	accountDescSchedulable := accountFields[16].Descriptor()
+	accountDescSchedulable := accountFields[23].Descriptor()
 	// account.DefaultSchedulable holds the default value on creation for the schedulable field.
 	account.DefaultSchedulable = accountDescSchedulable.Default.(bool)
 	// accountDescSessionWindowStatus is the schema descriptor for session_window_status field.
-	accountDescSessionWindowStatus := accountFields[24].Descriptor()
+	accountDescSessionWindowStatus := accountFields[31].Descriptor()
 	// account.SessionWindowStatusValidator is a validator for the "session_window_status" field. It is called by the builders before save.
 	account.SessionWindowStatusValidator = accountDescSessionWindowStatus.Validators[0].(func(string) error)
 	accountgroupFields := schema.AccountGroup{}.Fields()
@@ -849,6 +890,36 @@ func init() {
 	groupDescRpmLimit := groupFields[27].Descriptor()
 	// group.DefaultRpmLimit holds the default value on creation for the rpm_limit field.
 	group.DefaultRpmLimit = groupDescRpmLimit.Default.(int)
+	// groupDescSupplyRewardsEnabled is the schema descriptor for supply_rewards_enabled field.
+	groupDescSupplyRewardsEnabled := groupFields[28].Descriptor()
+	// group.DefaultSupplyRewardsEnabled holds the default value on creation for the supply_rewards_enabled field.
+	group.DefaultSupplyRewardsEnabled = groupDescSupplyRewardsEnabled.Default.(bool)
+	// groupDescSupplyRewardMultiplier is the schema descriptor for supply_reward_multiplier field.
+	groupDescSupplyRewardMultiplier := groupFields[29].Descriptor()
+	// group.DefaultSupplyRewardMultiplier holds the default value on creation for the supply_reward_multiplier field.
+	group.DefaultSupplyRewardMultiplier = groupDescSupplyRewardMultiplier.Default.(float64)
+	// group.SupplyRewardMultiplierValidator is a validator for the "supply_reward_multiplier" field. It is called by the builders before save.
+	group.SupplyRewardMultiplierValidator = groupDescSupplyRewardMultiplier.Validators[0].(func(float64) error)
+	// groupDescSupplySelfServiceReviewPolicy is the schema descriptor for supply_self_service_review_policy field.
+	groupDescSupplySelfServiceReviewPolicy := groupFields[30].Descriptor()
+	// group.DefaultSupplySelfServiceReviewPolicy holds the default value on creation for the supply_self_service_review_policy field.
+	group.DefaultSupplySelfServiceReviewPolicy = groupDescSupplySelfServiceReviewPolicy.Default.(string)
+	// group.SupplySelfServiceReviewPolicyValidator is a validator for the "supply_self_service_review_policy" field. It is called by the builders before save.
+	group.SupplySelfServiceReviewPolicyValidator = func() func(string) error {
+		validators := groupDescSupplySelfServiceReviewPolicy.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(supply_self_service_review_policy string) error {
+			for _, fn := range fns {
+				if err := fn(supply_self_service_review_policy); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	idempotencyrecordMixin := schema.IdempotencyRecord{}.Mixin()
 	idempotencyrecordMixinFields0 := idempotencyrecordMixin[0].Fields()
 	_ = idempotencyrecordMixinFields0
@@ -1377,6 +1448,94 @@ func init() {
 	redeemcodeDescValidityDays := redeemcodeFields[9].Descriptor()
 	// redeemcode.DefaultValidityDays holds the default value on creation for the validity_days field.
 	redeemcode.DefaultValidityDays = redeemcodeDescValidityDays.Default.(int)
+	resourcesupplybalanceMixin := schema.ResourceSupplyBalance{}.Mixin()
+	resourcesupplybalanceMixinFields0 := resourcesupplybalanceMixin[0].Fields()
+	_ = resourcesupplybalanceMixinFields0
+	resourcesupplybalanceFields := schema.ResourceSupplyBalance{}.Fields()
+	_ = resourcesupplybalanceFields
+	// resourcesupplybalanceDescCreatedAt is the schema descriptor for created_at field.
+	resourcesupplybalanceDescCreatedAt := resourcesupplybalanceMixinFields0[0].Descriptor()
+	// resourcesupplybalance.DefaultCreatedAt holds the default value on creation for the created_at field.
+	resourcesupplybalance.DefaultCreatedAt = resourcesupplybalanceDescCreatedAt.Default.(func() time.Time)
+	// resourcesupplybalanceDescUpdatedAt is the schema descriptor for updated_at field.
+	resourcesupplybalanceDescUpdatedAt := resourcesupplybalanceMixinFields0[1].Descriptor()
+	// resourcesupplybalance.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	resourcesupplybalance.DefaultUpdatedAt = resourcesupplybalanceDescUpdatedAt.Default.(func() time.Time)
+	// resourcesupplybalance.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	resourcesupplybalance.UpdateDefaultUpdatedAt = resourcesupplybalanceDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// resourcesupplybalanceDescAvailableAmount is the schema descriptor for available_amount field.
+	resourcesupplybalanceDescAvailableAmount := resourcesupplybalanceFields[1].Descriptor()
+	// resourcesupplybalance.DefaultAvailableAmount holds the default value on creation for the available_amount field.
+	resourcesupplybalance.DefaultAvailableAmount = resourcesupplybalanceDescAvailableAmount.Default.(float64)
+	// resourcesupplybalance.AvailableAmountValidator is a validator for the "available_amount" field. It is called by the builders before save.
+	resourcesupplybalance.AvailableAmountValidator = resourcesupplybalanceDescAvailableAmount.Validators[0].(func(float64) error)
+	// resourcesupplybalanceDescLifetimeEarnedAmount is the schema descriptor for lifetime_earned_amount field.
+	resourcesupplybalanceDescLifetimeEarnedAmount := resourcesupplybalanceFields[2].Descriptor()
+	// resourcesupplybalance.DefaultLifetimeEarnedAmount holds the default value on creation for the lifetime_earned_amount field.
+	resourcesupplybalance.DefaultLifetimeEarnedAmount = resourcesupplybalanceDescLifetimeEarnedAmount.Default.(float64)
+	// resourcesupplybalance.LifetimeEarnedAmountValidator is a validator for the "lifetime_earned_amount" field. It is called by the builders before save.
+	resourcesupplybalance.LifetimeEarnedAmountValidator = resourcesupplybalanceDescLifetimeEarnedAmount.Validators[0].(func(float64) error)
+	// resourcesupplybalanceDescLifetimeTransferredAmount is the schema descriptor for lifetime_transferred_amount field.
+	resourcesupplybalanceDescLifetimeTransferredAmount := resourcesupplybalanceFields[3].Descriptor()
+	// resourcesupplybalance.DefaultLifetimeTransferredAmount holds the default value on creation for the lifetime_transferred_amount field.
+	resourcesupplybalance.DefaultLifetimeTransferredAmount = resourcesupplybalanceDescLifetimeTransferredAmount.Default.(float64)
+	// resourcesupplybalance.LifetimeTransferredAmountValidator is a validator for the "lifetime_transferred_amount" field. It is called by the builders before save.
+	resourcesupplybalance.LifetimeTransferredAmountValidator = resourcesupplybalanceDescLifetimeTransferredAmount.Validators[0].(func(float64) error)
+	resourcesupplyledgerMixin := schema.ResourceSupplyLedger{}.Mixin()
+	resourcesupplyledgerMixinFields0 := resourcesupplyledgerMixin[0].Fields()
+	_ = resourcesupplyledgerMixinFields0
+	resourcesupplyledgerFields := schema.ResourceSupplyLedger{}.Fields()
+	_ = resourcesupplyledgerFields
+	// resourcesupplyledgerDescCreatedAt is the schema descriptor for created_at field.
+	resourcesupplyledgerDescCreatedAt := resourcesupplyledgerMixinFields0[0].Descriptor()
+	// resourcesupplyledger.DefaultCreatedAt holds the default value on creation for the created_at field.
+	resourcesupplyledger.DefaultCreatedAt = resourcesupplyledgerDescCreatedAt.Default.(func() time.Time)
+	// resourcesupplyledgerDescUpdatedAt is the schema descriptor for updated_at field.
+	resourcesupplyledgerDescUpdatedAt := resourcesupplyledgerMixinFields0[1].Descriptor()
+	// resourcesupplyledger.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	resourcesupplyledger.DefaultUpdatedAt = resourcesupplyledgerDescUpdatedAt.Default.(func() time.Time)
+	// resourcesupplyledger.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	resourcesupplyledger.UpdateDefaultUpdatedAt = resourcesupplyledgerDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// resourcesupplyledgerDescLedgerType is the schema descriptor for ledger_type field.
+	resourcesupplyledgerDescLedgerType := resourcesupplyledgerFields[6].Descriptor()
+	// resourcesupplyledger.LedgerTypeValidator is a validator for the "ledger_type" field. It is called by the builders before save.
+	resourcesupplyledger.LedgerTypeValidator = func() func(string) error {
+		validators := resourcesupplyledgerDescLedgerType.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(ledger_type string) error {
+			for _, fn := range fns {
+				if err := fn(ledger_type); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// resourcesupplyledgerDescIdempotencyKey is the schema descriptor for idempotency_key field.
+	resourcesupplyledgerDescIdempotencyKey := resourcesupplyledgerFields[7].Descriptor()
+	// resourcesupplyledger.IdempotencyKeyValidator is a validator for the "idempotency_key" field. It is called by the builders before save.
+	resourcesupplyledger.IdempotencyKeyValidator = resourcesupplyledgerDescIdempotencyKey.Validators[0].(func(string) error)
+	// resourcesupplyledgerDescAmount is the schema descriptor for amount field.
+	resourcesupplyledgerDescAmount := resourcesupplyledgerFields[8].Descriptor()
+	// resourcesupplyledger.DefaultAmount holds the default value on creation for the amount field.
+	resourcesupplyledger.DefaultAmount = resourcesupplyledgerDescAmount.Default.(float64)
+	// resourcesupplyledgerDescBalanceAfter is the schema descriptor for balance_after field.
+	resourcesupplyledgerDescBalanceAfter := resourcesupplyledgerFields[9].Descriptor()
+	// resourcesupplyledger.DefaultBalanceAfter holds the default value on creation for the balance_after field.
+	resourcesupplyledger.DefaultBalanceAfter = resourcesupplyledgerDescBalanceAfter.Default.(float64)
+	// resourcesupplyledger.BalanceAfterValidator is a validator for the "balance_after" field. It is called by the builders before save.
+	resourcesupplyledger.BalanceAfterValidator = resourcesupplyledgerDescBalanceAfter.Validators[0].(func(float64) error)
+	// resourcesupplyledgerDescModel is the schema descriptor for model field.
+	resourcesupplyledgerDescModel := resourcesupplyledgerFields[13].Descriptor()
+	// resourcesupplyledger.ModelValidator is a validator for the "model" field. It is called by the builders before save.
+	resourcesupplyledger.ModelValidator = resourcesupplyledgerDescModel.Validators[0].(func(string) error)
+	// resourcesupplyledgerDescRequestID is the schema descriptor for request_id field.
+	resourcesupplyledgerDescRequestID := resourcesupplyledgerFields[14].Descriptor()
+	// resourcesupplyledger.RequestIDValidator is a validator for the "request_id" field. It is called by the builders before save.
+	resourcesupplyledger.RequestIDValidator = resourcesupplyledgerDescRequestID.Validators[0].(func(string) error)
 	securitysecretMixin := schema.SecuritySecret{}.Mixin()
 	securitysecretMixinFields0 := securitysecretMixin[0].Fields()
 	_ = securitysecretMixinFields0
@@ -1539,6 +1698,199 @@ func init() {
 	tlsfingerprintprofileDescEnableGrease := tlsfingerprintprofileFields[2].Descriptor()
 	// tlsfingerprintprofile.DefaultEnableGrease holds the default value on creation for the enable_grease field.
 	tlsfingerprintprofile.DefaultEnableGrease = tlsfingerprintprofileDescEnableGrease.Default.(bool)
+	usagebillingeventMixin := schema.UsageBillingEvent{}.Mixin()
+	usagebillingeventMixinFields0 := usagebillingeventMixin[0].Fields()
+	_ = usagebillingeventMixinFields0
+	usagebillingeventFields := schema.UsageBillingEvent{}.Fields()
+	_ = usagebillingeventFields
+	// usagebillingeventDescCreatedAt is the schema descriptor for created_at field.
+	usagebillingeventDescCreatedAt := usagebillingeventMixinFields0[0].Descriptor()
+	// usagebillingevent.DefaultCreatedAt holds the default value on creation for the created_at field.
+	usagebillingevent.DefaultCreatedAt = usagebillingeventDescCreatedAt.Default.(func() time.Time)
+	// usagebillingeventDescUpdatedAt is the schema descriptor for updated_at field.
+	usagebillingeventDescUpdatedAt := usagebillingeventMixinFields0[1].Descriptor()
+	// usagebillingevent.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	usagebillingevent.DefaultUpdatedAt = usagebillingeventDescUpdatedAt.Default.(func() time.Time)
+	// usagebillingevent.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	usagebillingevent.UpdateDefaultUpdatedAt = usagebillingeventDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// usagebillingeventDescRequestID is the schema descriptor for request_id field.
+	usagebillingeventDescRequestID := usagebillingeventFields[0].Descriptor()
+	// usagebillingevent.RequestIDValidator is a validator for the "request_id" field. It is called by the builders before save.
+	usagebillingevent.RequestIDValidator = func() func(string) error {
+		validators := usagebillingeventDescRequestID.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(request_id string) error {
+			for _, fn := range fns {
+				if err := fn(request_id); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// usagebillingeventDescRequestFingerprint is the schema descriptor for request_fingerprint field.
+	usagebillingeventDescRequestFingerprint := usagebillingeventFields[2].Descriptor()
+	// usagebillingevent.RequestFingerprintValidator is a validator for the "request_fingerprint" field. It is called by the builders before save.
+	usagebillingevent.RequestFingerprintValidator = func() func(string) error {
+		validators := usagebillingeventDescRequestFingerprint.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(request_fingerprint string) error {
+			for _, fn := range fns {
+				if err := fn(request_fingerprint); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// usagebillingeventDescRequestPayloadHash is the schema descriptor for request_payload_hash field.
+	usagebillingeventDescRequestPayloadHash := usagebillingeventFields[3].Descriptor()
+	// usagebillingevent.RequestPayloadHashValidator is a validator for the "request_payload_hash" field. It is called by the builders before save.
+	usagebillingevent.RequestPayloadHashValidator = usagebillingeventDescRequestPayloadHash.Validators[0].(func(string) error)
+	// usagebillingeventDescAccountType is the schema descriptor for account_type field.
+	usagebillingeventDescAccountType := usagebillingeventFields[7].Descriptor()
+	// usagebillingevent.AccountTypeValidator is a validator for the "account_type" field. It is called by the builders before save.
+	usagebillingevent.AccountTypeValidator = usagebillingeventDescAccountType.Validators[0].(func(string) error)
+	// usagebillingeventDescModel is the schema descriptor for model field.
+	usagebillingeventDescModel := usagebillingeventFields[8].Descriptor()
+	// usagebillingevent.DefaultModel holds the default value on creation for the model field.
+	usagebillingevent.DefaultModel = usagebillingeventDescModel.Default.(string)
+	// usagebillingevent.ModelValidator is a validator for the "model" field. It is called by the builders before save.
+	usagebillingevent.ModelValidator = usagebillingeventDescModel.Validators[0].(func(string) error)
+	// usagebillingeventDescServiceTier is the schema descriptor for service_tier field.
+	usagebillingeventDescServiceTier := usagebillingeventFields[9].Descriptor()
+	// usagebillingevent.DefaultServiceTier holds the default value on creation for the service_tier field.
+	usagebillingevent.DefaultServiceTier = usagebillingeventDescServiceTier.Default.(string)
+	// usagebillingevent.ServiceTierValidator is a validator for the "service_tier" field. It is called by the builders before save.
+	usagebillingevent.ServiceTierValidator = usagebillingeventDescServiceTier.Validators[0].(func(string) error)
+	// usagebillingeventDescReasoningEffort is the schema descriptor for reasoning_effort field.
+	usagebillingeventDescReasoningEffort := usagebillingeventFields[10].Descriptor()
+	// usagebillingevent.DefaultReasoningEffort holds the default value on creation for the reasoning_effort field.
+	usagebillingevent.DefaultReasoningEffort = usagebillingeventDescReasoningEffort.Default.(string)
+	// usagebillingevent.ReasoningEffortValidator is a validator for the "reasoning_effort" field. It is called by the builders before save.
+	usagebillingevent.ReasoningEffortValidator = usagebillingeventDescReasoningEffort.Validators[0].(func(string) error)
+	// usagebillingeventDescInputTokens is the schema descriptor for input_tokens field.
+	usagebillingeventDescInputTokens := usagebillingeventFields[12].Descriptor()
+	// usagebillingevent.DefaultInputTokens holds the default value on creation for the input_tokens field.
+	usagebillingevent.DefaultInputTokens = usagebillingeventDescInputTokens.Default.(int)
+	// usagebillingeventDescOutputTokens is the schema descriptor for output_tokens field.
+	usagebillingeventDescOutputTokens := usagebillingeventFields[13].Descriptor()
+	// usagebillingevent.DefaultOutputTokens holds the default value on creation for the output_tokens field.
+	usagebillingevent.DefaultOutputTokens = usagebillingeventDescOutputTokens.Default.(int)
+	// usagebillingeventDescCacheCreationTokens is the schema descriptor for cache_creation_tokens field.
+	usagebillingeventDescCacheCreationTokens := usagebillingeventFields[14].Descriptor()
+	// usagebillingevent.DefaultCacheCreationTokens holds the default value on creation for the cache_creation_tokens field.
+	usagebillingevent.DefaultCacheCreationTokens = usagebillingeventDescCacheCreationTokens.Default.(int)
+	// usagebillingeventDescCacheReadTokens is the schema descriptor for cache_read_tokens field.
+	usagebillingeventDescCacheReadTokens := usagebillingeventFields[15].Descriptor()
+	// usagebillingevent.DefaultCacheReadTokens holds the default value on creation for the cache_read_tokens field.
+	usagebillingevent.DefaultCacheReadTokens = usagebillingeventDescCacheReadTokens.Default.(int)
+	// usagebillingeventDescCacheCreation5mTokens is the schema descriptor for cache_creation_5m_tokens field.
+	usagebillingeventDescCacheCreation5mTokens := usagebillingeventFields[16].Descriptor()
+	// usagebillingevent.DefaultCacheCreation5mTokens holds the default value on creation for the cache_creation_5m_tokens field.
+	usagebillingevent.DefaultCacheCreation5mTokens = usagebillingeventDescCacheCreation5mTokens.Default.(int)
+	// usagebillingeventDescCacheCreation1hTokens is the schema descriptor for cache_creation_1h_tokens field.
+	usagebillingeventDescCacheCreation1hTokens := usagebillingeventFields[17].Descriptor()
+	// usagebillingevent.DefaultCacheCreation1hTokens holds the default value on creation for the cache_creation_1h_tokens field.
+	usagebillingevent.DefaultCacheCreation1hTokens = usagebillingeventDescCacheCreation1hTokens.Default.(int)
+	// usagebillingeventDescTotalCost is the schema descriptor for total_cost field.
+	usagebillingeventDescTotalCost := usagebillingeventFields[18].Descriptor()
+	// usagebillingevent.DefaultTotalCost holds the default value on creation for the total_cost field.
+	usagebillingevent.DefaultTotalCost = usagebillingeventDescTotalCost.Default.(float64)
+	// usagebillingevent.TotalCostValidator is a validator for the "total_cost" field. It is called by the builders before save.
+	usagebillingevent.TotalCostValidator = usagebillingeventDescTotalCost.Validators[0].(func(float64) error)
+	// usagebillingeventDescActualCost is the schema descriptor for actual_cost field.
+	usagebillingeventDescActualCost := usagebillingeventFields[19].Descriptor()
+	// usagebillingevent.DefaultActualCost holds the default value on creation for the actual_cost field.
+	usagebillingevent.DefaultActualCost = usagebillingeventDescActualCost.Default.(float64)
+	// usagebillingevent.ActualCostValidator is a validator for the "actual_cost" field. It is called by the builders before save.
+	usagebillingevent.ActualCostValidator = usagebillingeventDescActualCost.Validators[0].(func(float64) error)
+	// usagebillingeventDescBalanceCost is the schema descriptor for balance_cost field.
+	usagebillingeventDescBalanceCost := usagebillingeventFields[20].Descriptor()
+	// usagebillingevent.DefaultBalanceCost holds the default value on creation for the balance_cost field.
+	usagebillingevent.DefaultBalanceCost = usagebillingeventDescBalanceCost.Default.(float64)
+	// usagebillingevent.BalanceCostValidator is a validator for the "balance_cost" field. It is called by the builders before save.
+	usagebillingevent.BalanceCostValidator = usagebillingeventDescBalanceCost.Validators[0].(func(float64) error)
+	// usagebillingeventDescSubscriptionCost is the schema descriptor for subscription_cost field.
+	usagebillingeventDescSubscriptionCost := usagebillingeventFields[21].Descriptor()
+	// usagebillingevent.DefaultSubscriptionCost holds the default value on creation for the subscription_cost field.
+	usagebillingevent.DefaultSubscriptionCost = usagebillingeventDescSubscriptionCost.Default.(float64)
+	// usagebillingevent.SubscriptionCostValidator is a validator for the "subscription_cost" field. It is called by the builders before save.
+	usagebillingevent.SubscriptionCostValidator = usagebillingeventDescSubscriptionCost.Validators[0].(func(float64) error)
+	// usagebillingeventDescAPIKeyQuotaCost is the schema descriptor for api_key_quota_cost field.
+	usagebillingeventDescAPIKeyQuotaCost := usagebillingeventFields[22].Descriptor()
+	// usagebillingevent.DefaultAPIKeyQuotaCost holds the default value on creation for the api_key_quota_cost field.
+	usagebillingevent.DefaultAPIKeyQuotaCost = usagebillingeventDescAPIKeyQuotaCost.Default.(float64)
+	// usagebillingevent.APIKeyQuotaCostValidator is a validator for the "api_key_quota_cost" field. It is called by the builders before save.
+	usagebillingevent.APIKeyQuotaCostValidator = usagebillingeventDescAPIKeyQuotaCost.Validators[0].(func(float64) error)
+	// usagebillingeventDescAPIKeyRateLimitCost is the schema descriptor for api_key_rate_limit_cost field.
+	usagebillingeventDescAPIKeyRateLimitCost := usagebillingeventFields[23].Descriptor()
+	// usagebillingevent.DefaultAPIKeyRateLimitCost holds the default value on creation for the api_key_rate_limit_cost field.
+	usagebillingevent.DefaultAPIKeyRateLimitCost = usagebillingeventDescAPIKeyRateLimitCost.Default.(float64)
+	// usagebillingevent.APIKeyRateLimitCostValidator is a validator for the "api_key_rate_limit_cost" field. It is called by the builders before save.
+	usagebillingevent.APIKeyRateLimitCostValidator = usagebillingeventDescAPIKeyRateLimitCost.Validators[0].(func(float64) error)
+	// usagebillingeventDescAccountQuotaCost is the schema descriptor for account_quota_cost field.
+	usagebillingeventDescAccountQuotaCost := usagebillingeventFields[24].Descriptor()
+	// usagebillingevent.DefaultAccountQuotaCost holds the default value on creation for the account_quota_cost field.
+	usagebillingevent.DefaultAccountQuotaCost = usagebillingeventDescAccountQuotaCost.Default.(float64)
+	// usagebillingevent.AccountQuotaCostValidator is a validator for the "account_quota_cost" field. It is called by the builders before save.
+	usagebillingevent.AccountQuotaCostValidator = usagebillingeventDescAccountQuotaCost.Validators[0].(func(float64) error)
+	// usagebillingeventDescSupplyRewardEligible is the schema descriptor for supply_reward_eligible field.
+	usagebillingeventDescSupplyRewardEligible := usagebillingeventFields[25].Descriptor()
+	// usagebillingevent.DefaultSupplyRewardEligible holds the default value on creation for the supply_reward_eligible field.
+	usagebillingevent.DefaultSupplyRewardEligible = usagebillingeventDescSupplyRewardEligible.Default.(bool)
+	// usagebillingeventDescSupplyRewardMultiplier is the schema descriptor for supply_reward_multiplier field.
+	usagebillingeventDescSupplyRewardMultiplier := usagebillingeventFields[27].Descriptor()
+	// usagebillingevent.DefaultSupplyRewardMultiplier holds the default value on creation for the supply_reward_multiplier field.
+	usagebillingevent.DefaultSupplyRewardMultiplier = usagebillingeventDescSupplyRewardMultiplier.Default.(float64)
+	// usagebillingevent.SupplyRewardMultiplierValidator is a validator for the "supply_reward_multiplier" field. It is called by the builders before save.
+	usagebillingevent.SupplyRewardMultiplierValidator = usagebillingeventDescSupplyRewardMultiplier.Validators[0].(func(float64) error)
+	// usagebillingeventDescSupplyAccountStatus is the schema descriptor for supply_account_status field.
+	usagebillingeventDescSupplyAccountStatus := usagebillingeventFields[28].Descriptor()
+	// usagebillingevent.DefaultSupplyAccountStatus holds the default value on creation for the supply_account_status field.
+	usagebillingevent.DefaultSupplyAccountStatus = usagebillingeventDescSupplyAccountStatus.Default.(string)
+	// usagebillingevent.SupplyAccountStatusValidator is a validator for the "supply_account_status" field. It is called by the builders before save.
+	usagebillingevent.SupplyAccountStatusValidator = func() func(string) error {
+		validators := usagebillingeventDescSupplyAccountStatus.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(supply_account_status string) error {
+			for _, fn := range fns {
+				if err := fn(supply_account_status); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// usagebillingeventDescSupplySource is the schema descriptor for supply_source field.
+	usagebillingeventDescSupplySource := usagebillingeventFields[29].Descriptor()
+	// usagebillingevent.DefaultSupplySource holds the default value on creation for the supply_source field.
+	usagebillingevent.DefaultSupplySource = usagebillingeventDescSupplySource.Default.(string)
+	// usagebillingevent.SupplySourceValidator is a validator for the "supply_source" field. It is called by the builders before save.
+	usagebillingevent.SupplySourceValidator = func() func(string) error {
+		validators := usagebillingeventDescSupplySource.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(supply_source string) error {
+			for _, fn := range fns {
+				if err := fn(supply_source); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	usagecleanuptaskMixin := schema.UsageCleanupTask{}.Mixin()
 	usagecleanuptaskMixinFields0 := usagecleanuptaskMixin[0].Fields()
 	_ = usagecleanuptaskMixinFields0

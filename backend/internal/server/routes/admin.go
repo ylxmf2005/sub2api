@@ -97,6 +97,9 @@ func RegisterAdminRoutes(
 
 		// 邀请返利（专属用户管理）
 		registerAffiliateRoutes(admin, h)
+
+		// 资源供给额度
+		registerResourceSupplyRoutes(admin, h)
 	}
 }
 
@@ -528,6 +531,18 @@ func registerUsageRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		usage.GET("/cleanup-tasks", h.Admin.Usage.ListCleanupTasks)
 		usage.POST("/cleanup-tasks", h.Admin.Usage.CreateCleanupTask)
 		usage.POST("/cleanup-tasks/:id/cancel", h.Admin.Usage.CancelCleanupTask)
+	}
+}
+
+func registerResourceSupplyRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	resourceSupply := admin.Group("/resource-supply")
+	{
+		resourceSupply.GET("/ledger", h.Admin.ResourceSupply.Ledger)
+		resourceSupply.POST("/accounts/:id/approve", h.Admin.ResourceSupply.ApproveAccount)
+		resourceSupply.POST("/accounts/:id/reject", h.Admin.ResourceSupply.RejectAccount)
+		resourceSupply.POST("/accounts/:id/pause", h.Admin.ResourceSupply.PauseAccount)
+		resourceSupply.POST("/accounts/:id/resume", h.Admin.ResourceSupply.ResumeAccount)
+		resourceSupply.POST("/adjustments", h.Admin.ResourceSupply.AdjustBalance)
 	}
 }
 

@@ -211,6 +211,9 @@ func TestAPIKeyService_GetByKey_UsesL2Cache(t *testing.T) {
 				ModelRouting: map[string][]int64{
 					"claude-opus-*": {1, 2},
 				},
+				SupplyRewardsEnabled:          true,
+				SupplyRewardMultiplier:        2.5,
+				SupplySelfServiceReviewPolicy: ResourceSupplyReviewPolicyManualReview,
 			},
 		},
 	}
@@ -225,6 +228,9 @@ func TestAPIKeyService_GetByKey_UsesL2Cache(t *testing.T) {
 	require.Equal(t, groupID, apiKey.Group.ID)
 	require.True(t, apiKey.Group.ModelRoutingEnabled)
 	require.Equal(t, map[string][]int64{"claude-opus-*": {1, 2}}, apiKey.Group.ModelRouting)
+	require.True(t, apiKey.Group.SupplyRewardsEnabled)
+	require.Equal(t, 2.5, apiKey.Group.SupplyRewardMultiplier)
+	require.Equal(t, ResourceSupplyReviewPolicyManualReview, apiKey.Group.SupplySelfServiceReviewPolicy)
 }
 
 func TestAPIKeyService_SnapshotRoundTrip_PreservesMessagesDispatchModelConfig(t *testing.T) {
@@ -244,14 +250,17 @@ func TestAPIKeyService_SnapshotRoundTrip_PreservesMessagesDispatchModelConfig(t 
 			Concurrency: 3,
 		},
 		Group: &Group{
-			ID:                    groupID,
-			Name:                  "openai",
-			Platform:              PlatformOpenAI,
-			Status:                StatusActive,
-			SubscriptionType:      SubscriptionTypeStandard,
-			RateMultiplier:        1,
-			AllowMessagesDispatch: true,
-			DefaultMappedModel:    "gpt-5.4",
+			ID:                            groupID,
+			Name:                          "openai",
+			Platform:                      PlatformOpenAI,
+			Status:                        StatusActive,
+			SubscriptionType:              SubscriptionTypeStandard,
+			RateMultiplier:                1,
+			AllowMessagesDispatch:         true,
+			DefaultMappedModel:            "gpt-5.4",
+			SupplyRewardsEnabled:          true,
+			SupplyRewardMultiplier:        1.75,
+			SupplySelfServiceReviewPolicy: ResourceSupplyReviewPolicyAutoOnline,
 			MessagesDispatchModelConfig: OpenAIMessagesDispatchModelConfig{
 				OpusMappedModel:   "gpt-5.4-nano",
 				SonnetMappedModel: "gpt-5.3-codex",
@@ -269,6 +278,9 @@ func TestAPIKeyService_SnapshotRoundTrip_PreservesMessagesDispatchModelConfig(t 
 	require.NotNil(t, roundTrip)
 	require.NotNil(t, roundTrip.Group)
 	require.Equal(t, apiKey.Group.MessagesDispatchModelConfig, roundTrip.Group.MessagesDispatchModelConfig)
+	require.True(t, roundTrip.Group.SupplyRewardsEnabled)
+	require.Equal(t, 1.75, roundTrip.Group.SupplyRewardMultiplier)
+	require.Equal(t, ResourceSupplyReviewPolicyAutoOnline, roundTrip.Group.SupplySelfServiceReviewPolicy)
 }
 
 func TestAPIKeyService_GetByKey_IgnoresLegacyAuthCacheSnapshotWithoutMessagesDispatchConfig(t *testing.T) {

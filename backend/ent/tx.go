@@ -60,6 +60,10 @@ type Tx struct {
 	Proxy *ProxyClient
 	// RedeemCode is the client for interacting with the RedeemCode builders.
 	RedeemCode *RedeemCodeClient
+	// ResourceSupplyBalance is the client for interacting with the ResourceSupplyBalance builders.
+	ResourceSupplyBalance *ResourceSupplyBalanceClient
+	// ResourceSupplyLedger is the client for interacting with the ResourceSupplyLedger builders.
+	ResourceSupplyLedger *ResourceSupplyLedgerClient
 	// SecuritySecret is the client for interacting with the SecuritySecret builders.
 	SecuritySecret *SecuritySecretClient
 	// Setting is the client for interacting with the Setting builders.
@@ -68,6 +72,8 @@ type Tx struct {
 	SubscriptionPlan *SubscriptionPlanClient
 	// TLSFingerprintProfile is the client for interacting with the TLSFingerprintProfile builders.
 	TLSFingerprintProfile *TLSFingerprintProfileClient
+	// UsageBillingEvent is the client for interacting with the UsageBillingEvent builders.
+	UsageBillingEvent *UsageBillingEventClient
 	// UsageCleanupTask is the client for interacting with the UsageCleanupTask builders.
 	UsageCleanupTask *UsageCleanupTaskClient
 	// UsageLog is the client for interacting with the UsageLog builders.
@@ -236,10 +242,13 @@ func (tx *Tx) init() {
 	tx.PromoCodeUsage = NewPromoCodeUsageClient(tx.config)
 	tx.Proxy = NewProxyClient(tx.config)
 	tx.RedeemCode = NewRedeemCodeClient(tx.config)
+	tx.ResourceSupplyBalance = NewResourceSupplyBalanceClient(tx.config)
+	tx.ResourceSupplyLedger = NewResourceSupplyLedgerClient(tx.config)
 	tx.SecuritySecret = NewSecuritySecretClient(tx.config)
 	tx.Setting = NewSettingClient(tx.config)
 	tx.SubscriptionPlan = NewSubscriptionPlanClient(tx.config)
 	tx.TLSFingerprintProfile = NewTLSFingerprintProfileClient(tx.config)
+	tx.UsageBillingEvent = NewUsageBillingEventClient(tx.config)
 	tx.UsageCleanupTask = NewUsageCleanupTaskClient(tx.config)
 	tx.UsageLog = NewUsageLogClient(tx.config)
 	tx.User = NewUserClient(tx.config)

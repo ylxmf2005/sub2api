@@ -217,6 +217,7 @@ export interface PublicSettings {
   channel_monitor_default_interval_seconds: number
   available_channels_enabled: boolean
   affiliate_enabled: boolean
+  resource_supply_self_service_enabled: boolean
 }
 
 export interface AuthResponse {
@@ -506,6 +507,9 @@ export interface Group {
   messages_dispatch_model_config?: OpenAIMessagesDispatchModelConfig
   require_oauth_only: boolean
   require_privacy_set: boolean
+  supply_rewards_enabled: boolean
+  supply_reward_multiplier: number
+  supply_self_service_review_policy: string
   created_at: string
   updated_at: string
 }
@@ -612,6 +616,9 @@ export interface CreateGroupRequest {
   supported_model_scopes?: string[]
   require_oauth_only?: boolean
   require_privacy_set?: boolean
+  supply_rewards_enabled?: boolean
+  supply_reward_multiplier?: number
+  supply_self_service_review_policy?: string
   // 从指定分组复制账号
   copy_accounts_from_group_ids?: number[]
 }
@@ -637,6 +644,9 @@ export interface UpdateGroupRequest {
   supported_model_scopes?: string[]
   require_oauth_only?: boolean
   require_privacy_set?: boolean
+  supply_rewards_enabled?: boolean
+  supply_reward_multiplier?: number
+  supply_self_service_review_policy?: string
   copy_accounts_from_group_ids?: number[]
 }
 
@@ -891,6 +901,15 @@ export interface Account {
   group_ids?: number[] // Groups this account belongs to
   groups?: Group[] // Preloaded group objects
 
+  // Resource supply fields
+  supply_owner_user_id?: number | null
+  supply_source?: string | null
+  supply_status: string
+  supply_status_reason?: string | null
+  supply_submitted_by?: number | null
+  supply_reviewed_by?: number | null
+  supply_reviewed_at?: string | null
+
   // Rate limit & scheduling fields
   schedulable: boolean
   rate_limited_at: string | null
@@ -1068,6 +1087,10 @@ export interface CreateAccountRequest {
   expires_at?: number | null
   auto_pause_on_expired?: boolean
   confirm_mixed_channel_risk?: boolean
+  supply_owner_user_id?: number | null
+  supply_source?: string | null
+  supply_status?: string
+  supply_status_reason?: string | null
 }
 
 export interface UpdateAccountRequest {
@@ -1087,6 +1110,10 @@ export interface UpdateAccountRequest {
   expires_at?: number | null
   auto_pause_on_expired?: boolean
   confirm_mixed_channel_risk?: boolean
+  supply_owner_user_id?: number | null
+  supply_source?: string | null
+  supply_status?: string
+  supply_status_reason?: string | null
 }
 
 export interface CheckMixedChannelRequest {
@@ -1843,6 +1870,85 @@ export interface UpdateScheduledTestPlanRequest {
   enabled?: boolean
   max_results?: number
   auto_recover?: boolean
+}
+
+// ==================== Resource Supply Types ====================
+
+export type ResourceSupplySource = 'admin' | 'self_service'
+export type ResourceSupplyStatus = 'none' | 'testing' | 'pending_review' | 'schedulable' | 'paused' | 'rejected' | 'revoked'
+export type ResourceSupplyReviewPolicy = 'manual_review' | 'auto_online'
+export type ResourceSupplyLedgerType = 'reward' | 'transfer' | 'adjustment'
+
+export interface ResourceSupplyBalance {
+  user_id: number
+  available_amount: number
+  lifetime_earned_amount: number
+  lifetime_transferred_amount: number
+  created_at: string
+  updated_at: string
+}
+
+export interface ResourceSupplyOwnedAccount {
+  id: number
+  name: string
+  platform: string
+  type: string
+  group_ids: number[]
+  group_names: string[]
+  supply_source: string
+  supply_status: string
+  supply_status_reason?: string | null
+  schedulable: boolean
+  created_at: string
+  updated_at: string
+  reviewed_at?: string | null
+}
+
+export interface ResourceSupplyLedgerEntry {
+  id: number
+  owner_user_id: number
+  caller_user_id?: number | null
+  api_key_id?: number | null
+  group_id?: number | null
+  account_id?: number | null
+  usage_billing_event_id?: number | null
+  ledger_type: string
+  amount: number
+  balance_after: number
+  actual_cost?: number | null
+  reward_multiplier?: number | null
+  billing_type?: number | null
+  model?: string | null
+  request_id?: string | null
+  admin_user_id?: number | null
+  note?: string | null
+  created_at: string
+  updated_at: string
+  owner_email?: string | null
+  caller_email?: string | null
+  group_name?: string | null
+  account_name?: string | null
+}
+
+export interface ResourceSupplySummary {
+  balance: ResourceSupplyBalance
+  account_status_counts: Record<string, number>
+  accounts: ResourceSupplyOwnedAccount[]
+  recent_ledger: ResourceSupplyLedgerEntry[]
+  self_service_enabled: boolean
+}
+
+export interface ResourceSupplyTransferResult {
+  amount: number
+  new_balance: number
+}
+
+export interface ResourceSupplyLedgerResponse {
+  items: ResourceSupplyLedgerEntry[]
+  total: number
+  page: number
+  page_size: number
+  pages: number
 }
 
 // Payment types

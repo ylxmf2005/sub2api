@@ -36,10 +36,13 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
+	"github.com/Wei-Shaw/sub2api/ent/resourcesupplybalance"
+	"github.com/Wei-Shaw/sub2api/ent/resourcesupplyledger"
 	"github.com/Wei-Shaw/sub2api/ent/securitysecret"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
+	"github.com/Wei-Shaw/sub2api/ent/usagebillingevent"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
@@ -82,10 +85,13 @@ const (
 	TypePromoCodeUsage                = "PromoCodeUsage"
 	TypeProxy                         = "Proxy"
 	TypeRedeemCode                    = "RedeemCode"
+	TypeResourceSupplyBalance         = "ResourceSupplyBalance"
+	TypeResourceSupplyLedger          = "ResourceSupplyLedger"
 	TypeSecuritySecret                = "SecuritySecret"
 	TypeSetting                       = "Setting"
 	TypeSubscriptionPlan              = "SubscriptionPlan"
 	TypeTLSFingerprintProfile         = "TLSFingerprintProfile"
+	TypeUsageBillingEvent             = "UsageBillingEvent"
 	TypeUsageCleanupTask              = "UsageCleanupTask"
 	TypeUsageLog                      = "UsageLog"
 	TypeUser                          = "User"
@@ -2297,6 +2303,16 @@ type AccountMutation struct {
 	last_used_at              *time.Time
 	expires_at                *time.Time
 	auto_pause_on_expired     *bool
+	supply_owner_user_id      *int64
+	addsupply_owner_user_id   *int64
+	supply_source             *string
+	supply_status             *string
+	supply_status_reason      *string
+	supply_submitted_by       *int64
+	addsupply_submitted_by    *int64
+	supply_reviewed_by        *int64
+	addsupply_reviewed_by     *int64
+	supply_reviewed_at        *time.Time
 	schedulable               *bool
 	rate_limited_at           *time.Time
 	rate_limit_reset_at       *time.Time
@@ -3274,6 +3290,399 @@ func (m *AccountMutation) ResetAutoPauseOnExpired() {
 	m.auto_pause_on_expired = nil
 }
 
+// SetSupplyOwnerUserID sets the "supply_owner_user_id" field.
+func (m *AccountMutation) SetSupplyOwnerUserID(i int64) {
+	m.supply_owner_user_id = &i
+	m.addsupply_owner_user_id = nil
+}
+
+// SupplyOwnerUserID returns the value of the "supply_owner_user_id" field in the mutation.
+func (m *AccountMutation) SupplyOwnerUserID() (r int64, exists bool) {
+	v := m.supply_owner_user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSupplyOwnerUserID returns the old "supply_owner_user_id" field's value of the Account entity.
+// If the Account object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AccountMutation) OldSupplyOwnerUserID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSupplyOwnerUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSupplyOwnerUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSupplyOwnerUserID: %w", err)
+	}
+	return oldValue.SupplyOwnerUserID, nil
+}
+
+// AddSupplyOwnerUserID adds i to the "supply_owner_user_id" field.
+func (m *AccountMutation) AddSupplyOwnerUserID(i int64) {
+	if m.addsupply_owner_user_id != nil {
+		*m.addsupply_owner_user_id += i
+	} else {
+		m.addsupply_owner_user_id = &i
+	}
+}
+
+// AddedSupplyOwnerUserID returns the value that was added to the "supply_owner_user_id" field in this mutation.
+func (m *AccountMutation) AddedSupplyOwnerUserID() (r int64, exists bool) {
+	v := m.addsupply_owner_user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearSupplyOwnerUserID clears the value of the "supply_owner_user_id" field.
+func (m *AccountMutation) ClearSupplyOwnerUserID() {
+	m.supply_owner_user_id = nil
+	m.addsupply_owner_user_id = nil
+	m.clearedFields[account.FieldSupplyOwnerUserID] = struct{}{}
+}
+
+// SupplyOwnerUserIDCleared returns if the "supply_owner_user_id" field was cleared in this mutation.
+func (m *AccountMutation) SupplyOwnerUserIDCleared() bool {
+	_, ok := m.clearedFields[account.FieldSupplyOwnerUserID]
+	return ok
+}
+
+// ResetSupplyOwnerUserID resets all changes to the "supply_owner_user_id" field.
+func (m *AccountMutation) ResetSupplyOwnerUserID() {
+	m.supply_owner_user_id = nil
+	m.addsupply_owner_user_id = nil
+	delete(m.clearedFields, account.FieldSupplyOwnerUserID)
+}
+
+// SetSupplySource sets the "supply_source" field.
+func (m *AccountMutation) SetSupplySource(s string) {
+	m.supply_source = &s
+}
+
+// SupplySource returns the value of the "supply_source" field in the mutation.
+func (m *AccountMutation) SupplySource() (r string, exists bool) {
+	v := m.supply_source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSupplySource returns the old "supply_source" field's value of the Account entity.
+// If the Account object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AccountMutation) OldSupplySource(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSupplySource is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSupplySource requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSupplySource: %w", err)
+	}
+	return oldValue.SupplySource, nil
+}
+
+// ClearSupplySource clears the value of the "supply_source" field.
+func (m *AccountMutation) ClearSupplySource() {
+	m.supply_source = nil
+	m.clearedFields[account.FieldSupplySource] = struct{}{}
+}
+
+// SupplySourceCleared returns if the "supply_source" field was cleared in this mutation.
+func (m *AccountMutation) SupplySourceCleared() bool {
+	_, ok := m.clearedFields[account.FieldSupplySource]
+	return ok
+}
+
+// ResetSupplySource resets all changes to the "supply_source" field.
+func (m *AccountMutation) ResetSupplySource() {
+	m.supply_source = nil
+	delete(m.clearedFields, account.FieldSupplySource)
+}
+
+// SetSupplyStatus sets the "supply_status" field.
+func (m *AccountMutation) SetSupplyStatus(s string) {
+	m.supply_status = &s
+}
+
+// SupplyStatus returns the value of the "supply_status" field in the mutation.
+func (m *AccountMutation) SupplyStatus() (r string, exists bool) {
+	v := m.supply_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSupplyStatus returns the old "supply_status" field's value of the Account entity.
+// If the Account object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AccountMutation) OldSupplyStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSupplyStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSupplyStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSupplyStatus: %w", err)
+	}
+	return oldValue.SupplyStatus, nil
+}
+
+// ResetSupplyStatus resets all changes to the "supply_status" field.
+func (m *AccountMutation) ResetSupplyStatus() {
+	m.supply_status = nil
+}
+
+// SetSupplyStatusReason sets the "supply_status_reason" field.
+func (m *AccountMutation) SetSupplyStatusReason(s string) {
+	m.supply_status_reason = &s
+}
+
+// SupplyStatusReason returns the value of the "supply_status_reason" field in the mutation.
+func (m *AccountMutation) SupplyStatusReason() (r string, exists bool) {
+	v := m.supply_status_reason
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSupplyStatusReason returns the old "supply_status_reason" field's value of the Account entity.
+// If the Account object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AccountMutation) OldSupplyStatusReason(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSupplyStatusReason is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSupplyStatusReason requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSupplyStatusReason: %w", err)
+	}
+	return oldValue.SupplyStatusReason, nil
+}
+
+// ClearSupplyStatusReason clears the value of the "supply_status_reason" field.
+func (m *AccountMutation) ClearSupplyStatusReason() {
+	m.supply_status_reason = nil
+	m.clearedFields[account.FieldSupplyStatusReason] = struct{}{}
+}
+
+// SupplyStatusReasonCleared returns if the "supply_status_reason" field was cleared in this mutation.
+func (m *AccountMutation) SupplyStatusReasonCleared() bool {
+	_, ok := m.clearedFields[account.FieldSupplyStatusReason]
+	return ok
+}
+
+// ResetSupplyStatusReason resets all changes to the "supply_status_reason" field.
+func (m *AccountMutation) ResetSupplyStatusReason() {
+	m.supply_status_reason = nil
+	delete(m.clearedFields, account.FieldSupplyStatusReason)
+}
+
+// SetSupplySubmittedBy sets the "supply_submitted_by" field.
+func (m *AccountMutation) SetSupplySubmittedBy(i int64) {
+	m.supply_submitted_by = &i
+	m.addsupply_submitted_by = nil
+}
+
+// SupplySubmittedBy returns the value of the "supply_submitted_by" field in the mutation.
+func (m *AccountMutation) SupplySubmittedBy() (r int64, exists bool) {
+	v := m.supply_submitted_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSupplySubmittedBy returns the old "supply_submitted_by" field's value of the Account entity.
+// If the Account object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AccountMutation) OldSupplySubmittedBy(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSupplySubmittedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSupplySubmittedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSupplySubmittedBy: %w", err)
+	}
+	return oldValue.SupplySubmittedBy, nil
+}
+
+// AddSupplySubmittedBy adds i to the "supply_submitted_by" field.
+func (m *AccountMutation) AddSupplySubmittedBy(i int64) {
+	if m.addsupply_submitted_by != nil {
+		*m.addsupply_submitted_by += i
+	} else {
+		m.addsupply_submitted_by = &i
+	}
+}
+
+// AddedSupplySubmittedBy returns the value that was added to the "supply_submitted_by" field in this mutation.
+func (m *AccountMutation) AddedSupplySubmittedBy() (r int64, exists bool) {
+	v := m.addsupply_submitted_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearSupplySubmittedBy clears the value of the "supply_submitted_by" field.
+func (m *AccountMutation) ClearSupplySubmittedBy() {
+	m.supply_submitted_by = nil
+	m.addsupply_submitted_by = nil
+	m.clearedFields[account.FieldSupplySubmittedBy] = struct{}{}
+}
+
+// SupplySubmittedByCleared returns if the "supply_submitted_by" field was cleared in this mutation.
+func (m *AccountMutation) SupplySubmittedByCleared() bool {
+	_, ok := m.clearedFields[account.FieldSupplySubmittedBy]
+	return ok
+}
+
+// ResetSupplySubmittedBy resets all changes to the "supply_submitted_by" field.
+func (m *AccountMutation) ResetSupplySubmittedBy() {
+	m.supply_submitted_by = nil
+	m.addsupply_submitted_by = nil
+	delete(m.clearedFields, account.FieldSupplySubmittedBy)
+}
+
+// SetSupplyReviewedBy sets the "supply_reviewed_by" field.
+func (m *AccountMutation) SetSupplyReviewedBy(i int64) {
+	m.supply_reviewed_by = &i
+	m.addsupply_reviewed_by = nil
+}
+
+// SupplyReviewedBy returns the value of the "supply_reviewed_by" field in the mutation.
+func (m *AccountMutation) SupplyReviewedBy() (r int64, exists bool) {
+	v := m.supply_reviewed_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSupplyReviewedBy returns the old "supply_reviewed_by" field's value of the Account entity.
+// If the Account object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AccountMutation) OldSupplyReviewedBy(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSupplyReviewedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSupplyReviewedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSupplyReviewedBy: %w", err)
+	}
+	return oldValue.SupplyReviewedBy, nil
+}
+
+// AddSupplyReviewedBy adds i to the "supply_reviewed_by" field.
+func (m *AccountMutation) AddSupplyReviewedBy(i int64) {
+	if m.addsupply_reviewed_by != nil {
+		*m.addsupply_reviewed_by += i
+	} else {
+		m.addsupply_reviewed_by = &i
+	}
+}
+
+// AddedSupplyReviewedBy returns the value that was added to the "supply_reviewed_by" field in this mutation.
+func (m *AccountMutation) AddedSupplyReviewedBy() (r int64, exists bool) {
+	v := m.addsupply_reviewed_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearSupplyReviewedBy clears the value of the "supply_reviewed_by" field.
+func (m *AccountMutation) ClearSupplyReviewedBy() {
+	m.supply_reviewed_by = nil
+	m.addsupply_reviewed_by = nil
+	m.clearedFields[account.FieldSupplyReviewedBy] = struct{}{}
+}
+
+// SupplyReviewedByCleared returns if the "supply_reviewed_by" field was cleared in this mutation.
+func (m *AccountMutation) SupplyReviewedByCleared() bool {
+	_, ok := m.clearedFields[account.FieldSupplyReviewedBy]
+	return ok
+}
+
+// ResetSupplyReviewedBy resets all changes to the "supply_reviewed_by" field.
+func (m *AccountMutation) ResetSupplyReviewedBy() {
+	m.supply_reviewed_by = nil
+	m.addsupply_reviewed_by = nil
+	delete(m.clearedFields, account.FieldSupplyReviewedBy)
+}
+
+// SetSupplyReviewedAt sets the "supply_reviewed_at" field.
+func (m *AccountMutation) SetSupplyReviewedAt(t time.Time) {
+	m.supply_reviewed_at = &t
+}
+
+// SupplyReviewedAt returns the value of the "supply_reviewed_at" field in the mutation.
+func (m *AccountMutation) SupplyReviewedAt() (r time.Time, exists bool) {
+	v := m.supply_reviewed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSupplyReviewedAt returns the old "supply_reviewed_at" field's value of the Account entity.
+// If the Account object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AccountMutation) OldSupplyReviewedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSupplyReviewedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSupplyReviewedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSupplyReviewedAt: %w", err)
+	}
+	return oldValue.SupplyReviewedAt, nil
+}
+
+// ClearSupplyReviewedAt clears the value of the "supply_reviewed_at" field.
+func (m *AccountMutation) ClearSupplyReviewedAt() {
+	m.supply_reviewed_at = nil
+	m.clearedFields[account.FieldSupplyReviewedAt] = struct{}{}
+}
+
+// SupplyReviewedAtCleared returns if the "supply_reviewed_at" field was cleared in this mutation.
+func (m *AccountMutation) SupplyReviewedAtCleared() bool {
+	_, ok := m.clearedFields[account.FieldSupplyReviewedAt]
+	return ok
+}
+
+// ResetSupplyReviewedAt resets all changes to the "supply_reviewed_at" field.
+func (m *AccountMutation) ResetSupplyReviewedAt() {
+	m.supply_reviewed_at = nil
+	delete(m.clearedFields, account.FieldSupplyReviewedAt)
+}
+
 // SetSchedulable sets the "schedulable" field.
 func (m *AccountMutation) SetSchedulable(b bool) {
 	m.schedulable = &b
@@ -3871,7 +4280,7 @@ func (m *AccountMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AccountMutation) Fields() []string {
-	fields := make([]string, 0, 28)
+	fields := make([]string, 0, 35)
 	if m.created_at != nil {
 		fields = append(fields, account.FieldCreatedAt)
 	}
@@ -3928,6 +4337,27 @@ func (m *AccountMutation) Fields() []string {
 	}
 	if m.auto_pause_on_expired != nil {
 		fields = append(fields, account.FieldAutoPauseOnExpired)
+	}
+	if m.supply_owner_user_id != nil {
+		fields = append(fields, account.FieldSupplyOwnerUserID)
+	}
+	if m.supply_source != nil {
+		fields = append(fields, account.FieldSupplySource)
+	}
+	if m.supply_status != nil {
+		fields = append(fields, account.FieldSupplyStatus)
+	}
+	if m.supply_status_reason != nil {
+		fields = append(fields, account.FieldSupplyStatusReason)
+	}
+	if m.supply_submitted_by != nil {
+		fields = append(fields, account.FieldSupplySubmittedBy)
+	}
+	if m.supply_reviewed_by != nil {
+		fields = append(fields, account.FieldSupplyReviewedBy)
+	}
+	if m.supply_reviewed_at != nil {
+		fields = append(fields, account.FieldSupplyReviewedAt)
 	}
 	if m.schedulable != nil {
 		fields = append(fields, account.FieldSchedulable)
@@ -4002,6 +4432,20 @@ func (m *AccountMutation) Field(name string) (ent.Value, bool) {
 		return m.ExpiresAt()
 	case account.FieldAutoPauseOnExpired:
 		return m.AutoPauseOnExpired()
+	case account.FieldSupplyOwnerUserID:
+		return m.SupplyOwnerUserID()
+	case account.FieldSupplySource:
+		return m.SupplySource()
+	case account.FieldSupplyStatus:
+		return m.SupplyStatus()
+	case account.FieldSupplyStatusReason:
+		return m.SupplyStatusReason()
+	case account.FieldSupplySubmittedBy:
+		return m.SupplySubmittedBy()
+	case account.FieldSupplyReviewedBy:
+		return m.SupplyReviewedBy()
+	case account.FieldSupplyReviewedAt:
+		return m.SupplyReviewedAt()
 	case account.FieldSchedulable:
 		return m.Schedulable()
 	case account.FieldRateLimitedAt:
@@ -4067,6 +4511,20 @@ func (m *AccountMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldExpiresAt(ctx)
 	case account.FieldAutoPauseOnExpired:
 		return m.OldAutoPauseOnExpired(ctx)
+	case account.FieldSupplyOwnerUserID:
+		return m.OldSupplyOwnerUserID(ctx)
+	case account.FieldSupplySource:
+		return m.OldSupplySource(ctx)
+	case account.FieldSupplyStatus:
+		return m.OldSupplyStatus(ctx)
+	case account.FieldSupplyStatusReason:
+		return m.OldSupplyStatusReason(ctx)
+	case account.FieldSupplySubmittedBy:
+		return m.OldSupplySubmittedBy(ctx)
+	case account.FieldSupplyReviewedBy:
+		return m.OldSupplyReviewedBy(ctx)
+	case account.FieldSupplyReviewedAt:
+		return m.OldSupplyReviewedAt(ctx)
 	case account.FieldSchedulable:
 		return m.OldSchedulable(ctx)
 	case account.FieldRateLimitedAt:
@@ -4227,6 +4685,55 @@ func (m *AccountMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetAutoPauseOnExpired(v)
 		return nil
+	case account.FieldSupplyOwnerUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSupplyOwnerUserID(v)
+		return nil
+	case account.FieldSupplySource:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSupplySource(v)
+		return nil
+	case account.FieldSupplyStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSupplyStatus(v)
+		return nil
+	case account.FieldSupplyStatusReason:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSupplyStatusReason(v)
+		return nil
+	case account.FieldSupplySubmittedBy:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSupplySubmittedBy(v)
+		return nil
+	case account.FieldSupplyReviewedBy:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSupplyReviewedBy(v)
+		return nil
+	case account.FieldSupplyReviewedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSupplyReviewedAt(v)
+		return nil
 	case account.FieldSchedulable:
 		v, ok := value.(bool)
 		if !ok {
@@ -4310,6 +4817,15 @@ func (m *AccountMutation) AddedFields() []string {
 	if m.addrate_multiplier != nil {
 		fields = append(fields, account.FieldRateMultiplier)
 	}
+	if m.addsupply_owner_user_id != nil {
+		fields = append(fields, account.FieldSupplyOwnerUserID)
+	}
+	if m.addsupply_submitted_by != nil {
+		fields = append(fields, account.FieldSupplySubmittedBy)
+	}
+	if m.addsupply_reviewed_by != nil {
+		fields = append(fields, account.FieldSupplyReviewedBy)
+	}
 	return fields
 }
 
@@ -4326,6 +4842,12 @@ func (m *AccountMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedPriority()
 	case account.FieldRateMultiplier:
 		return m.AddedRateMultiplier()
+	case account.FieldSupplyOwnerUserID:
+		return m.AddedSupplyOwnerUserID()
+	case account.FieldSupplySubmittedBy:
+		return m.AddedSupplySubmittedBy()
+	case account.FieldSupplyReviewedBy:
+		return m.AddedSupplyReviewedBy()
 	}
 	return nil, false
 }
@@ -4363,6 +4885,27 @@ func (m *AccountMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddRateMultiplier(v)
 		return nil
+	case account.FieldSupplyOwnerUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSupplyOwnerUserID(v)
+		return nil
+	case account.FieldSupplySubmittedBy:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSupplySubmittedBy(v)
+		return nil
+	case account.FieldSupplyReviewedBy:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSupplyReviewedBy(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Account numeric field %s", name)
 }
@@ -4391,6 +4934,24 @@ func (m *AccountMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(account.FieldExpiresAt) {
 		fields = append(fields, account.FieldExpiresAt)
+	}
+	if m.FieldCleared(account.FieldSupplyOwnerUserID) {
+		fields = append(fields, account.FieldSupplyOwnerUserID)
+	}
+	if m.FieldCleared(account.FieldSupplySource) {
+		fields = append(fields, account.FieldSupplySource)
+	}
+	if m.FieldCleared(account.FieldSupplyStatusReason) {
+		fields = append(fields, account.FieldSupplyStatusReason)
+	}
+	if m.FieldCleared(account.FieldSupplySubmittedBy) {
+		fields = append(fields, account.FieldSupplySubmittedBy)
+	}
+	if m.FieldCleared(account.FieldSupplyReviewedBy) {
+		fields = append(fields, account.FieldSupplyReviewedBy)
+	}
+	if m.FieldCleared(account.FieldSupplyReviewedAt) {
+		fields = append(fields, account.FieldSupplyReviewedAt)
 	}
 	if m.FieldCleared(account.FieldRateLimitedAt) {
 		fields = append(fields, account.FieldRateLimitedAt)
@@ -4450,6 +5011,24 @@ func (m *AccountMutation) ClearField(name string) error {
 		return nil
 	case account.FieldExpiresAt:
 		m.ClearExpiresAt()
+		return nil
+	case account.FieldSupplyOwnerUserID:
+		m.ClearSupplyOwnerUserID()
+		return nil
+	case account.FieldSupplySource:
+		m.ClearSupplySource()
+		return nil
+	case account.FieldSupplyStatusReason:
+		m.ClearSupplyStatusReason()
+		return nil
+	case account.FieldSupplySubmittedBy:
+		m.ClearSupplySubmittedBy()
+		return nil
+	case account.FieldSupplyReviewedBy:
+		m.ClearSupplyReviewedBy()
+		return nil
+	case account.FieldSupplyReviewedAt:
+		m.ClearSupplyReviewedAt()
 		return nil
 	case account.FieldRateLimitedAt:
 		m.ClearRateLimitedAt()
@@ -4539,6 +5118,27 @@ func (m *AccountMutation) ResetField(name string) error {
 		return nil
 	case account.FieldAutoPauseOnExpired:
 		m.ResetAutoPauseOnExpired()
+		return nil
+	case account.FieldSupplyOwnerUserID:
+		m.ResetSupplyOwnerUserID()
+		return nil
+	case account.FieldSupplySource:
+		m.ResetSupplySource()
+		return nil
+	case account.FieldSupplyStatus:
+		m.ResetSupplyStatus()
+		return nil
+	case account.FieldSupplyStatusReason:
+		m.ResetSupplyStatusReason()
+		return nil
+	case account.FieldSupplySubmittedBy:
+		m.ResetSupplySubmittedBy()
+		return nil
+	case account.FieldSupplyReviewedBy:
+		m.ResetSupplyReviewedBy()
+		return nil
+	case account.FieldSupplyReviewedAt:
+		m.ResetSupplyReviewedAt()
 		return nil
 	case account.FieldSchedulable:
 		m.ResetSchedulable()
@@ -14789,6 +15389,10 @@ type GroupMutation struct {
 	messages_dispatch_model_config          *domain.OpenAIMessagesDispatchModelConfig
 	rpm_limit                               *int
 	addrpm_limit                            *int
+	supply_rewards_enabled                  *bool
+	supply_reward_multiplier                *float64
+	addsupply_reward_multiplier             *float64
+	supply_self_service_review_policy       *string
 	clearedFields                           map[string]struct{}
 	api_keys                                map[int64]struct{}
 	removedapi_keys                         map[int64]struct{}
@@ -16433,6 +17037,134 @@ func (m *GroupMutation) ResetRpmLimit() {
 	m.addrpm_limit = nil
 }
 
+// SetSupplyRewardsEnabled sets the "supply_rewards_enabled" field.
+func (m *GroupMutation) SetSupplyRewardsEnabled(b bool) {
+	m.supply_rewards_enabled = &b
+}
+
+// SupplyRewardsEnabled returns the value of the "supply_rewards_enabled" field in the mutation.
+func (m *GroupMutation) SupplyRewardsEnabled() (r bool, exists bool) {
+	v := m.supply_rewards_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSupplyRewardsEnabled returns the old "supply_rewards_enabled" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldSupplyRewardsEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSupplyRewardsEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSupplyRewardsEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSupplyRewardsEnabled: %w", err)
+	}
+	return oldValue.SupplyRewardsEnabled, nil
+}
+
+// ResetSupplyRewardsEnabled resets all changes to the "supply_rewards_enabled" field.
+func (m *GroupMutation) ResetSupplyRewardsEnabled() {
+	m.supply_rewards_enabled = nil
+}
+
+// SetSupplyRewardMultiplier sets the "supply_reward_multiplier" field.
+func (m *GroupMutation) SetSupplyRewardMultiplier(f float64) {
+	m.supply_reward_multiplier = &f
+	m.addsupply_reward_multiplier = nil
+}
+
+// SupplyRewardMultiplier returns the value of the "supply_reward_multiplier" field in the mutation.
+func (m *GroupMutation) SupplyRewardMultiplier() (r float64, exists bool) {
+	v := m.supply_reward_multiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSupplyRewardMultiplier returns the old "supply_reward_multiplier" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldSupplyRewardMultiplier(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSupplyRewardMultiplier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSupplyRewardMultiplier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSupplyRewardMultiplier: %w", err)
+	}
+	return oldValue.SupplyRewardMultiplier, nil
+}
+
+// AddSupplyRewardMultiplier adds f to the "supply_reward_multiplier" field.
+func (m *GroupMutation) AddSupplyRewardMultiplier(f float64) {
+	if m.addsupply_reward_multiplier != nil {
+		*m.addsupply_reward_multiplier += f
+	} else {
+		m.addsupply_reward_multiplier = &f
+	}
+}
+
+// AddedSupplyRewardMultiplier returns the value that was added to the "supply_reward_multiplier" field in this mutation.
+func (m *GroupMutation) AddedSupplyRewardMultiplier() (r float64, exists bool) {
+	v := m.addsupply_reward_multiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSupplyRewardMultiplier resets all changes to the "supply_reward_multiplier" field.
+func (m *GroupMutation) ResetSupplyRewardMultiplier() {
+	m.supply_reward_multiplier = nil
+	m.addsupply_reward_multiplier = nil
+}
+
+// SetSupplySelfServiceReviewPolicy sets the "supply_self_service_review_policy" field.
+func (m *GroupMutation) SetSupplySelfServiceReviewPolicy(s string) {
+	m.supply_self_service_review_policy = &s
+}
+
+// SupplySelfServiceReviewPolicy returns the value of the "supply_self_service_review_policy" field in the mutation.
+func (m *GroupMutation) SupplySelfServiceReviewPolicy() (r string, exists bool) {
+	v := m.supply_self_service_review_policy
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSupplySelfServiceReviewPolicy returns the old "supply_self_service_review_policy" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldSupplySelfServiceReviewPolicy(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSupplySelfServiceReviewPolicy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSupplySelfServiceReviewPolicy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSupplySelfServiceReviewPolicy: %w", err)
+	}
+	return oldValue.SupplySelfServiceReviewPolicy, nil
+}
+
+// ResetSupplySelfServiceReviewPolicy resets all changes to the "supply_self_service_review_policy" field.
+func (m *GroupMutation) ResetSupplySelfServiceReviewPolicy() {
+	m.supply_self_service_review_policy = nil
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by ids.
 func (m *GroupMutation) AddAPIKeyIDs(ids ...int64) {
 	if m.api_keys == nil {
@@ -16791,7 +17523,7 @@ func (m *GroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GroupMutation) Fields() []string {
-	fields := make([]string, 0, 31)
+	fields := make([]string, 0, 34)
 	if m.created_at != nil {
 		fields = append(fields, group.FieldCreatedAt)
 	}
@@ -16885,6 +17617,15 @@ func (m *GroupMutation) Fields() []string {
 	if m.rpm_limit != nil {
 		fields = append(fields, group.FieldRpmLimit)
 	}
+	if m.supply_rewards_enabled != nil {
+		fields = append(fields, group.FieldSupplyRewardsEnabled)
+	}
+	if m.supply_reward_multiplier != nil {
+		fields = append(fields, group.FieldSupplyRewardMultiplier)
+	}
+	if m.supply_self_service_review_policy != nil {
+		fields = append(fields, group.FieldSupplySelfServiceReviewPolicy)
+	}
 	return fields
 }
 
@@ -16955,6 +17696,12 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.MessagesDispatchModelConfig()
 	case group.FieldRpmLimit:
 		return m.RpmLimit()
+	case group.FieldSupplyRewardsEnabled:
+		return m.SupplyRewardsEnabled()
+	case group.FieldSupplyRewardMultiplier:
+		return m.SupplyRewardMultiplier()
+	case group.FieldSupplySelfServiceReviewPolicy:
+		return m.SupplySelfServiceReviewPolicy()
 	}
 	return nil, false
 }
@@ -17026,6 +17773,12 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldMessagesDispatchModelConfig(ctx)
 	case group.FieldRpmLimit:
 		return m.OldRpmLimit(ctx)
+	case group.FieldSupplyRewardsEnabled:
+		return m.OldSupplyRewardsEnabled(ctx)
+	case group.FieldSupplyRewardMultiplier:
+		return m.OldSupplyRewardMultiplier(ctx)
+	case group.FieldSupplySelfServiceReviewPolicy:
+		return m.OldSupplySelfServiceReviewPolicy(ctx)
 	}
 	return nil, fmt.Errorf("unknown Group field %s", name)
 }
@@ -17252,6 +18005,27 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetRpmLimit(v)
 		return nil
+	case group.FieldSupplyRewardsEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSupplyRewardsEnabled(v)
+		return nil
+	case group.FieldSupplyRewardMultiplier:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSupplyRewardMultiplier(v)
+		return nil
+	case group.FieldSupplySelfServiceReviewPolicy:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSupplySelfServiceReviewPolicy(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Group field %s", name)
 }
@@ -17296,6 +18070,9 @@ func (m *GroupMutation) AddedFields() []string {
 	if m.addrpm_limit != nil {
 		fields = append(fields, group.FieldRpmLimit)
 	}
+	if m.addsupply_reward_multiplier != nil {
+		fields = append(fields, group.FieldSupplyRewardMultiplier)
+	}
 	return fields
 }
 
@@ -17328,6 +18105,8 @@ func (m *GroupMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedSortOrder()
 	case group.FieldRpmLimit:
 		return m.AddedRpmLimit()
+	case group.FieldSupplyRewardMultiplier:
+		return m.AddedSupplyRewardMultiplier()
 	}
 	return nil, false
 }
@@ -17420,6 +18199,13 @@ func (m *GroupMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddRpmLimit(v)
+		return nil
+	case group.FieldSupplyRewardMultiplier:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSupplyRewardMultiplier(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Group numeric field %s", name)
@@ -17609,6 +18395,15 @@ func (m *GroupMutation) ResetField(name string) error {
 		return nil
 	case group.FieldRpmLimit:
 		m.ResetRpmLimit()
+		return nil
+	case group.FieldSupplyRewardsEnabled:
+		m.ResetSupplyRewardsEnabled()
+		return nil
+	case group.FieldSupplyRewardMultiplier:
+		m.ResetSupplyRewardMultiplier()
+		return nil
+	case group.FieldSupplySelfServiceReviewPolicy:
+		m.ResetSupplySelfServiceReviewPolicy()
 		return nil
 	}
 	return fmt.Errorf("unknown Group field %s", name)
@@ -29466,6 +30261,2714 @@ func (m *RedeemCodeMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown RedeemCode edge %s", name)
 }
 
+// ResourceSupplyBalanceMutation represents an operation that mutates the ResourceSupplyBalance nodes in the graph.
+type ResourceSupplyBalanceMutation struct {
+	config
+	op                             Op
+	typ                            string
+	id                             *int64
+	created_at                     *time.Time
+	updated_at                     *time.Time
+	available_amount               *float64
+	addavailable_amount            *float64
+	lifetime_earned_amount         *float64
+	addlifetime_earned_amount      *float64
+	lifetime_transferred_amount    *float64
+	addlifetime_transferred_amount *float64
+	clearedFields                  map[string]struct{}
+	user                           *int64
+	cleareduser                    bool
+	done                           bool
+	oldValue                       func(context.Context) (*ResourceSupplyBalance, error)
+	predicates                     []predicate.ResourceSupplyBalance
+}
+
+var _ ent.Mutation = (*ResourceSupplyBalanceMutation)(nil)
+
+// resourcesupplybalanceOption allows management of the mutation configuration using functional options.
+type resourcesupplybalanceOption func(*ResourceSupplyBalanceMutation)
+
+// newResourceSupplyBalanceMutation creates new mutation for the ResourceSupplyBalance entity.
+func newResourceSupplyBalanceMutation(c config, op Op, opts ...resourcesupplybalanceOption) *ResourceSupplyBalanceMutation {
+	m := &ResourceSupplyBalanceMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeResourceSupplyBalance,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withResourceSupplyBalanceID sets the ID field of the mutation.
+func withResourceSupplyBalanceID(id int64) resourcesupplybalanceOption {
+	return func(m *ResourceSupplyBalanceMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ResourceSupplyBalance
+		)
+		m.oldValue = func(ctx context.Context) (*ResourceSupplyBalance, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ResourceSupplyBalance.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withResourceSupplyBalance sets the old ResourceSupplyBalance of the mutation.
+func withResourceSupplyBalance(node *ResourceSupplyBalance) resourcesupplybalanceOption {
+	return func(m *ResourceSupplyBalanceMutation) {
+		m.oldValue = func(context.Context) (*ResourceSupplyBalance, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ResourceSupplyBalanceMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ResourceSupplyBalanceMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ResourceSupplyBalanceMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ResourceSupplyBalanceMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ResourceSupplyBalance.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ResourceSupplyBalanceMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ResourceSupplyBalanceMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ResourceSupplyBalance entity.
+// If the ResourceSupplyBalance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResourceSupplyBalanceMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ResourceSupplyBalanceMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *ResourceSupplyBalanceMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *ResourceSupplyBalanceMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the ResourceSupplyBalance entity.
+// If the ResourceSupplyBalance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResourceSupplyBalanceMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *ResourceSupplyBalanceMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetUserID sets the "user_id" field.
+func (m *ResourceSupplyBalanceMutation) SetUserID(i int64) {
+	m.user = &i
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *ResourceSupplyBalanceMutation) UserID() (r int64, exists bool) {
+	v := m.user
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the ResourceSupplyBalance entity.
+// If the ResourceSupplyBalance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResourceSupplyBalanceMutation) OldUserID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *ResourceSupplyBalanceMutation) ResetUserID() {
+	m.user = nil
+}
+
+// SetAvailableAmount sets the "available_amount" field.
+func (m *ResourceSupplyBalanceMutation) SetAvailableAmount(f float64) {
+	m.available_amount = &f
+	m.addavailable_amount = nil
+}
+
+// AvailableAmount returns the value of the "available_amount" field in the mutation.
+func (m *ResourceSupplyBalanceMutation) AvailableAmount() (r float64, exists bool) {
+	v := m.available_amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAvailableAmount returns the old "available_amount" field's value of the ResourceSupplyBalance entity.
+// If the ResourceSupplyBalance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResourceSupplyBalanceMutation) OldAvailableAmount(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAvailableAmount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAvailableAmount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAvailableAmount: %w", err)
+	}
+	return oldValue.AvailableAmount, nil
+}
+
+// AddAvailableAmount adds f to the "available_amount" field.
+func (m *ResourceSupplyBalanceMutation) AddAvailableAmount(f float64) {
+	if m.addavailable_amount != nil {
+		*m.addavailable_amount += f
+	} else {
+		m.addavailable_amount = &f
+	}
+}
+
+// AddedAvailableAmount returns the value that was added to the "available_amount" field in this mutation.
+func (m *ResourceSupplyBalanceMutation) AddedAvailableAmount() (r float64, exists bool) {
+	v := m.addavailable_amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAvailableAmount resets all changes to the "available_amount" field.
+func (m *ResourceSupplyBalanceMutation) ResetAvailableAmount() {
+	m.available_amount = nil
+	m.addavailable_amount = nil
+}
+
+// SetLifetimeEarnedAmount sets the "lifetime_earned_amount" field.
+func (m *ResourceSupplyBalanceMutation) SetLifetimeEarnedAmount(f float64) {
+	m.lifetime_earned_amount = &f
+	m.addlifetime_earned_amount = nil
+}
+
+// LifetimeEarnedAmount returns the value of the "lifetime_earned_amount" field in the mutation.
+func (m *ResourceSupplyBalanceMutation) LifetimeEarnedAmount() (r float64, exists bool) {
+	v := m.lifetime_earned_amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLifetimeEarnedAmount returns the old "lifetime_earned_amount" field's value of the ResourceSupplyBalance entity.
+// If the ResourceSupplyBalance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResourceSupplyBalanceMutation) OldLifetimeEarnedAmount(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLifetimeEarnedAmount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLifetimeEarnedAmount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLifetimeEarnedAmount: %w", err)
+	}
+	return oldValue.LifetimeEarnedAmount, nil
+}
+
+// AddLifetimeEarnedAmount adds f to the "lifetime_earned_amount" field.
+func (m *ResourceSupplyBalanceMutation) AddLifetimeEarnedAmount(f float64) {
+	if m.addlifetime_earned_amount != nil {
+		*m.addlifetime_earned_amount += f
+	} else {
+		m.addlifetime_earned_amount = &f
+	}
+}
+
+// AddedLifetimeEarnedAmount returns the value that was added to the "lifetime_earned_amount" field in this mutation.
+func (m *ResourceSupplyBalanceMutation) AddedLifetimeEarnedAmount() (r float64, exists bool) {
+	v := m.addlifetime_earned_amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetLifetimeEarnedAmount resets all changes to the "lifetime_earned_amount" field.
+func (m *ResourceSupplyBalanceMutation) ResetLifetimeEarnedAmount() {
+	m.lifetime_earned_amount = nil
+	m.addlifetime_earned_amount = nil
+}
+
+// SetLifetimeTransferredAmount sets the "lifetime_transferred_amount" field.
+func (m *ResourceSupplyBalanceMutation) SetLifetimeTransferredAmount(f float64) {
+	m.lifetime_transferred_amount = &f
+	m.addlifetime_transferred_amount = nil
+}
+
+// LifetimeTransferredAmount returns the value of the "lifetime_transferred_amount" field in the mutation.
+func (m *ResourceSupplyBalanceMutation) LifetimeTransferredAmount() (r float64, exists bool) {
+	v := m.lifetime_transferred_amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLifetimeTransferredAmount returns the old "lifetime_transferred_amount" field's value of the ResourceSupplyBalance entity.
+// If the ResourceSupplyBalance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResourceSupplyBalanceMutation) OldLifetimeTransferredAmount(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLifetimeTransferredAmount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLifetimeTransferredAmount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLifetimeTransferredAmount: %w", err)
+	}
+	return oldValue.LifetimeTransferredAmount, nil
+}
+
+// AddLifetimeTransferredAmount adds f to the "lifetime_transferred_amount" field.
+func (m *ResourceSupplyBalanceMutation) AddLifetimeTransferredAmount(f float64) {
+	if m.addlifetime_transferred_amount != nil {
+		*m.addlifetime_transferred_amount += f
+	} else {
+		m.addlifetime_transferred_amount = &f
+	}
+}
+
+// AddedLifetimeTransferredAmount returns the value that was added to the "lifetime_transferred_amount" field in this mutation.
+func (m *ResourceSupplyBalanceMutation) AddedLifetimeTransferredAmount() (r float64, exists bool) {
+	v := m.addlifetime_transferred_amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetLifetimeTransferredAmount resets all changes to the "lifetime_transferred_amount" field.
+func (m *ResourceSupplyBalanceMutation) ResetLifetimeTransferredAmount() {
+	m.lifetime_transferred_amount = nil
+	m.addlifetime_transferred_amount = nil
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (m *ResourceSupplyBalanceMutation) ClearUser() {
+	m.cleareduser = true
+	m.clearedFields[resourcesupplybalance.FieldUserID] = struct{}{}
+}
+
+// UserCleared reports if the "user" edge to the User entity was cleared.
+func (m *ResourceSupplyBalanceMutation) UserCleared() bool {
+	return m.cleareduser
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
+func (m *ResourceSupplyBalanceMutation) UserIDs() (ids []int64) {
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *ResourceSupplyBalanceMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+}
+
+// Where appends a list predicates to the ResourceSupplyBalanceMutation builder.
+func (m *ResourceSupplyBalanceMutation) Where(ps ...predicate.ResourceSupplyBalance) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ResourceSupplyBalanceMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ResourceSupplyBalanceMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ResourceSupplyBalance, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ResourceSupplyBalanceMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ResourceSupplyBalanceMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ResourceSupplyBalance).
+func (m *ResourceSupplyBalanceMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ResourceSupplyBalanceMutation) Fields() []string {
+	fields := make([]string, 0, 6)
+	if m.created_at != nil {
+		fields = append(fields, resourcesupplybalance.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, resourcesupplybalance.FieldUpdatedAt)
+	}
+	if m.user != nil {
+		fields = append(fields, resourcesupplybalance.FieldUserID)
+	}
+	if m.available_amount != nil {
+		fields = append(fields, resourcesupplybalance.FieldAvailableAmount)
+	}
+	if m.lifetime_earned_amount != nil {
+		fields = append(fields, resourcesupplybalance.FieldLifetimeEarnedAmount)
+	}
+	if m.lifetime_transferred_amount != nil {
+		fields = append(fields, resourcesupplybalance.FieldLifetimeTransferredAmount)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ResourceSupplyBalanceMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case resourcesupplybalance.FieldCreatedAt:
+		return m.CreatedAt()
+	case resourcesupplybalance.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case resourcesupplybalance.FieldUserID:
+		return m.UserID()
+	case resourcesupplybalance.FieldAvailableAmount:
+		return m.AvailableAmount()
+	case resourcesupplybalance.FieldLifetimeEarnedAmount:
+		return m.LifetimeEarnedAmount()
+	case resourcesupplybalance.FieldLifetimeTransferredAmount:
+		return m.LifetimeTransferredAmount()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ResourceSupplyBalanceMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case resourcesupplybalance.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case resourcesupplybalance.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case resourcesupplybalance.FieldUserID:
+		return m.OldUserID(ctx)
+	case resourcesupplybalance.FieldAvailableAmount:
+		return m.OldAvailableAmount(ctx)
+	case resourcesupplybalance.FieldLifetimeEarnedAmount:
+		return m.OldLifetimeEarnedAmount(ctx)
+	case resourcesupplybalance.FieldLifetimeTransferredAmount:
+		return m.OldLifetimeTransferredAmount(ctx)
+	}
+	return nil, fmt.Errorf("unknown ResourceSupplyBalance field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ResourceSupplyBalanceMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case resourcesupplybalance.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case resourcesupplybalance.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case resourcesupplybalance.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case resourcesupplybalance.FieldAvailableAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAvailableAmount(v)
+		return nil
+	case resourcesupplybalance.FieldLifetimeEarnedAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLifetimeEarnedAmount(v)
+		return nil
+	case resourcesupplybalance.FieldLifetimeTransferredAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLifetimeTransferredAmount(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ResourceSupplyBalance field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ResourceSupplyBalanceMutation) AddedFields() []string {
+	var fields []string
+	if m.addavailable_amount != nil {
+		fields = append(fields, resourcesupplybalance.FieldAvailableAmount)
+	}
+	if m.addlifetime_earned_amount != nil {
+		fields = append(fields, resourcesupplybalance.FieldLifetimeEarnedAmount)
+	}
+	if m.addlifetime_transferred_amount != nil {
+		fields = append(fields, resourcesupplybalance.FieldLifetimeTransferredAmount)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ResourceSupplyBalanceMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case resourcesupplybalance.FieldAvailableAmount:
+		return m.AddedAvailableAmount()
+	case resourcesupplybalance.FieldLifetimeEarnedAmount:
+		return m.AddedLifetimeEarnedAmount()
+	case resourcesupplybalance.FieldLifetimeTransferredAmount:
+		return m.AddedLifetimeTransferredAmount()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ResourceSupplyBalanceMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case resourcesupplybalance.FieldAvailableAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAvailableAmount(v)
+		return nil
+	case resourcesupplybalance.FieldLifetimeEarnedAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLifetimeEarnedAmount(v)
+		return nil
+	case resourcesupplybalance.FieldLifetimeTransferredAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLifetimeTransferredAmount(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ResourceSupplyBalance numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ResourceSupplyBalanceMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ResourceSupplyBalanceMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ResourceSupplyBalanceMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown ResourceSupplyBalance nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ResourceSupplyBalanceMutation) ResetField(name string) error {
+	switch name {
+	case resourcesupplybalance.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case resourcesupplybalance.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case resourcesupplybalance.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case resourcesupplybalance.FieldAvailableAmount:
+		m.ResetAvailableAmount()
+		return nil
+	case resourcesupplybalance.FieldLifetimeEarnedAmount:
+		m.ResetLifetimeEarnedAmount()
+		return nil
+	case resourcesupplybalance.FieldLifetimeTransferredAmount:
+		m.ResetLifetimeTransferredAmount()
+		return nil
+	}
+	return fmt.Errorf("unknown ResourceSupplyBalance field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ResourceSupplyBalanceMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.user != nil {
+		edges = append(edges, resourcesupplybalance.EdgeUser)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ResourceSupplyBalanceMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case resourcesupplybalance.EdgeUser:
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ResourceSupplyBalanceMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ResourceSupplyBalanceMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ResourceSupplyBalanceMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.cleareduser {
+		edges = append(edges, resourcesupplybalance.EdgeUser)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ResourceSupplyBalanceMutation) EdgeCleared(name string) bool {
+	switch name {
+	case resourcesupplybalance.EdgeUser:
+		return m.cleareduser
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ResourceSupplyBalanceMutation) ClearEdge(name string) error {
+	switch name {
+	case resourcesupplybalance.EdgeUser:
+		m.ClearUser()
+		return nil
+	}
+	return fmt.Errorf("unknown ResourceSupplyBalance unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ResourceSupplyBalanceMutation) ResetEdge(name string) error {
+	switch name {
+	case resourcesupplybalance.EdgeUser:
+		m.ResetUser()
+		return nil
+	}
+	return fmt.Errorf("unknown ResourceSupplyBalance edge %s", name)
+}
+
+// ResourceSupplyLedgerMutation represents an operation that mutates the ResourceSupplyLedger nodes in the graph.
+type ResourceSupplyLedgerMutation struct {
+	config
+	op                        Op
+	typ                       string
+	id                        *int64
+	created_at                *time.Time
+	updated_at                *time.Time
+	owner_user_id             *int64
+	addowner_user_id          *int64
+	caller_user_id            *int64
+	addcaller_user_id         *int64
+	api_key_id                *int64
+	addapi_key_id             *int64
+	group_id                  *int64
+	addgroup_id               *int64
+	account_id                *int64
+	addaccount_id             *int64
+	usage_billing_event_id    *int64
+	addusage_billing_event_id *int64
+	ledger_type               *string
+	idempotency_key           *string
+	amount                    *float64
+	addamount                 *float64
+	balance_after             *float64
+	addbalance_after          *float64
+	actual_cost               *float64
+	addactual_cost            *float64
+	reward_multiplier         *float64
+	addreward_multiplier      *float64
+	billing_type              *int8
+	addbilling_type           *int8
+	model                     *string
+	request_id                *string
+	admin_user_id             *int64
+	addadmin_user_id          *int64
+	note                      *string
+	clearedFields             map[string]struct{}
+	done                      bool
+	oldValue                  func(context.Context) (*ResourceSupplyLedger, error)
+	predicates                []predicate.ResourceSupplyLedger
+}
+
+var _ ent.Mutation = (*ResourceSupplyLedgerMutation)(nil)
+
+// resourcesupplyledgerOption allows management of the mutation configuration using functional options.
+type resourcesupplyledgerOption func(*ResourceSupplyLedgerMutation)
+
+// newResourceSupplyLedgerMutation creates new mutation for the ResourceSupplyLedger entity.
+func newResourceSupplyLedgerMutation(c config, op Op, opts ...resourcesupplyledgerOption) *ResourceSupplyLedgerMutation {
+	m := &ResourceSupplyLedgerMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeResourceSupplyLedger,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withResourceSupplyLedgerID sets the ID field of the mutation.
+func withResourceSupplyLedgerID(id int64) resourcesupplyledgerOption {
+	return func(m *ResourceSupplyLedgerMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ResourceSupplyLedger
+		)
+		m.oldValue = func(ctx context.Context) (*ResourceSupplyLedger, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ResourceSupplyLedger.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withResourceSupplyLedger sets the old ResourceSupplyLedger of the mutation.
+func withResourceSupplyLedger(node *ResourceSupplyLedger) resourcesupplyledgerOption {
+	return func(m *ResourceSupplyLedgerMutation) {
+		m.oldValue = func(context.Context) (*ResourceSupplyLedger, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ResourceSupplyLedgerMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ResourceSupplyLedgerMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ResourceSupplyLedgerMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ResourceSupplyLedgerMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ResourceSupplyLedger.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ResourceSupplyLedgerMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ResourceSupplyLedgerMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ResourceSupplyLedger entity.
+// If the ResourceSupplyLedger object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResourceSupplyLedgerMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ResourceSupplyLedgerMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *ResourceSupplyLedgerMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *ResourceSupplyLedgerMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the ResourceSupplyLedger entity.
+// If the ResourceSupplyLedger object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResourceSupplyLedgerMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *ResourceSupplyLedgerMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetOwnerUserID sets the "owner_user_id" field.
+func (m *ResourceSupplyLedgerMutation) SetOwnerUserID(i int64) {
+	m.owner_user_id = &i
+	m.addowner_user_id = nil
+}
+
+// OwnerUserID returns the value of the "owner_user_id" field in the mutation.
+func (m *ResourceSupplyLedgerMutation) OwnerUserID() (r int64, exists bool) {
+	v := m.owner_user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOwnerUserID returns the old "owner_user_id" field's value of the ResourceSupplyLedger entity.
+// If the ResourceSupplyLedger object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResourceSupplyLedgerMutation) OldOwnerUserID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOwnerUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOwnerUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOwnerUserID: %w", err)
+	}
+	return oldValue.OwnerUserID, nil
+}
+
+// AddOwnerUserID adds i to the "owner_user_id" field.
+func (m *ResourceSupplyLedgerMutation) AddOwnerUserID(i int64) {
+	if m.addowner_user_id != nil {
+		*m.addowner_user_id += i
+	} else {
+		m.addowner_user_id = &i
+	}
+}
+
+// AddedOwnerUserID returns the value that was added to the "owner_user_id" field in this mutation.
+func (m *ResourceSupplyLedgerMutation) AddedOwnerUserID() (r int64, exists bool) {
+	v := m.addowner_user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetOwnerUserID resets all changes to the "owner_user_id" field.
+func (m *ResourceSupplyLedgerMutation) ResetOwnerUserID() {
+	m.owner_user_id = nil
+	m.addowner_user_id = nil
+}
+
+// SetCallerUserID sets the "caller_user_id" field.
+func (m *ResourceSupplyLedgerMutation) SetCallerUserID(i int64) {
+	m.caller_user_id = &i
+	m.addcaller_user_id = nil
+}
+
+// CallerUserID returns the value of the "caller_user_id" field in the mutation.
+func (m *ResourceSupplyLedgerMutation) CallerUserID() (r int64, exists bool) {
+	v := m.caller_user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCallerUserID returns the old "caller_user_id" field's value of the ResourceSupplyLedger entity.
+// If the ResourceSupplyLedger object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResourceSupplyLedgerMutation) OldCallerUserID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCallerUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCallerUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCallerUserID: %w", err)
+	}
+	return oldValue.CallerUserID, nil
+}
+
+// AddCallerUserID adds i to the "caller_user_id" field.
+func (m *ResourceSupplyLedgerMutation) AddCallerUserID(i int64) {
+	if m.addcaller_user_id != nil {
+		*m.addcaller_user_id += i
+	} else {
+		m.addcaller_user_id = &i
+	}
+}
+
+// AddedCallerUserID returns the value that was added to the "caller_user_id" field in this mutation.
+func (m *ResourceSupplyLedgerMutation) AddedCallerUserID() (r int64, exists bool) {
+	v := m.addcaller_user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearCallerUserID clears the value of the "caller_user_id" field.
+func (m *ResourceSupplyLedgerMutation) ClearCallerUserID() {
+	m.caller_user_id = nil
+	m.addcaller_user_id = nil
+	m.clearedFields[resourcesupplyledger.FieldCallerUserID] = struct{}{}
+}
+
+// CallerUserIDCleared returns if the "caller_user_id" field was cleared in this mutation.
+func (m *ResourceSupplyLedgerMutation) CallerUserIDCleared() bool {
+	_, ok := m.clearedFields[resourcesupplyledger.FieldCallerUserID]
+	return ok
+}
+
+// ResetCallerUserID resets all changes to the "caller_user_id" field.
+func (m *ResourceSupplyLedgerMutation) ResetCallerUserID() {
+	m.caller_user_id = nil
+	m.addcaller_user_id = nil
+	delete(m.clearedFields, resourcesupplyledger.FieldCallerUserID)
+}
+
+// SetAPIKeyID sets the "api_key_id" field.
+func (m *ResourceSupplyLedgerMutation) SetAPIKeyID(i int64) {
+	m.api_key_id = &i
+	m.addapi_key_id = nil
+}
+
+// APIKeyID returns the value of the "api_key_id" field in the mutation.
+func (m *ResourceSupplyLedgerMutation) APIKeyID() (r int64, exists bool) {
+	v := m.api_key_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAPIKeyID returns the old "api_key_id" field's value of the ResourceSupplyLedger entity.
+// If the ResourceSupplyLedger object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResourceSupplyLedgerMutation) OldAPIKeyID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAPIKeyID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAPIKeyID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAPIKeyID: %w", err)
+	}
+	return oldValue.APIKeyID, nil
+}
+
+// AddAPIKeyID adds i to the "api_key_id" field.
+func (m *ResourceSupplyLedgerMutation) AddAPIKeyID(i int64) {
+	if m.addapi_key_id != nil {
+		*m.addapi_key_id += i
+	} else {
+		m.addapi_key_id = &i
+	}
+}
+
+// AddedAPIKeyID returns the value that was added to the "api_key_id" field in this mutation.
+func (m *ResourceSupplyLedgerMutation) AddedAPIKeyID() (r int64, exists bool) {
+	v := m.addapi_key_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearAPIKeyID clears the value of the "api_key_id" field.
+func (m *ResourceSupplyLedgerMutation) ClearAPIKeyID() {
+	m.api_key_id = nil
+	m.addapi_key_id = nil
+	m.clearedFields[resourcesupplyledger.FieldAPIKeyID] = struct{}{}
+}
+
+// APIKeyIDCleared returns if the "api_key_id" field was cleared in this mutation.
+func (m *ResourceSupplyLedgerMutation) APIKeyIDCleared() bool {
+	_, ok := m.clearedFields[resourcesupplyledger.FieldAPIKeyID]
+	return ok
+}
+
+// ResetAPIKeyID resets all changes to the "api_key_id" field.
+func (m *ResourceSupplyLedgerMutation) ResetAPIKeyID() {
+	m.api_key_id = nil
+	m.addapi_key_id = nil
+	delete(m.clearedFields, resourcesupplyledger.FieldAPIKeyID)
+}
+
+// SetGroupID sets the "group_id" field.
+func (m *ResourceSupplyLedgerMutation) SetGroupID(i int64) {
+	m.group_id = &i
+	m.addgroup_id = nil
+}
+
+// GroupID returns the value of the "group_id" field in the mutation.
+func (m *ResourceSupplyLedgerMutation) GroupID() (r int64, exists bool) {
+	v := m.group_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGroupID returns the old "group_id" field's value of the ResourceSupplyLedger entity.
+// If the ResourceSupplyLedger object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResourceSupplyLedgerMutation) OldGroupID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGroupID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGroupID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGroupID: %w", err)
+	}
+	return oldValue.GroupID, nil
+}
+
+// AddGroupID adds i to the "group_id" field.
+func (m *ResourceSupplyLedgerMutation) AddGroupID(i int64) {
+	if m.addgroup_id != nil {
+		*m.addgroup_id += i
+	} else {
+		m.addgroup_id = &i
+	}
+}
+
+// AddedGroupID returns the value that was added to the "group_id" field in this mutation.
+func (m *ResourceSupplyLedgerMutation) AddedGroupID() (r int64, exists bool) {
+	v := m.addgroup_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearGroupID clears the value of the "group_id" field.
+func (m *ResourceSupplyLedgerMutation) ClearGroupID() {
+	m.group_id = nil
+	m.addgroup_id = nil
+	m.clearedFields[resourcesupplyledger.FieldGroupID] = struct{}{}
+}
+
+// GroupIDCleared returns if the "group_id" field was cleared in this mutation.
+func (m *ResourceSupplyLedgerMutation) GroupIDCleared() bool {
+	_, ok := m.clearedFields[resourcesupplyledger.FieldGroupID]
+	return ok
+}
+
+// ResetGroupID resets all changes to the "group_id" field.
+func (m *ResourceSupplyLedgerMutation) ResetGroupID() {
+	m.group_id = nil
+	m.addgroup_id = nil
+	delete(m.clearedFields, resourcesupplyledger.FieldGroupID)
+}
+
+// SetAccountID sets the "account_id" field.
+func (m *ResourceSupplyLedgerMutation) SetAccountID(i int64) {
+	m.account_id = &i
+	m.addaccount_id = nil
+}
+
+// AccountID returns the value of the "account_id" field in the mutation.
+func (m *ResourceSupplyLedgerMutation) AccountID() (r int64, exists bool) {
+	v := m.account_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccountID returns the old "account_id" field's value of the ResourceSupplyLedger entity.
+// If the ResourceSupplyLedger object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResourceSupplyLedgerMutation) OldAccountID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccountID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccountID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccountID: %w", err)
+	}
+	return oldValue.AccountID, nil
+}
+
+// AddAccountID adds i to the "account_id" field.
+func (m *ResourceSupplyLedgerMutation) AddAccountID(i int64) {
+	if m.addaccount_id != nil {
+		*m.addaccount_id += i
+	} else {
+		m.addaccount_id = &i
+	}
+}
+
+// AddedAccountID returns the value that was added to the "account_id" field in this mutation.
+func (m *ResourceSupplyLedgerMutation) AddedAccountID() (r int64, exists bool) {
+	v := m.addaccount_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearAccountID clears the value of the "account_id" field.
+func (m *ResourceSupplyLedgerMutation) ClearAccountID() {
+	m.account_id = nil
+	m.addaccount_id = nil
+	m.clearedFields[resourcesupplyledger.FieldAccountID] = struct{}{}
+}
+
+// AccountIDCleared returns if the "account_id" field was cleared in this mutation.
+func (m *ResourceSupplyLedgerMutation) AccountIDCleared() bool {
+	_, ok := m.clearedFields[resourcesupplyledger.FieldAccountID]
+	return ok
+}
+
+// ResetAccountID resets all changes to the "account_id" field.
+func (m *ResourceSupplyLedgerMutation) ResetAccountID() {
+	m.account_id = nil
+	m.addaccount_id = nil
+	delete(m.clearedFields, resourcesupplyledger.FieldAccountID)
+}
+
+// SetUsageBillingEventID sets the "usage_billing_event_id" field.
+func (m *ResourceSupplyLedgerMutation) SetUsageBillingEventID(i int64) {
+	m.usage_billing_event_id = &i
+	m.addusage_billing_event_id = nil
+}
+
+// UsageBillingEventID returns the value of the "usage_billing_event_id" field in the mutation.
+func (m *ResourceSupplyLedgerMutation) UsageBillingEventID() (r int64, exists bool) {
+	v := m.usage_billing_event_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUsageBillingEventID returns the old "usage_billing_event_id" field's value of the ResourceSupplyLedger entity.
+// If the ResourceSupplyLedger object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResourceSupplyLedgerMutation) OldUsageBillingEventID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUsageBillingEventID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUsageBillingEventID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUsageBillingEventID: %w", err)
+	}
+	return oldValue.UsageBillingEventID, nil
+}
+
+// AddUsageBillingEventID adds i to the "usage_billing_event_id" field.
+func (m *ResourceSupplyLedgerMutation) AddUsageBillingEventID(i int64) {
+	if m.addusage_billing_event_id != nil {
+		*m.addusage_billing_event_id += i
+	} else {
+		m.addusage_billing_event_id = &i
+	}
+}
+
+// AddedUsageBillingEventID returns the value that was added to the "usage_billing_event_id" field in this mutation.
+func (m *ResourceSupplyLedgerMutation) AddedUsageBillingEventID() (r int64, exists bool) {
+	v := m.addusage_billing_event_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearUsageBillingEventID clears the value of the "usage_billing_event_id" field.
+func (m *ResourceSupplyLedgerMutation) ClearUsageBillingEventID() {
+	m.usage_billing_event_id = nil
+	m.addusage_billing_event_id = nil
+	m.clearedFields[resourcesupplyledger.FieldUsageBillingEventID] = struct{}{}
+}
+
+// UsageBillingEventIDCleared returns if the "usage_billing_event_id" field was cleared in this mutation.
+func (m *ResourceSupplyLedgerMutation) UsageBillingEventIDCleared() bool {
+	_, ok := m.clearedFields[resourcesupplyledger.FieldUsageBillingEventID]
+	return ok
+}
+
+// ResetUsageBillingEventID resets all changes to the "usage_billing_event_id" field.
+func (m *ResourceSupplyLedgerMutation) ResetUsageBillingEventID() {
+	m.usage_billing_event_id = nil
+	m.addusage_billing_event_id = nil
+	delete(m.clearedFields, resourcesupplyledger.FieldUsageBillingEventID)
+}
+
+// SetLedgerType sets the "ledger_type" field.
+func (m *ResourceSupplyLedgerMutation) SetLedgerType(s string) {
+	m.ledger_type = &s
+}
+
+// LedgerType returns the value of the "ledger_type" field in the mutation.
+func (m *ResourceSupplyLedgerMutation) LedgerType() (r string, exists bool) {
+	v := m.ledger_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLedgerType returns the old "ledger_type" field's value of the ResourceSupplyLedger entity.
+// If the ResourceSupplyLedger object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResourceSupplyLedgerMutation) OldLedgerType(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLedgerType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLedgerType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLedgerType: %w", err)
+	}
+	return oldValue.LedgerType, nil
+}
+
+// ResetLedgerType resets all changes to the "ledger_type" field.
+func (m *ResourceSupplyLedgerMutation) ResetLedgerType() {
+	m.ledger_type = nil
+}
+
+// SetIdempotencyKey sets the "idempotency_key" field.
+func (m *ResourceSupplyLedgerMutation) SetIdempotencyKey(s string) {
+	m.idempotency_key = &s
+}
+
+// IdempotencyKey returns the value of the "idempotency_key" field in the mutation.
+func (m *ResourceSupplyLedgerMutation) IdempotencyKey() (r string, exists bool) {
+	v := m.idempotency_key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIdempotencyKey returns the old "idempotency_key" field's value of the ResourceSupplyLedger entity.
+// If the ResourceSupplyLedger object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResourceSupplyLedgerMutation) OldIdempotencyKey(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIdempotencyKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIdempotencyKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIdempotencyKey: %w", err)
+	}
+	return oldValue.IdempotencyKey, nil
+}
+
+// ClearIdempotencyKey clears the value of the "idempotency_key" field.
+func (m *ResourceSupplyLedgerMutation) ClearIdempotencyKey() {
+	m.idempotency_key = nil
+	m.clearedFields[resourcesupplyledger.FieldIdempotencyKey] = struct{}{}
+}
+
+// IdempotencyKeyCleared returns if the "idempotency_key" field was cleared in this mutation.
+func (m *ResourceSupplyLedgerMutation) IdempotencyKeyCleared() bool {
+	_, ok := m.clearedFields[resourcesupplyledger.FieldIdempotencyKey]
+	return ok
+}
+
+// ResetIdempotencyKey resets all changes to the "idempotency_key" field.
+func (m *ResourceSupplyLedgerMutation) ResetIdempotencyKey() {
+	m.idempotency_key = nil
+	delete(m.clearedFields, resourcesupplyledger.FieldIdempotencyKey)
+}
+
+// SetAmount sets the "amount" field.
+func (m *ResourceSupplyLedgerMutation) SetAmount(f float64) {
+	m.amount = &f
+	m.addamount = nil
+}
+
+// Amount returns the value of the "amount" field in the mutation.
+func (m *ResourceSupplyLedgerMutation) Amount() (r float64, exists bool) {
+	v := m.amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAmount returns the old "amount" field's value of the ResourceSupplyLedger entity.
+// If the ResourceSupplyLedger object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResourceSupplyLedgerMutation) OldAmount(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAmount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAmount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAmount: %w", err)
+	}
+	return oldValue.Amount, nil
+}
+
+// AddAmount adds f to the "amount" field.
+func (m *ResourceSupplyLedgerMutation) AddAmount(f float64) {
+	if m.addamount != nil {
+		*m.addamount += f
+	} else {
+		m.addamount = &f
+	}
+}
+
+// AddedAmount returns the value that was added to the "amount" field in this mutation.
+func (m *ResourceSupplyLedgerMutation) AddedAmount() (r float64, exists bool) {
+	v := m.addamount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAmount resets all changes to the "amount" field.
+func (m *ResourceSupplyLedgerMutation) ResetAmount() {
+	m.amount = nil
+	m.addamount = nil
+}
+
+// SetBalanceAfter sets the "balance_after" field.
+func (m *ResourceSupplyLedgerMutation) SetBalanceAfter(f float64) {
+	m.balance_after = &f
+	m.addbalance_after = nil
+}
+
+// BalanceAfter returns the value of the "balance_after" field in the mutation.
+func (m *ResourceSupplyLedgerMutation) BalanceAfter() (r float64, exists bool) {
+	v := m.balance_after
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBalanceAfter returns the old "balance_after" field's value of the ResourceSupplyLedger entity.
+// If the ResourceSupplyLedger object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResourceSupplyLedgerMutation) OldBalanceAfter(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBalanceAfter is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBalanceAfter requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBalanceAfter: %w", err)
+	}
+	return oldValue.BalanceAfter, nil
+}
+
+// AddBalanceAfter adds f to the "balance_after" field.
+func (m *ResourceSupplyLedgerMutation) AddBalanceAfter(f float64) {
+	if m.addbalance_after != nil {
+		*m.addbalance_after += f
+	} else {
+		m.addbalance_after = &f
+	}
+}
+
+// AddedBalanceAfter returns the value that was added to the "balance_after" field in this mutation.
+func (m *ResourceSupplyLedgerMutation) AddedBalanceAfter() (r float64, exists bool) {
+	v := m.addbalance_after
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetBalanceAfter resets all changes to the "balance_after" field.
+func (m *ResourceSupplyLedgerMutation) ResetBalanceAfter() {
+	m.balance_after = nil
+	m.addbalance_after = nil
+}
+
+// SetActualCost sets the "actual_cost" field.
+func (m *ResourceSupplyLedgerMutation) SetActualCost(f float64) {
+	m.actual_cost = &f
+	m.addactual_cost = nil
+}
+
+// ActualCost returns the value of the "actual_cost" field in the mutation.
+func (m *ResourceSupplyLedgerMutation) ActualCost() (r float64, exists bool) {
+	v := m.actual_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldActualCost returns the old "actual_cost" field's value of the ResourceSupplyLedger entity.
+// If the ResourceSupplyLedger object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResourceSupplyLedgerMutation) OldActualCost(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldActualCost is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldActualCost requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldActualCost: %w", err)
+	}
+	return oldValue.ActualCost, nil
+}
+
+// AddActualCost adds f to the "actual_cost" field.
+func (m *ResourceSupplyLedgerMutation) AddActualCost(f float64) {
+	if m.addactual_cost != nil {
+		*m.addactual_cost += f
+	} else {
+		m.addactual_cost = &f
+	}
+}
+
+// AddedActualCost returns the value that was added to the "actual_cost" field in this mutation.
+func (m *ResourceSupplyLedgerMutation) AddedActualCost() (r float64, exists bool) {
+	v := m.addactual_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearActualCost clears the value of the "actual_cost" field.
+func (m *ResourceSupplyLedgerMutation) ClearActualCost() {
+	m.actual_cost = nil
+	m.addactual_cost = nil
+	m.clearedFields[resourcesupplyledger.FieldActualCost] = struct{}{}
+}
+
+// ActualCostCleared returns if the "actual_cost" field was cleared in this mutation.
+func (m *ResourceSupplyLedgerMutation) ActualCostCleared() bool {
+	_, ok := m.clearedFields[resourcesupplyledger.FieldActualCost]
+	return ok
+}
+
+// ResetActualCost resets all changes to the "actual_cost" field.
+func (m *ResourceSupplyLedgerMutation) ResetActualCost() {
+	m.actual_cost = nil
+	m.addactual_cost = nil
+	delete(m.clearedFields, resourcesupplyledger.FieldActualCost)
+}
+
+// SetRewardMultiplier sets the "reward_multiplier" field.
+func (m *ResourceSupplyLedgerMutation) SetRewardMultiplier(f float64) {
+	m.reward_multiplier = &f
+	m.addreward_multiplier = nil
+}
+
+// RewardMultiplier returns the value of the "reward_multiplier" field in the mutation.
+func (m *ResourceSupplyLedgerMutation) RewardMultiplier() (r float64, exists bool) {
+	v := m.reward_multiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRewardMultiplier returns the old "reward_multiplier" field's value of the ResourceSupplyLedger entity.
+// If the ResourceSupplyLedger object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResourceSupplyLedgerMutation) OldRewardMultiplier(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRewardMultiplier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRewardMultiplier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRewardMultiplier: %w", err)
+	}
+	return oldValue.RewardMultiplier, nil
+}
+
+// AddRewardMultiplier adds f to the "reward_multiplier" field.
+func (m *ResourceSupplyLedgerMutation) AddRewardMultiplier(f float64) {
+	if m.addreward_multiplier != nil {
+		*m.addreward_multiplier += f
+	} else {
+		m.addreward_multiplier = &f
+	}
+}
+
+// AddedRewardMultiplier returns the value that was added to the "reward_multiplier" field in this mutation.
+func (m *ResourceSupplyLedgerMutation) AddedRewardMultiplier() (r float64, exists bool) {
+	v := m.addreward_multiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearRewardMultiplier clears the value of the "reward_multiplier" field.
+func (m *ResourceSupplyLedgerMutation) ClearRewardMultiplier() {
+	m.reward_multiplier = nil
+	m.addreward_multiplier = nil
+	m.clearedFields[resourcesupplyledger.FieldRewardMultiplier] = struct{}{}
+}
+
+// RewardMultiplierCleared returns if the "reward_multiplier" field was cleared in this mutation.
+func (m *ResourceSupplyLedgerMutation) RewardMultiplierCleared() bool {
+	_, ok := m.clearedFields[resourcesupplyledger.FieldRewardMultiplier]
+	return ok
+}
+
+// ResetRewardMultiplier resets all changes to the "reward_multiplier" field.
+func (m *ResourceSupplyLedgerMutation) ResetRewardMultiplier() {
+	m.reward_multiplier = nil
+	m.addreward_multiplier = nil
+	delete(m.clearedFields, resourcesupplyledger.FieldRewardMultiplier)
+}
+
+// SetBillingType sets the "billing_type" field.
+func (m *ResourceSupplyLedgerMutation) SetBillingType(i int8) {
+	m.billing_type = &i
+	m.addbilling_type = nil
+}
+
+// BillingType returns the value of the "billing_type" field in the mutation.
+func (m *ResourceSupplyLedgerMutation) BillingType() (r int8, exists bool) {
+	v := m.billing_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBillingType returns the old "billing_type" field's value of the ResourceSupplyLedger entity.
+// If the ResourceSupplyLedger object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResourceSupplyLedgerMutation) OldBillingType(ctx context.Context) (v *int8, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBillingType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBillingType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBillingType: %w", err)
+	}
+	return oldValue.BillingType, nil
+}
+
+// AddBillingType adds i to the "billing_type" field.
+func (m *ResourceSupplyLedgerMutation) AddBillingType(i int8) {
+	if m.addbilling_type != nil {
+		*m.addbilling_type += i
+	} else {
+		m.addbilling_type = &i
+	}
+}
+
+// AddedBillingType returns the value that was added to the "billing_type" field in this mutation.
+func (m *ResourceSupplyLedgerMutation) AddedBillingType() (r int8, exists bool) {
+	v := m.addbilling_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearBillingType clears the value of the "billing_type" field.
+func (m *ResourceSupplyLedgerMutation) ClearBillingType() {
+	m.billing_type = nil
+	m.addbilling_type = nil
+	m.clearedFields[resourcesupplyledger.FieldBillingType] = struct{}{}
+}
+
+// BillingTypeCleared returns if the "billing_type" field was cleared in this mutation.
+func (m *ResourceSupplyLedgerMutation) BillingTypeCleared() bool {
+	_, ok := m.clearedFields[resourcesupplyledger.FieldBillingType]
+	return ok
+}
+
+// ResetBillingType resets all changes to the "billing_type" field.
+func (m *ResourceSupplyLedgerMutation) ResetBillingType() {
+	m.billing_type = nil
+	m.addbilling_type = nil
+	delete(m.clearedFields, resourcesupplyledger.FieldBillingType)
+}
+
+// SetModel sets the "model" field.
+func (m *ResourceSupplyLedgerMutation) SetModel(s string) {
+	m.model = &s
+}
+
+// Model returns the value of the "model" field in the mutation.
+func (m *ResourceSupplyLedgerMutation) Model() (r string, exists bool) {
+	v := m.model
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldModel returns the old "model" field's value of the ResourceSupplyLedger entity.
+// If the ResourceSupplyLedger object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResourceSupplyLedgerMutation) OldModel(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldModel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldModel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldModel: %w", err)
+	}
+	return oldValue.Model, nil
+}
+
+// ClearModel clears the value of the "model" field.
+func (m *ResourceSupplyLedgerMutation) ClearModel() {
+	m.model = nil
+	m.clearedFields[resourcesupplyledger.FieldModel] = struct{}{}
+}
+
+// ModelCleared returns if the "model" field was cleared in this mutation.
+func (m *ResourceSupplyLedgerMutation) ModelCleared() bool {
+	_, ok := m.clearedFields[resourcesupplyledger.FieldModel]
+	return ok
+}
+
+// ResetModel resets all changes to the "model" field.
+func (m *ResourceSupplyLedgerMutation) ResetModel() {
+	m.model = nil
+	delete(m.clearedFields, resourcesupplyledger.FieldModel)
+}
+
+// SetRequestID sets the "request_id" field.
+func (m *ResourceSupplyLedgerMutation) SetRequestID(s string) {
+	m.request_id = &s
+}
+
+// RequestID returns the value of the "request_id" field in the mutation.
+func (m *ResourceSupplyLedgerMutation) RequestID() (r string, exists bool) {
+	v := m.request_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRequestID returns the old "request_id" field's value of the ResourceSupplyLedger entity.
+// If the ResourceSupplyLedger object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResourceSupplyLedgerMutation) OldRequestID(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRequestID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRequestID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRequestID: %w", err)
+	}
+	return oldValue.RequestID, nil
+}
+
+// ClearRequestID clears the value of the "request_id" field.
+func (m *ResourceSupplyLedgerMutation) ClearRequestID() {
+	m.request_id = nil
+	m.clearedFields[resourcesupplyledger.FieldRequestID] = struct{}{}
+}
+
+// RequestIDCleared returns if the "request_id" field was cleared in this mutation.
+func (m *ResourceSupplyLedgerMutation) RequestIDCleared() bool {
+	_, ok := m.clearedFields[resourcesupplyledger.FieldRequestID]
+	return ok
+}
+
+// ResetRequestID resets all changes to the "request_id" field.
+func (m *ResourceSupplyLedgerMutation) ResetRequestID() {
+	m.request_id = nil
+	delete(m.clearedFields, resourcesupplyledger.FieldRequestID)
+}
+
+// SetAdminUserID sets the "admin_user_id" field.
+func (m *ResourceSupplyLedgerMutation) SetAdminUserID(i int64) {
+	m.admin_user_id = &i
+	m.addadmin_user_id = nil
+}
+
+// AdminUserID returns the value of the "admin_user_id" field in the mutation.
+func (m *ResourceSupplyLedgerMutation) AdminUserID() (r int64, exists bool) {
+	v := m.admin_user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAdminUserID returns the old "admin_user_id" field's value of the ResourceSupplyLedger entity.
+// If the ResourceSupplyLedger object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResourceSupplyLedgerMutation) OldAdminUserID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAdminUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAdminUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAdminUserID: %w", err)
+	}
+	return oldValue.AdminUserID, nil
+}
+
+// AddAdminUserID adds i to the "admin_user_id" field.
+func (m *ResourceSupplyLedgerMutation) AddAdminUserID(i int64) {
+	if m.addadmin_user_id != nil {
+		*m.addadmin_user_id += i
+	} else {
+		m.addadmin_user_id = &i
+	}
+}
+
+// AddedAdminUserID returns the value that was added to the "admin_user_id" field in this mutation.
+func (m *ResourceSupplyLedgerMutation) AddedAdminUserID() (r int64, exists bool) {
+	v := m.addadmin_user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearAdminUserID clears the value of the "admin_user_id" field.
+func (m *ResourceSupplyLedgerMutation) ClearAdminUserID() {
+	m.admin_user_id = nil
+	m.addadmin_user_id = nil
+	m.clearedFields[resourcesupplyledger.FieldAdminUserID] = struct{}{}
+}
+
+// AdminUserIDCleared returns if the "admin_user_id" field was cleared in this mutation.
+func (m *ResourceSupplyLedgerMutation) AdminUserIDCleared() bool {
+	_, ok := m.clearedFields[resourcesupplyledger.FieldAdminUserID]
+	return ok
+}
+
+// ResetAdminUserID resets all changes to the "admin_user_id" field.
+func (m *ResourceSupplyLedgerMutation) ResetAdminUserID() {
+	m.admin_user_id = nil
+	m.addadmin_user_id = nil
+	delete(m.clearedFields, resourcesupplyledger.FieldAdminUserID)
+}
+
+// SetNote sets the "note" field.
+func (m *ResourceSupplyLedgerMutation) SetNote(s string) {
+	m.note = &s
+}
+
+// Note returns the value of the "note" field in the mutation.
+func (m *ResourceSupplyLedgerMutation) Note() (r string, exists bool) {
+	v := m.note
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNote returns the old "note" field's value of the ResourceSupplyLedger entity.
+// If the ResourceSupplyLedger object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResourceSupplyLedgerMutation) OldNote(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNote is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNote requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNote: %w", err)
+	}
+	return oldValue.Note, nil
+}
+
+// ClearNote clears the value of the "note" field.
+func (m *ResourceSupplyLedgerMutation) ClearNote() {
+	m.note = nil
+	m.clearedFields[resourcesupplyledger.FieldNote] = struct{}{}
+}
+
+// NoteCleared returns if the "note" field was cleared in this mutation.
+func (m *ResourceSupplyLedgerMutation) NoteCleared() bool {
+	_, ok := m.clearedFields[resourcesupplyledger.FieldNote]
+	return ok
+}
+
+// ResetNote resets all changes to the "note" field.
+func (m *ResourceSupplyLedgerMutation) ResetNote() {
+	m.note = nil
+	delete(m.clearedFields, resourcesupplyledger.FieldNote)
+}
+
+// Where appends a list predicates to the ResourceSupplyLedgerMutation builder.
+func (m *ResourceSupplyLedgerMutation) Where(ps ...predicate.ResourceSupplyLedger) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ResourceSupplyLedgerMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ResourceSupplyLedgerMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ResourceSupplyLedger, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ResourceSupplyLedgerMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ResourceSupplyLedgerMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ResourceSupplyLedger).
+func (m *ResourceSupplyLedgerMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ResourceSupplyLedgerMutation) Fields() []string {
+	fields := make([]string, 0, 19)
+	if m.created_at != nil {
+		fields = append(fields, resourcesupplyledger.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, resourcesupplyledger.FieldUpdatedAt)
+	}
+	if m.owner_user_id != nil {
+		fields = append(fields, resourcesupplyledger.FieldOwnerUserID)
+	}
+	if m.caller_user_id != nil {
+		fields = append(fields, resourcesupplyledger.FieldCallerUserID)
+	}
+	if m.api_key_id != nil {
+		fields = append(fields, resourcesupplyledger.FieldAPIKeyID)
+	}
+	if m.group_id != nil {
+		fields = append(fields, resourcesupplyledger.FieldGroupID)
+	}
+	if m.account_id != nil {
+		fields = append(fields, resourcesupplyledger.FieldAccountID)
+	}
+	if m.usage_billing_event_id != nil {
+		fields = append(fields, resourcesupplyledger.FieldUsageBillingEventID)
+	}
+	if m.ledger_type != nil {
+		fields = append(fields, resourcesupplyledger.FieldLedgerType)
+	}
+	if m.idempotency_key != nil {
+		fields = append(fields, resourcesupplyledger.FieldIdempotencyKey)
+	}
+	if m.amount != nil {
+		fields = append(fields, resourcesupplyledger.FieldAmount)
+	}
+	if m.balance_after != nil {
+		fields = append(fields, resourcesupplyledger.FieldBalanceAfter)
+	}
+	if m.actual_cost != nil {
+		fields = append(fields, resourcesupplyledger.FieldActualCost)
+	}
+	if m.reward_multiplier != nil {
+		fields = append(fields, resourcesupplyledger.FieldRewardMultiplier)
+	}
+	if m.billing_type != nil {
+		fields = append(fields, resourcesupplyledger.FieldBillingType)
+	}
+	if m.model != nil {
+		fields = append(fields, resourcesupplyledger.FieldModel)
+	}
+	if m.request_id != nil {
+		fields = append(fields, resourcesupplyledger.FieldRequestID)
+	}
+	if m.admin_user_id != nil {
+		fields = append(fields, resourcesupplyledger.FieldAdminUserID)
+	}
+	if m.note != nil {
+		fields = append(fields, resourcesupplyledger.FieldNote)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ResourceSupplyLedgerMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case resourcesupplyledger.FieldCreatedAt:
+		return m.CreatedAt()
+	case resourcesupplyledger.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case resourcesupplyledger.FieldOwnerUserID:
+		return m.OwnerUserID()
+	case resourcesupplyledger.FieldCallerUserID:
+		return m.CallerUserID()
+	case resourcesupplyledger.FieldAPIKeyID:
+		return m.APIKeyID()
+	case resourcesupplyledger.FieldGroupID:
+		return m.GroupID()
+	case resourcesupplyledger.FieldAccountID:
+		return m.AccountID()
+	case resourcesupplyledger.FieldUsageBillingEventID:
+		return m.UsageBillingEventID()
+	case resourcesupplyledger.FieldLedgerType:
+		return m.LedgerType()
+	case resourcesupplyledger.FieldIdempotencyKey:
+		return m.IdempotencyKey()
+	case resourcesupplyledger.FieldAmount:
+		return m.Amount()
+	case resourcesupplyledger.FieldBalanceAfter:
+		return m.BalanceAfter()
+	case resourcesupplyledger.FieldActualCost:
+		return m.ActualCost()
+	case resourcesupplyledger.FieldRewardMultiplier:
+		return m.RewardMultiplier()
+	case resourcesupplyledger.FieldBillingType:
+		return m.BillingType()
+	case resourcesupplyledger.FieldModel:
+		return m.Model()
+	case resourcesupplyledger.FieldRequestID:
+		return m.RequestID()
+	case resourcesupplyledger.FieldAdminUserID:
+		return m.AdminUserID()
+	case resourcesupplyledger.FieldNote:
+		return m.Note()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ResourceSupplyLedgerMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case resourcesupplyledger.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case resourcesupplyledger.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case resourcesupplyledger.FieldOwnerUserID:
+		return m.OldOwnerUserID(ctx)
+	case resourcesupplyledger.FieldCallerUserID:
+		return m.OldCallerUserID(ctx)
+	case resourcesupplyledger.FieldAPIKeyID:
+		return m.OldAPIKeyID(ctx)
+	case resourcesupplyledger.FieldGroupID:
+		return m.OldGroupID(ctx)
+	case resourcesupplyledger.FieldAccountID:
+		return m.OldAccountID(ctx)
+	case resourcesupplyledger.FieldUsageBillingEventID:
+		return m.OldUsageBillingEventID(ctx)
+	case resourcesupplyledger.FieldLedgerType:
+		return m.OldLedgerType(ctx)
+	case resourcesupplyledger.FieldIdempotencyKey:
+		return m.OldIdempotencyKey(ctx)
+	case resourcesupplyledger.FieldAmount:
+		return m.OldAmount(ctx)
+	case resourcesupplyledger.FieldBalanceAfter:
+		return m.OldBalanceAfter(ctx)
+	case resourcesupplyledger.FieldActualCost:
+		return m.OldActualCost(ctx)
+	case resourcesupplyledger.FieldRewardMultiplier:
+		return m.OldRewardMultiplier(ctx)
+	case resourcesupplyledger.FieldBillingType:
+		return m.OldBillingType(ctx)
+	case resourcesupplyledger.FieldModel:
+		return m.OldModel(ctx)
+	case resourcesupplyledger.FieldRequestID:
+		return m.OldRequestID(ctx)
+	case resourcesupplyledger.FieldAdminUserID:
+		return m.OldAdminUserID(ctx)
+	case resourcesupplyledger.FieldNote:
+		return m.OldNote(ctx)
+	}
+	return nil, fmt.Errorf("unknown ResourceSupplyLedger field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ResourceSupplyLedgerMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case resourcesupplyledger.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case resourcesupplyledger.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case resourcesupplyledger.FieldOwnerUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOwnerUserID(v)
+		return nil
+	case resourcesupplyledger.FieldCallerUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCallerUserID(v)
+		return nil
+	case resourcesupplyledger.FieldAPIKeyID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAPIKeyID(v)
+		return nil
+	case resourcesupplyledger.FieldGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGroupID(v)
+		return nil
+	case resourcesupplyledger.FieldAccountID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccountID(v)
+		return nil
+	case resourcesupplyledger.FieldUsageBillingEventID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUsageBillingEventID(v)
+		return nil
+	case resourcesupplyledger.FieldLedgerType:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLedgerType(v)
+		return nil
+	case resourcesupplyledger.FieldIdempotencyKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIdempotencyKey(v)
+		return nil
+	case resourcesupplyledger.FieldAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAmount(v)
+		return nil
+	case resourcesupplyledger.FieldBalanceAfter:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBalanceAfter(v)
+		return nil
+	case resourcesupplyledger.FieldActualCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetActualCost(v)
+		return nil
+	case resourcesupplyledger.FieldRewardMultiplier:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRewardMultiplier(v)
+		return nil
+	case resourcesupplyledger.FieldBillingType:
+		v, ok := value.(int8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBillingType(v)
+		return nil
+	case resourcesupplyledger.FieldModel:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetModel(v)
+		return nil
+	case resourcesupplyledger.FieldRequestID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRequestID(v)
+		return nil
+	case resourcesupplyledger.FieldAdminUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAdminUserID(v)
+		return nil
+	case resourcesupplyledger.FieldNote:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNote(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ResourceSupplyLedger field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ResourceSupplyLedgerMutation) AddedFields() []string {
+	var fields []string
+	if m.addowner_user_id != nil {
+		fields = append(fields, resourcesupplyledger.FieldOwnerUserID)
+	}
+	if m.addcaller_user_id != nil {
+		fields = append(fields, resourcesupplyledger.FieldCallerUserID)
+	}
+	if m.addapi_key_id != nil {
+		fields = append(fields, resourcesupplyledger.FieldAPIKeyID)
+	}
+	if m.addgroup_id != nil {
+		fields = append(fields, resourcesupplyledger.FieldGroupID)
+	}
+	if m.addaccount_id != nil {
+		fields = append(fields, resourcesupplyledger.FieldAccountID)
+	}
+	if m.addusage_billing_event_id != nil {
+		fields = append(fields, resourcesupplyledger.FieldUsageBillingEventID)
+	}
+	if m.addamount != nil {
+		fields = append(fields, resourcesupplyledger.FieldAmount)
+	}
+	if m.addbalance_after != nil {
+		fields = append(fields, resourcesupplyledger.FieldBalanceAfter)
+	}
+	if m.addactual_cost != nil {
+		fields = append(fields, resourcesupplyledger.FieldActualCost)
+	}
+	if m.addreward_multiplier != nil {
+		fields = append(fields, resourcesupplyledger.FieldRewardMultiplier)
+	}
+	if m.addbilling_type != nil {
+		fields = append(fields, resourcesupplyledger.FieldBillingType)
+	}
+	if m.addadmin_user_id != nil {
+		fields = append(fields, resourcesupplyledger.FieldAdminUserID)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ResourceSupplyLedgerMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case resourcesupplyledger.FieldOwnerUserID:
+		return m.AddedOwnerUserID()
+	case resourcesupplyledger.FieldCallerUserID:
+		return m.AddedCallerUserID()
+	case resourcesupplyledger.FieldAPIKeyID:
+		return m.AddedAPIKeyID()
+	case resourcesupplyledger.FieldGroupID:
+		return m.AddedGroupID()
+	case resourcesupplyledger.FieldAccountID:
+		return m.AddedAccountID()
+	case resourcesupplyledger.FieldUsageBillingEventID:
+		return m.AddedUsageBillingEventID()
+	case resourcesupplyledger.FieldAmount:
+		return m.AddedAmount()
+	case resourcesupplyledger.FieldBalanceAfter:
+		return m.AddedBalanceAfter()
+	case resourcesupplyledger.FieldActualCost:
+		return m.AddedActualCost()
+	case resourcesupplyledger.FieldRewardMultiplier:
+		return m.AddedRewardMultiplier()
+	case resourcesupplyledger.FieldBillingType:
+		return m.AddedBillingType()
+	case resourcesupplyledger.FieldAdminUserID:
+		return m.AddedAdminUserID()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ResourceSupplyLedgerMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case resourcesupplyledger.FieldOwnerUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddOwnerUserID(v)
+		return nil
+	case resourcesupplyledger.FieldCallerUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCallerUserID(v)
+		return nil
+	case resourcesupplyledger.FieldAPIKeyID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAPIKeyID(v)
+		return nil
+	case resourcesupplyledger.FieldGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddGroupID(v)
+		return nil
+	case resourcesupplyledger.FieldAccountID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAccountID(v)
+		return nil
+	case resourcesupplyledger.FieldUsageBillingEventID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUsageBillingEventID(v)
+		return nil
+	case resourcesupplyledger.FieldAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAmount(v)
+		return nil
+	case resourcesupplyledger.FieldBalanceAfter:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddBalanceAfter(v)
+		return nil
+	case resourcesupplyledger.FieldActualCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddActualCost(v)
+		return nil
+	case resourcesupplyledger.FieldRewardMultiplier:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRewardMultiplier(v)
+		return nil
+	case resourcesupplyledger.FieldBillingType:
+		v, ok := value.(int8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddBillingType(v)
+		return nil
+	case resourcesupplyledger.FieldAdminUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAdminUserID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ResourceSupplyLedger numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ResourceSupplyLedgerMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(resourcesupplyledger.FieldCallerUserID) {
+		fields = append(fields, resourcesupplyledger.FieldCallerUserID)
+	}
+	if m.FieldCleared(resourcesupplyledger.FieldAPIKeyID) {
+		fields = append(fields, resourcesupplyledger.FieldAPIKeyID)
+	}
+	if m.FieldCleared(resourcesupplyledger.FieldGroupID) {
+		fields = append(fields, resourcesupplyledger.FieldGroupID)
+	}
+	if m.FieldCleared(resourcesupplyledger.FieldAccountID) {
+		fields = append(fields, resourcesupplyledger.FieldAccountID)
+	}
+	if m.FieldCleared(resourcesupplyledger.FieldUsageBillingEventID) {
+		fields = append(fields, resourcesupplyledger.FieldUsageBillingEventID)
+	}
+	if m.FieldCleared(resourcesupplyledger.FieldIdempotencyKey) {
+		fields = append(fields, resourcesupplyledger.FieldIdempotencyKey)
+	}
+	if m.FieldCleared(resourcesupplyledger.FieldActualCost) {
+		fields = append(fields, resourcesupplyledger.FieldActualCost)
+	}
+	if m.FieldCleared(resourcesupplyledger.FieldRewardMultiplier) {
+		fields = append(fields, resourcesupplyledger.FieldRewardMultiplier)
+	}
+	if m.FieldCleared(resourcesupplyledger.FieldBillingType) {
+		fields = append(fields, resourcesupplyledger.FieldBillingType)
+	}
+	if m.FieldCleared(resourcesupplyledger.FieldModel) {
+		fields = append(fields, resourcesupplyledger.FieldModel)
+	}
+	if m.FieldCleared(resourcesupplyledger.FieldRequestID) {
+		fields = append(fields, resourcesupplyledger.FieldRequestID)
+	}
+	if m.FieldCleared(resourcesupplyledger.FieldAdminUserID) {
+		fields = append(fields, resourcesupplyledger.FieldAdminUserID)
+	}
+	if m.FieldCleared(resourcesupplyledger.FieldNote) {
+		fields = append(fields, resourcesupplyledger.FieldNote)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ResourceSupplyLedgerMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ResourceSupplyLedgerMutation) ClearField(name string) error {
+	switch name {
+	case resourcesupplyledger.FieldCallerUserID:
+		m.ClearCallerUserID()
+		return nil
+	case resourcesupplyledger.FieldAPIKeyID:
+		m.ClearAPIKeyID()
+		return nil
+	case resourcesupplyledger.FieldGroupID:
+		m.ClearGroupID()
+		return nil
+	case resourcesupplyledger.FieldAccountID:
+		m.ClearAccountID()
+		return nil
+	case resourcesupplyledger.FieldUsageBillingEventID:
+		m.ClearUsageBillingEventID()
+		return nil
+	case resourcesupplyledger.FieldIdempotencyKey:
+		m.ClearIdempotencyKey()
+		return nil
+	case resourcesupplyledger.FieldActualCost:
+		m.ClearActualCost()
+		return nil
+	case resourcesupplyledger.FieldRewardMultiplier:
+		m.ClearRewardMultiplier()
+		return nil
+	case resourcesupplyledger.FieldBillingType:
+		m.ClearBillingType()
+		return nil
+	case resourcesupplyledger.FieldModel:
+		m.ClearModel()
+		return nil
+	case resourcesupplyledger.FieldRequestID:
+		m.ClearRequestID()
+		return nil
+	case resourcesupplyledger.FieldAdminUserID:
+		m.ClearAdminUserID()
+		return nil
+	case resourcesupplyledger.FieldNote:
+		m.ClearNote()
+		return nil
+	}
+	return fmt.Errorf("unknown ResourceSupplyLedger nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ResourceSupplyLedgerMutation) ResetField(name string) error {
+	switch name {
+	case resourcesupplyledger.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case resourcesupplyledger.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case resourcesupplyledger.FieldOwnerUserID:
+		m.ResetOwnerUserID()
+		return nil
+	case resourcesupplyledger.FieldCallerUserID:
+		m.ResetCallerUserID()
+		return nil
+	case resourcesupplyledger.FieldAPIKeyID:
+		m.ResetAPIKeyID()
+		return nil
+	case resourcesupplyledger.FieldGroupID:
+		m.ResetGroupID()
+		return nil
+	case resourcesupplyledger.FieldAccountID:
+		m.ResetAccountID()
+		return nil
+	case resourcesupplyledger.FieldUsageBillingEventID:
+		m.ResetUsageBillingEventID()
+		return nil
+	case resourcesupplyledger.FieldLedgerType:
+		m.ResetLedgerType()
+		return nil
+	case resourcesupplyledger.FieldIdempotencyKey:
+		m.ResetIdempotencyKey()
+		return nil
+	case resourcesupplyledger.FieldAmount:
+		m.ResetAmount()
+		return nil
+	case resourcesupplyledger.FieldBalanceAfter:
+		m.ResetBalanceAfter()
+		return nil
+	case resourcesupplyledger.FieldActualCost:
+		m.ResetActualCost()
+		return nil
+	case resourcesupplyledger.FieldRewardMultiplier:
+		m.ResetRewardMultiplier()
+		return nil
+	case resourcesupplyledger.FieldBillingType:
+		m.ResetBillingType()
+		return nil
+	case resourcesupplyledger.FieldModel:
+		m.ResetModel()
+		return nil
+	case resourcesupplyledger.FieldRequestID:
+		m.ResetRequestID()
+		return nil
+	case resourcesupplyledger.FieldAdminUserID:
+		m.ResetAdminUserID()
+		return nil
+	case resourcesupplyledger.FieldNote:
+		m.ResetNote()
+		return nil
+	}
+	return fmt.Errorf("unknown ResourceSupplyLedger field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ResourceSupplyLedgerMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ResourceSupplyLedgerMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ResourceSupplyLedgerMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ResourceSupplyLedgerMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ResourceSupplyLedgerMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ResourceSupplyLedgerMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ResourceSupplyLedgerMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown ResourceSupplyLedger unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ResourceSupplyLedgerMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown ResourceSupplyLedger edge %s", name)
+}
+
 // SecuritySecretMutation represents an operation that mutates the SecuritySecret nodes in the graph.
 type SecuritySecretMutation struct {
 	config
@@ -32925,6 +36428,2750 @@ func (m *TLSFingerprintProfileMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *TLSFingerprintProfileMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown TLSFingerprintProfile edge %s", name)
+}
+
+// UsageBillingEventMutation represents an operation that mutates the UsageBillingEvent nodes in the graph.
+type UsageBillingEventMutation struct {
+	config
+	op                          Op
+	typ                         string
+	id                          *int64
+	created_at                  *time.Time
+	updated_at                  *time.Time
+	request_id                  *string
+	api_key_id                  *int64
+	addapi_key_id               *int64
+	request_fingerprint         *string
+	request_payload_hash        *string
+	user_id                     *int64
+	adduser_id                  *int64
+	group_id                    *int64
+	addgroup_id                 *int64
+	account_id                  *int64
+	addaccount_id               *int64
+	account_type                *string
+	model                       *string
+	service_tier                *string
+	reasoning_effort            *string
+	billing_type                *int8
+	addbilling_type             *int8
+	input_tokens                *int
+	addinput_tokens             *int
+	output_tokens               *int
+	addoutput_tokens            *int
+	cache_creation_tokens       *int
+	addcache_creation_tokens    *int
+	cache_read_tokens           *int
+	addcache_read_tokens        *int
+	cache_creation_5m_tokens    *int
+	addcache_creation_5m_tokens *int
+	cache_creation_1h_tokens    *int
+	addcache_creation_1h_tokens *int
+	total_cost                  *float64
+	addtotal_cost               *float64
+	actual_cost                 *float64
+	addactual_cost              *float64
+	balance_cost                *float64
+	addbalance_cost             *float64
+	subscription_cost           *float64
+	addsubscription_cost        *float64
+	api_key_quota_cost          *float64
+	addapi_key_quota_cost       *float64
+	api_key_rate_limit_cost     *float64
+	addapi_key_rate_limit_cost  *float64
+	account_quota_cost          *float64
+	addaccount_quota_cost       *float64
+	supply_reward_eligible      *bool
+	supply_owner_user_id        *int64
+	addsupply_owner_user_id     *int64
+	supply_reward_multiplier    *float64
+	addsupply_reward_multiplier *float64
+	supply_account_status       *string
+	supply_source               *string
+	clearedFields               map[string]struct{}
+	done                        bool
+	oldValue                    func(context.Context) (*UsageBillingEvent, error)
+	predicates                  []predicate.UsageBillingEvent
+}
+
+var _ ent.Mutation = (*UsageBillingEventMutation)(nil)
+
+// usagebillingeventOption allows management of the mutation configuration using functional options.
+type usagebillingeventOption func(*UsageBillingEventMutation)
+
+// newUsageBillingEventMutation creates new mutation for the UsageBillingEvent entity.
+func newUsageBillingEventMutation(c config, op Op, opts ...usagebillingeventOption) *UsageBillingEventMutation {
+	m := &UsageBillingEventMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeUsageBillingEvent,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withUsageBillingEventID sets the ID field of the mutation.
+func withUsageBillingEventID(id int64) usagebillingeventOption {
+	return func(m *UsageBillingEventMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *UsageBillingEvent
+		)
+		m.oldValue = func(ctx context.Context) (*UsageBillingEvent, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().UsageBillingEvent.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withUsageBillingEvent sets the old UsageBillingEvent of the mutation.
+func withUsageBillingEvent(node *UsageBillingEvent) usagebillingeventOption {
+	return func(m *UsageBillingEventMutation) {
+		m.oldValue = func(context.Context) (*UsageBillingEvent, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m UsageBillingEventMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m UsageBillingEventMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *UsageBillingEventMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *UsageBillingEventMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().UsageBillingEvent.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *UsageBillingEventMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *UsageBillingEventMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *UsageBillingEventMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *UsageBillingEventMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *UsageBillingEventMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *UsageBillingEventMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetRequestID sets the "request_id" field.
+func (m *UsageBillingEventMutation) SetRequestID(s string) {
+	m.request_id = &s
+}
+
+// RequestID returns the value of the "request_id" field in the mutation.
+func (m *UsageBillingEventMutation) RequestID() (r string, exists bool) {
+	v := m.request_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRequestID returns the old "request_id" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldRequestID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRequestID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRequestID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRequestID: %w", err)
+	}
+	return oldValue.RequestID, nil
+}
+
+// ResetRequestID resets all changes to the "request_id" field.
+func (m *UsageBillingEventMutation) ResetRequestID() {
+	m.request_id = nil
+}
+
+// SetAPIKeyID sets the "api_key_id" field.
+func (m *UsageBillingEventMutation) SetAPIKeyID(i int64) {
+	m.api_key_id = &i
+	m.addapi_key_id = nil
+}
+
+// APIKeyID returns the value of the "api_key_id" field in the mutation.
+func (m *UsageBillingEventMutation) APIKeyID() (r int64, exists bool) {
+	v := m.api_key_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAPIKeyID returns the old "api_key_id" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldAPIKeyID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAPIKeyID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAPIKeyID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAPIKeyID: %w", err)
+	}
+	return oldValue.APIKeyID, nil
+}
+
+// AddAPIKeyID adds i to the "api_key_id" field.
+func (m *UsageBillingEventMutation) AddAPIKeyID(i int64) {
+	if m.addapi_key_id != nil {
+		*m.addapi_key_id += i
+	} else {
+		m.addapi_key_id = &i
+	}
+}
+
+// AddedAPIKeyID returns the value that was added to the "api_key_id" field in this mutation.
+func (m *UsageBillingEventMutation) AddedAPIKeyID() (r int64, exists bool) {
+	v := m.addapi_key_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAPIKeyID resets all changes to the "api_key_id" field.
+func (m *UsageBillingEventMutation) ResetAPIKeyID() {
+	m.api_key_id = nil
+	m.addapi_key_id = nil
+}
+
+// SetRequestFingerprint sets the "request_fingerprint" field.
+func (m *UsageBillingEventMutation) SetRequestFingerprint(s string) {
+	m.request_fingerprint = &s
+}
+
+// RequestFingerprint returns the value of the "request_fingerprint" field in the mutation.
+func (m *UsageBillingEventMutation) RequestFingerprint() (r string, exists bool) {
+	v := m.request_fingerprint
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRequestFingerprint returns the old "request_fingerprint" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldRequestFingerprint(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRequestFingerprint is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRequestFingerprint requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRequestFingerprint: %w", err)
+	}
+	return oldValue.RequestFingerprint, nil
+}
+
+// ResetRequestFingerprint resets all changes to the "request_fingerprint" field.
+func (m *UsageBillingEventMutation) ResetRequestFingerprint() {
+	m.request_fingerprint = nil
+}
+
+// SetRequestPayloadHash sets the "request_payload_hash" field.
+func (m *UsageBillingEventMutation) SetRequestPayloadHash(s string) {
+	m.request_payload_hash = &s
+}
+
+// RequestPayloadHash returns the value of the "request_payload_hash" field in the mutation.
+func (m *UsageBillingEventMutation) RequestPayloadHash() (r string, exists bool) {
+	v := m.request_payload_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRequestPayloadHash returns the old "request_payload_hash" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldRequestPayloadHash(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRequestPayloadHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRequestPayloadHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRequestPayloadHash: %w", err)
+	}
+	return oldValue.RequestPayloadHash, nil
+}
+
+// ClearRequestPayloadHash clears the value of the "request_payload_hash" field.
+func (m *UsageBillingEventMutation) ClearRequestPayloadHash() {
+	m.request_payload_hash = nil
+	m.clearedFields[usagebillingevent.FieldRequestPayloadHash] = struct{}{}
+}
+
+// RequestPayloadHashCleared returns if the "request_payload_hash" field was cleared in this mutation.
+func (m *UsageBillingEventMutation) RequestPayloadHashCleared() bool {
+	_, ok := m.clearedFields[usagebillingevent.FieldRequestPayloadHash]
+	return ok
+}
+
+// ResetRequestPayloadHash resets all changes to the "request_payload_hash" field.
+func (m *UsageBillingEventMutation) ResetRequestPayloadHash() {
+	m.request_payload_hash = nil
+	delete(m.clearedFields, usagebillingevent.FieldRequestPayloadHash)
+}
+
+// SetUserID sets the "user_id" field.
+func (m *UsageBillingEventMutation) SetUserID(i int64) {
+	m.user_id = &i
+	m.adduser_id = nil
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *UsageBillingEventMutation) UserID() (r int64, exists bool) {
+	v := m.user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldUserID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// AddUserID adds i to the "user_id" field.
+func (m *UsageBillingEventMutation) AddUserID(i int64) {
+	if m.adduser_id != nil {
+		*m.adduser_id += i
+	} else {
+		m.adduser_id = &i
+	}
+}
+
+// AddedUserID returns the value that was added to the "user_id" field in this mutation.
+func (m *UsageBillingEventMutation) AddedUserID() (r int64, exists bool) {
+	v := m.adduser_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *UsageBillingEventMutation) ResetUserID() {
+	m.user_id = nil
+	m.adduser_id = nil
+}
+
+// SetGroupID sets the "group_id" field.
+func (m *UsageBillingEventMutation) SetGroupID(i int64) {
+	m.group_id = &i
+	m.addgroup_id = nil
+}
+
+// GroupID returns the value of the "group_id" field in the mutation.
+func (m *UsageBillingEventMutation) GroupID() (r int64, exists bool) {
+	v := m.group_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGroupID returns the old "group_id" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldGroupID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGroupID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGroupID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGroupID: %w", err)
+	}
+	return oldValue.GroupID, nil
+}
+
+// AddGroupID adds i to the "group_id" field.
+func (m *UsageBillingEventMutation) AddGroupID(i int64) {
+	if m.addgroup_id != nil {
+		*m.addgroup_id += i
+	} else {
+		m.addgroup_id = &i
+	}
+}
+
+// AddedGroupID returns the value that was added to the "group_id" field in this mutation.
+func (m *UsageBillingEventMutation) AddedGroupID() (r int64, exists bool) {
+	v := m.addgroup_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearGroupID clears the value of the "group_id" field.
+func (m *UsageBillingEventMutation) ClearGroupID() {
+	m.group_id = nil
+	m.addgroup_id = nil
+	m.clearedFields[usagebillingevent.FieldGroupID] = struct{}{}
+}
+
+// GroupIDCleared returns if the "group_id" field was cleared in this mutation.
+func (m *UsageBillingEventMutation) GroupIDCleared() bool {
+	_, ok := m.clearedFields[usagebillingevent.FieldGroupID]
+	return ok
+}
+
+// ResetGroupID resets all changes to the "group_id" field.
+func (m *UsageBillingEventMutation) ResetGroupID() {
+	m.group_id = nil
+	m.addgroup_id = nil
+	delete(m.clearedFields, usagebillingevent.FieldGroupID)
+}
+
+// SetAccountID sets the "account_id" field.
+func (m *UsageBillingEventMutation) SetAccountID(i int64) {
+	m.account_id = &i
+	m.addaccount_id = nil
+}
+
+// AccountID returns the value of the "account_id" field in the mutation.
+func (m *UsageBillingEventMutation) AccountID() (r int64, exists bool) {
+	v := m.account_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccountID returns the old "account_id" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldAccountID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccountID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccountID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccountID: %w", err)
+	}
+	return oldValue.AccountID, nil
+}
+
+// AddAccountID adds i to the "account_id" field.
+func (m *UsageBillingEventMutation) AddAccountID(i int64) {
+	if m.addaccount_id != nil {
+		*m.addaccount_id += i
+	} else {
+		m.addaccount_id = &i
+	}
+}
+
+// AddedAccountID returns the value that was added to the "account_id" field in this mutation.
+func (m *UsageBillingEventMutation) AddedAccountID() (r int64, exists bool) {
+	v := m.addaccount_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAccountID resets all changes to the "account_id" field.
+func (m *UsageBillingEventMutation) ResetAccountID() {
+	m.account_id = nil
+	m.addaccount_id = nil
+}
+
+// SetAccountType sets the "account_type" field.
+func (m *UsageBillingEventMutation) SetAccountType(s string) {
+	m.account_type = &s
+}
+
+// AccountType returns the value of the "account_type" field in the mutation.
+func (m *UsageBillingEventMutation) AccountType() (r string, exists bool) {
+	v := m.account_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccountType returns the old "account_type" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldAccountType(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccountType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccountType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccountType: %w", err)
+	}
+	return oldValue.AccountType, nil
+}
+
+// ClearAccountType clears the value of the "account_type" field.
+func (m *UsageBillingEventMutation) ClearAccountType() {
+	m.account_type = nil
+	m.clearedFields[usagebillingevent.FieldAccountType] = struct{}{}
+}
+
+// AccountTypeCleared returns if the "account_type" field was cleared in this mutation.
+func (m *UsageBillingEventMutation) AccountTypeCleared() bool {
+	_, ok := m.clearedFields[usagebillingevent.FieldAccountType]
+	return ok
+}
+
+// ResetAccountType resets all changes to the "account_type" field.
+func (m *UsageBillingEventMutation) ResetAccountType() {
+	m.account_type = nil
+	delete(m.clearedFields, usagebillingevent.FieldAccountType)
+}
+
+// SetModel sets the "model" field.
+func (m *UsageBillingEventMutation) SetModel(s string) {
+	m.model = &s
+}
+
+// Model returns the value of the "model" field in the mutation.
+func (m *UsageBillingEventMutation) Model() (r string, exists bool) {
+	v := m.model
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldModel returns the old "model" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldModel(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldModel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldModel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldModel: %w", err)
+	}
+	return oldValue.Model, nil
+}
+
+// ResetModel resets all changes to the "model" field.
+func (m *UsageBillingEventMutation) ResetModel() {
+	m.model = nil
+}
+
+// SetServiceTier sets the "service_tier" field.
+func (m *UsageBillingEventMutation) SetServiceTier(s string) {
+	m.service_tier = &s
+}
+
+// ServiceTier returns the value of the "service_tier" field in the mutation.
+func (m *UsageBillingEventMutation) ServiceTier() (r string, exists bool) {
+	v := m.service_tier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldServiceTier returns the old "service_tier" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldServiceTier(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldServiceTier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldServiceTier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldServiceTier: %w", err)
+	}
+	return oldValue.ServiceTier, nil
+}
+
+// ResetServiceTier resets all changes to the "service_tier" field.
+func (m *UsageBillingEventMutation) ResetServiceTier() {
+	m.service_tier = nil
+}
+
+// SetReasoningEffort sets the "reasoning_effort" field.
+func (m *UsageBillingEventMutation) SetReasoningEffort(s string) {
+	m.reasoning_effort = &s
+}
+
+// ReasoningEffort returns the value of the "reasoning_effort" field in the mutation.
+func (m *UsageBillingEventMutation) ReasoningEffort() (r string, exists bool) {
+	v := m.reasoning_effort
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReasoningEffort returns the old "reasoning_effort" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldReasoningEffort(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReasoningEffort is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReasoningEffort requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReasoningEffort: %w", err)
+	}
+	return oldValue.ReasoningEffort, nil
+}
+
+// ResetReasoningEffort resets all changes to the "reasoning_effort" field.
+func (m *UsageBillingEventMutation) ResetReasoningEffort() {
+	m.reasoning_effort = nil
+}
+
+// SetBillingType sets the "billing_type" field.
+func (m *UsageBillingEventMutation) SetBillingType(i int8) {
+	m.billing_type = &i
+	m.addbilling_type = nil
+}
+
+// BillingType returns the value of the "billing_type" field in the mutation.
+func (m *UsageBillingEventMutation) BillingType() (r int8, exists bool) {
+	v := m.billing_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBillingType returns the old "billing_type" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldBillingType(ctx context.Context) (v int8, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBillingType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBillingType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBillingType: %w", err)
+	}
+	return oldValue.BillingType, nil
+}
+
+// AddBillingType adds i to the "billing_type" field.
+func (m *UsageBillingEventMutation) AddBillingType(i int8) {
+	if m.addbilling_type != nil {
+		*m.addbilling_type += i
+	} else {
+		m.addbilling_type = &i
+	}
+}
+
+// AddedBillingType returns the value that was added to the "billing_type" field in this mutation.
+func (m *UsageBillingEventMutation) AddedBillingType() (r int8, exists bool) {
+	v := m.addbilling_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetBillingType resets all changes to the "billing_type" field.
+func (m *UsageBillingEventMutation) ResetBillingType() {
+	m.billing_type = nil
+	m.addbilling_type = nil
+}
+
+// SetInputTokens sets the "input_tokens" field.
+func (m *UsageBillingEventMutation) SetInputTokens(i int) {
+	m.input_tokens = &i
+	m.addinput_tokens = nil
+}
+
+// InputTokens returns the value of the "input_tokens" field in the mutation.
+func (m *UsageBillingEventMutation) InputTokens() (r int, exists bool) {
+	v := m.input_tokens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldInputTokens returns the old "input_tokens" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldInputTokens(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldInputTokens is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldInputTokens requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldInputTokens: %w", err)
+	}
+	return oldValue.InputTokens, nil
+}
+
+// AddInputTokens adds i to the "input_tokens" field.
+func (m *UsageBillingEventMutation) AddInputTokens(i int) {
+	if m.addinput_tokens != nil {
+		*m.addinput_tokens += i
+	} else {
+		m.addinput_tokens = &i
+	}
+}
+
+// AddedInputTokens returns the value that was added to the "input_tokens" field in this mutation.
+func (m *UsageBillingEventMutation) AddedInputTokens() (r int, exists bool) {
+	v := m.addinput_tokens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetInputTokens resets all changes to the "input_tokens" field.
+func (m *UsageBillingEventMutation) ResetInputTokens() {
+	m.input_tokens = nil
+	m.addinput_tokens = nil
+}
+
+// SetOutputTokens sets the "output_tokens" field.
+func (m *UsageBillingEventMutation) SetOutputTokens(i int) {
+	m.output_tokens = &i
+	m.addoutput_tokens = nil
+}
+
+// OutputTokens returns the value of the "output_tokens" field in the mutation.
+func (m *UsageBillingEventMutation) OutputTokens() (r int, exists bool) {
+	v := m.output_tokens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOutputTokens returns the old "output_tokens" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldOutputTokens(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOutputTokens is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOutputTokens requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOutputTokens: %w", err)
+	}
+	return oldValue.OutputTokens, nil
+}
+
+// AddOutputTokens adds i to the "output_tokens" field.
+func (m *UsageBillingEventMutation) AddOutputTokens(i int) {
+	if m.addoutput_tokens != nil {
+		*m.addoutput_tokens += i
+	} else {
+		m.addoutput_tokens = &i
+	}
+}
+
+// AddedOutputTokens returns the value that was added to the "output_tokens" field in this mutation.
+func (m *UsageBillingEventMutation) AddedOutputTokens() (r int, exists bool) {
+	v := m.addoutput_tokens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetOutputTokens resets all changes to the "output_tokens" field.
+func (m *UsageBillingEventMutation) ResetOutputTokens() {
+	m.output_tokens = nil
+	m.addoutput_tokens = nil
+}
+
+// SetCacheCreationTokens sets the "cache_creation_tokens" field.
+func (m *UsageBillingEventMutation) SetCacheCreationTokens(i int) {
+	m.cache_creation_tokens = &i
+	m.addcache_creation_tokens = nil
+}
+
+// CacheCreationTokens returns the value of the "cache_creation_tokens" field in the mutation.
+func (m *UsageBillingEventMutation) CacheCreationTokens() (r int, exists bool) {
+	v := m.cache_creation_tokens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCacheCreationTokens returns the old "cache_creation_tokens" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldCacheCreationTokens(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCacheCreationTokens is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCacheCreationTokens requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCacheCreationTokens: %w", err)
+	}
+	return oldValue.CacheCreationTokens, nil
+}
+
+// AddCacheCreationTokens adds i to the "cache_creation_tokens" field.
+func (m *UsageBillingEventMutation) AddCacheCreationTokens(i int) {
+	if m.addcache_creation_tokens != nil {
+		*m.addcache_creation_tokens += i
+	} else {
+		m.addcache_creation_tokens = &i
+	}
+}
+
+// AddedCacheCreationTokens returns the value that was added to the "cache_creation_tokens" field in this mutation.
+func (m *UsageBillingEventMutation) AddedCacheCreationTokens() (r int, exists bool) {
+	v := m.addcache_creation_tokens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCacheCreationTokens resets all changes to the "cache_creation_tokens" field.
+func (m *UsageBillingEventMutation) ResetCacheCreationTokens() {
+	m.cache_creation_tokens = nil
+	m.addcache_creation_tokens = nil
+}
+
+// SetCacheReadTokens sets the "cache_read_tokens" field.
+func (m *UsageBillingEventMutation) SetCacheReadTokens(i int) {
+	m.cache_read_tokens = &i
+	m.addcache_read_tokens = nil
+}
+
+// CacheReadTokens returns the value of the "cache_read_tokens" field in the mutation.
+func (m *UsageBillingEventMutation) CacheReadTokens() (r int, exists bool) {
+	v := m.cache_read_tokens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCacheReadTokens returns the old "cache_read_tokens" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldCacheReadTokens(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCacheReadTokens is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCacheReadTokens requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCacheReadTokens: %w", err)
+	}
+	return oldValue.CacheReadTokens, nil
+}
+
+// AddCacheReadTokens adds i to the "cache_read_tokens" field.
+func (m *UsageBillingEventMutation) AddCacheReadTokens(i int) {
+	if m.addcache_read_tokens != nil {
+		*m.addcache_read_tokens += i
+	} else {
+		m.addcache_read_tokens = &i
+	}
+}
+
+// AddedCacheReadTokens returns the value that was added to the "cache_read_tokens" field in this mutation.
+func (m *UsageBillingEventMutation) AddedCacheReadTokens() (r int, exists bool) {
+	v := m.addcache_read_tokens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCacheReadTokens resets all changes to the "cache_read_tokens" field.
+func (m *UsageBillingEventMutation) ResetCacheReadTokens() {
+	m.cache_read_tokens = nil
+	m.addcache_read_tokens = nil
+}
+
+// SetCacheCreation5mTokens sets the "cache_creation_5m_tokens" field.
+func (m *UsageBillingEventMutation) SetCacheCreation5mTokens(i int) {
+	m.cache_creation_5m_tokens = &i
+	m.addcache_creation_5m_tokens = nil
+}
+
+// CacheCreation5mTokens returns the value of the "cache_creation_5m_tokens" field in the mutation.
+func (m *UsageBillingEventMutation) CacheCreation5mTokens() (r int, exists bool) {
+	v := m.cache_creation_5m_tokens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCacheCreation5mTokens returns the old "cache_creation_5m_tokens" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldCacheCreation5mTokens(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCacheCreation5mTokens is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCacheCreation5mTokens requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCacheCreation5mTokens: %w", err)
+	}
+	return oldValue.CacheCreation5mTokens, nil
+}
+
+// AddCacheCreation5mTokens adds i to the "cache_creation_5m_tokens" field.
+func (m *UsageBillingEventMutation) AddCacheCreation5mTokens(i int) {
+	if m.addcache_creation_5m_tokens != nil {
+		*m.addcache_creation_5m_tokens += i
+	} else {
+		m.addcache_creation_5m_tokens = &i
+	}
+}
+
+// AddedCacheCreation5mTokens returns the value that was added to the "cache_creation_5m_tokens" field in this mutation.
+func (m *UsageBillingEventMutation) AddedCacheCreation5mTokens() (r int, exists bool) {
+	v := m.addcache_creation_5m_tokens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCacheCreation5mTokens resets all changes to the "cache_creation_5m_tokens" field.
+func (m *UsageBillingEventMutation) ResetCacheCreation5mTokens() {
+	m.cache_creation_5m_tokens = nil
+	m.addcache_creation_5m_tokens = nil
+}
+
+// SetCacheCreation1hTokens sets the "cache_creation_1h_tokens" field.
+func (m *UsageBillingEventMutation) SetCacheCreation1hTokens(i int) {
+	m.cache_creation_1h_tokens = &i
+	m.addcache_creation_1h_tokens = nil
+}
+
+// CacheCreation1hTokens returns the value of the "cache_creation_1h_tokens" field in the mutation.
+func (m *UsageBillingEventMutation) CacheCreation1hTokens() (r int, exists bool) {
+	v := m.cache_creation_1h_tokens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCacheCreation1hTokens returns the old "cache_creation_1h_tokens" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldCacheCreation1hTokens(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCacheCreation1hTokens is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCacheCreation1hTokens requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCacheCreation1hTokens: %w", err)
+	}
+	return oldValue.CacheCreation1hTokens, nil
+}
+
+// AddCacheCreation1hTokens adds i to the "cache_creation_1h_tokens" field.
+func (m *UsageBillingEventMutation) AddCacheCreation1hTokens(i int) {
+	if m.addcache_creation_1h_tokens != nil {
+		*m.addcache_creation_1h_tokens += i
+	} else {
+		m.addcache_creation_1h_tokens = &i
+	}
+}
+
+// AddedCacheCreation1hTokens returns the value that was added to the "cache_creation_1h_tokens" field in this mutation.
+func (m *UsageBillingEventMutation) AddedCacheCreation1hTokens() (r int, exists bool) {
+	v := m.addcache_creation_1h_tokens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCacheCreation1hTokens resets all changes to the "cache_creation_1h_tokens" field.
+func (m *UsageBillingEventMutation) ResetCacheCreation1hTokens() {
+	m.cache_creation_1h_tokens = nil
+	m.addcache_creation_1h_tokens = nil
+}
+
+// SetTotalCost sets the "total_cost" field.
+func (m *UsageBillingEventMutation) SetTotalCost(f float64) {
+	m.total_cost = &f
+	m.addtotal_cost = nil
+}
+
+// TotalCost returns the value of the "total_cost" field in the mutation.
+func (m *UsageBillingEventMutation) TotalCost() (r float64, exists bool) {
+	v := m.total_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTotalCost returns the old "total_cost" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldTotalCost(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTotalCost is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTotalCost requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTotalCost: %w", err)
+	}
+	return oldValue.TotalCost, nil
+}
+
+// AddTotalCost adds f to the "total_cost" field.
+func (m *UsageBillingEventMutation) AddTotalCost(f float64) {
+	if m.addtotal_cost != nil {
+		*m.addtotal_cost += f
+	} else {
+		m.addtotal_cost = &f
+	}
+}
+
+// AddedTotalCost returns the value that was added to the "total_cost" field in this mutation.
+func (m *UsageBillingEventMutation) AddedTotalCost() (r float64, exists bool) {
+	v := m.addtotal_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTotalCost resets all changes to the "total_cost" field.
+func (m *UsageBillingEventMutation) ResetTotalCost() {
+	m.total_cost = nil
+	m.addtotal_cost = nil
+}
+
+// SetActualCost sets the "actual_cost" field.
+func (m *UsageBillingEventMutation) SetActualCost(f float64) {
+	m.actual_cost = &f
+	m.addactual_cost = nil
+}
+
+// ActualCost returns the value of the "actual_cost" field in the mutation.
+func (m *UsageBillingEventMutation) ActualCost() (r float64, exists bool) {
+	v := m.actual_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldActualCost returns the old "actual_cost" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldActualCost(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldActualCost is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldActualCost requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldActualCost: %w", err)
+	}
+	return oldValue.ActualCost, nil
+}
+
+// AddActualCost adds f to the "actual_cost" field.
+func (m *UsageBillingEventMutation) AddActualCost(f float64) {
+	if m.addactual_cost != nil {
+		*m.addactual_cost += f
+	} else {
+		m.addactual_cost = &f
+	}
+}
+
+// AddedActualCost returns the value that was added to the "actual_cost" field in this mutation.
+func (m *UsageBillingEventMutation) AddedActualCost() (r float64, exists bool) {
+	v := m.addactual_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetActualCost resets all changes to the "actual_cost" field.
+func (m *UsageBillingEventMutation) ResetActualCost() {
+	m.actual_cost = nil
+	m.addactual_cost = nil
+}
+
+// SetBalanceCost sets the "balance_cost" field.
+func (m *UsageBillingEventMutation) SetBalanceCost(f float64) {
+	m.balance_cost = &f
+	m.addbalance_cost = nil
+}
+
+// BalanceCost returns the value of the "balance_cost" field in the mutation.
+func (m *UsageBillingEventMutation) BalanceCost() (r float64, exists bool) {
+	v := m.balance_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBalanceCost returns the old "balance_cost" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldBalanceCost(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBalanceCost is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBalanceCost requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBalanceCost: %w", err)
+	}
+	return oldValue.BalanceCost, nil
+}
+
+// AddBalanceCost adds f to the "balance_cost" field.
+func (m *UsageBillingEventMutation) AddBalanceCost(f float64) {
+	if m.addbalance_cost != nil {
+		*m.addbalance_cost += f
+	} else {
+		m.addbalance_cost = &f
+	}
+}
+
+// AddedBalanceCost returns the value that was added to the "balance_cost" field in this mutation.
+func (m *UsageBillingEventMutation) AddedBalanceCost() (r float64, exists bool) {
+	v := m.addbalance_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetBalanceCost resets all changes to the "balance_cost" field.
+func (m *UsageBillingEventMutation) ResetBalanceCost() {
+	m.balance_cost = nil
+	m.addbalance_cost = nil
+}
+
+// SetSubscriptionCost sets the "subscription_cost" field.
+func (m *UsageBillingEventMutation) SetSubscriptionCost(f float64) {
+	m.subscription_cost = &f
+	m.addsubscription_cost = nil
+}
+
+// SubscriptionCost returns the value of the "subscription_cost" field in the mutation.
+func (m *UsageBillingEventMutation) SubscriptionCost() (r float64, exists bool) {
+	v := m.subscription_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubscriptionCost returns the old "subscription_cost" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldSubscriptionCost(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubscriptionCost is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubscriptionCost requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubscriptionCost: %w", err)
+	}
+	return oldValue.SubscriptionCost, nil
+}
+
+// AddSubscriptionCost adds f to the "subscription_cost" field.
+func (m *UsageBillingEventMutation) AddSubscriptionCost(f float64) {
+	if m.addsubscription_cost != nil {
+		*m.addsubscription_cost += f
+	} else {
+		m.addsubscription_cost = &f
+	}
+}
+
+// AddedSubscriptionCost returns the value that was added to the "subscription_cost" field in this mutation.
+func (m *UsageBillingEventMutation) AddedSubscriptionCost() (r float64, exists bool) {
+	v := m.addsubscription_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSubscriptionCost resets all changes to the "subscription_cost" field.
+func (m *UsageBillingEventMutation) ResetSubscriptionCost() {
+	m.subscription_cost = nil
+	m.addsubscription_cost = nil
+}
+
+// SetAPIKeyQuotaCost sets the "api_key_quota_cost" field.
+func (m *UsageBillingEventMutation) SetAPIKeyQuotaCost(f float64) {
+	m.api_key_quota_cost = &f
+	m.addapi_key_quota_cost = nil
+}
+
+// APIKeyQuotaCost returns the value of the "api_key_quota_cost" field in the mutation.
+func (m *UsageBillingEventMutation) APIKeyQuotaCost() (r float64, exists bool) {
+	v := m.api_key_quota_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAPIKeyQuotaCost returns the old "api_key_quota_cost" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldAPIKeyQuotaCost(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAPIKeyQuotaCost is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAPIKeyQuotaCost requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAPIKeyQuotaCost: %w", err)
+	}
+	return oldValue.APIKeyQuotaCost, nil
+}
+
+// AddAPIKeyQuotaCost adds f to the "api_key_quota_cost" field.
+func (m *UsageBillingEventMutation) AddAPIKeyQuotaCost(f float64) {
+	if m.addapi_key_quota_cost != nil {
+		*m.addapi_key_quota_cost += f
+	} else {
+		m.addapi_key_quota_cost = &f
+	}
+}
+
+// AddedAPIKeyQuotaCost returns the value that was added to the "api_key_quota_cost" field in this mutation.
+func (m *UsageBillingEventMutation) AddedAPIKeyQuotaCost() (r float64, exists bool) {
+	v := m.addapi_key_quota_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAPIKeyQuotaCost resets all changes to the "api_key_quota_cost" field.
+func (m *UsageBillingEventMutation) ResetAPIKeyQuotaCost() {
+	m.api_key_quota_cost = nil
+	m.addapi_key_quota_cost = nil
+}
+
+// SetAPIKeyRateLimitCost sets the "api_key_rate_limit_cost" field.
+func (m *UsageBillingEventMutation) SetAPIKeyRateLimitCost(f float64) {
+	m.api_key_rate_limit_cost = &f
+	m.addapi_key_rate_limit_cost = nil
+}
+
+// APIKeyRateLimitCost returns the value of the "api_key_rate_limit_cost" field in the mutation.
+func (m *UsageBillingEventMutation) APIKeyRateLimitCost() (r float64, exists bool) {
+	v := m.api_key_rate_limit_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAPIKeyRateLimitCost returns the old "api_key_rate_limit_cost" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldAPIKeyRateLimitCost(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAPIKeyRateLimitCost is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAPIKeyRateLimitCost requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAPIKeyRateLimitCost: %w", err)
+	}
+	return oldValue.APIKeyRateLimitCost, nil
+}
+
+// AddAPIKeyRateLimitCost adds f to the "api_key_rate_limit_cost" field.
+func (m *UsageBillingEventMutation) AddAPIKeyRateLimitCost(f float64) {
+	if m.addapi_key_rate_limit_cost != nil {
+		*m.addapi_key_rate_limit_cost += f
+	} else {
+		m.addapi_key_rate_limit_cost = &f
+	}
+}
+
+// AddedAPIKeyRateLimitCost returns the value that was added to the "api_key_rate_limit_cost" field in this mutation.
+func (m *UsageBillingEventMutation) AddedAPIKeyRateLimitCost() (r float64, exists bool) {
+	v := m.addapi_key_rate_limit_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAPIKeyRateLimitCost resets all changes to the "api_key_rate_limit_cost" field.
+func (m *UsageBillingEventMutation) ResetAPIKeyRateLimitCost() {
+	m.api_key_rate_limit_cost = nil
+	m.addapi_key_rate_limit_cost = nil
+}
+
+// SetAccountQuotaCost sets the "account_quota_cost" field.
+func (m *UsageBillingEventMutation) SetAccountQuotaCost(f float64) {
+	m.account_quota_cost = &f
+	m.addaccount_quota_cost = nil
+}
+
+// AccountQuotaCost returns the value of the "account_quota_cost" field in the mutation.
+func (m *UsageBillingEventMutation) AccountQuotaCost() (r float64, exists bool) {
+	v := m.account_quota_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccountQuotaCost returns the old "account_quota_cost" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldAccountQuotaCost(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccountQuotaCost is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccountQuotaCost requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccountQuotaCost: %w", err)
+	}
+	return oldValue.AccountQuotaCost, nil
+}
+
+// AddAccountQuotaCost adds f to the "account_quota_cost" field.
+func (m *UsageBillingEventMutation) AddAccountQuotaCost(f float64) {
+	if m.addaccount_quota_cost != nil {
+		*m.addaccount_quota_cost += f
+	} else {
+		m.addaccount_quota_cost = &f
+	}
+}
+
+// AddedAccountQuotaCost returns the value that was added to the "account_quota_cost" field in this mutation.
+func (m *UsageBillingEventMutation) AddedAccountQuotaCost() (r float64, exists bool) {
+	v := m.addaccount_quota_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAccountQuotaCost resets all changes to the "account_quota_cost" field.
+func (m *UsageBillingEventMutation) ResetAccountQuotaCost() {
+	m.account_quota_cost = nil
+	m.addaccount_quota_cost = nil
+}
+
+// SetSupplyRewardEligible sets the "supply_reward_eligible" field.
+func (m *UsageBillingEventMutation) SetSupplyRewardEligible(b bool) {
+	m.supply_reward_eligible = &b
+}
+
+// SupplyRewardEligible returns the value of the "supply_reward_eligible" field in the mutation.
+func (m *UsageBillingEventMutation) SupplyRewardEligible() (r bool, exists bool) {
+	v := m.supply_reward_eligible
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSupplyRewardEligible returns the old "supply_reward_eligible" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldSupplyRewardEligible(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSupplyRewardEligible is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSupplyRewardEligible requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSupplyRewardEligible: %w", err)
+	}
+	return oldValue.SupplyRewardEligible, nil
+}
+
+// ResetSupplyRewardEligible resets all changes to the "supply_reward_eligible" field.
+func (m *UsageBillingEventMutation) ResetSupplyRewardEligible() {
+	m.supply_reward_eligible = nil
+}
+
+// SetSupplyOwnerUserID sets the "supply_owner_user_id" field.
+func (m *UsageBillingEventMutation) SetSupplyOwnerUserID(i int64) {
+	m.supply_owner_user_id = &i
+	m.addsupply_owner_user_id = nil
+}
+
+// SupplyOwnerUserID returns the value of the "supply_owner_user_id" field in the mutation.
+func (m *UsageBillingEventMutation) SupplyOwnerUserID() (r int64, exists bool) {
+	v := m.supply_owner_user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSupplyOwnerUserID returns the old "supply_owner_user_id" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldSupplyOwnerUserID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSupplyOwnerUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSupplyOwnerUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSupplyOwnerUserID: %w", err)
+	}
+	return oldValue.SupplyOwnerUserID, nil
+}
+
+// AddSupplyOwnerUserID adds i to the "supply_owner_user_id" field.
+func (m *UsageBillingEventMutation) AddSupplyOwnerUserID(i int64) {
+	if m.addsupply_owner_user_id != nil {
+		*m.addsupply_owner_user_id += i
+	} else {
+		m.addsupply_owner_user_id = &i
+	}
+}
+
+// AddedSupplyOwnerUserID returns the value that was added to the "supply_owner_user_id" field in this mutation.
+func (m *UsageBillingEventMutation) AddedSupplyOwnerUserID() (r int64, exists bool) {
+	v := m.addsupply_owner_user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearSupplyOwnerUserID clears the value of the "supply_owner_user_id" field.
+func (m *UsageBillingEventMutation) ClearSupplyOwnerUserID() {
+	m.supply_owner_user_id = nil
+	m.addsupply_owner_user_id = nil
+	m.clearedFields[usagebillingevent.FieldSupplyOwnerUserID] = struct{}{}
+}
+
+// SupplyOwnerUserIDCleared returns if the "supply_owner_user_id" field was cleared in this mutation.
+func (m *UsageBillingEventMutation) SupplyOwnerUserIDCleared() bool {
+	_, ok := m.clearedFields[usagebillingevent.FieldSupplyOwnerUserID]
+	return ok
+}
+
+// ResetSupplyOwnerUserID resets all changes to the "supply_owner_user_id" field.
+func (m *UsageBillingEventMutation) ResetSupplyOwnerUserID() {
+	m.supply_owner_user_id = nil
+	m.addsupply_owner_user_id = nil
+	delete(m.clearedFields, usagebillingevent.FieldSupplyOwnerUserID)
+}
+
+// SetSupplyRewardMultiplier sets the "supply_reward_multiplier" field.
+func (m *UsageBillingEventMutation) SetSupplyRewardMultiplier(f float64) {
+	m.supply_reward_multiplier = &f
+	m.addsupply_reward_multiplier = nil
+}
+
+// SupplyRewardMultiplier returns the value of the "supply_reward_multiplier" field in the mutation.
+func (m *UsageBillingEventMutation) SupplyRewardMultiplier() (r float64, exists bool) {
+	v := m.supply_reward_multiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSupplyRewardMultiplier returns the old "supply_reward_multiplier" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldSupplyRewardMultiplier(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSupplyRewardMultiplier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSupplyRewardMultiplier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSupplyRewardMultiplier: %w", err)
+	}
+	return oldValue.SupplyRewardMultiplier, nil
+}
+
+// AddSupplyRewardMultiplier adds f to the "supply_reward_multiplier" field.
+func (m *UsageBillingEventMutation) AddSupplyRewardMultiplier(f float64) {
+	if m.addsupply_reward_multiplier != nil {
+		*m.addsupply_reward_multiplier += f
+	} else {
+		m.addsupply_reward_multiplier = &f
+	}
+}
+
+// AddedSupplyRewardMultiplier returns the value that was added to the "supply_reward_multiplier" field in this mutation.
+func (m *UsageBillingEventMutation) AddedSupplyRewardMultiplier() (r float64, exists bool) {
+	v := m.addsupply_reward_multiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSupplyRewardMultiplier resets all changes to the "supply_reward_multiplier" field.
+func (m *UsageBillingEventMutation) ResetSupplyRewardMultiplier() {
+	m.supply_reward_multiplier = nil
+	m.addsupply_reward_multiplier = nil
+}
+
+// SetSupplyAccountStatus sets the "supply_account_status" field.
+func (m *UsageBillingEventMutation) SetSupplyAccountStatus(s string) {
+	m.supply_account_status = &s
+}
+
+// SupplyAccountStatus returns the value of the "supply_account_status" field in the mutation.
+func (m *UsageBillingEventMutation) SupplyAccountStatus() (r string, exists bool) {
+	v := m.supply_account_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSupplyAccountStatus returns the old "supply_account_status" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldSupplyAccountStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSupplyAccountStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSupplyAccountStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSupplyAccountStatus: %w", err)
+	}
+	return oldValue.SupplyAccountStatus, nil
+}
+
+// ResetSupplyAccountStatus resets all changes to the "supply_account_status" field.
+func (m *UsageBillingEventMutation) ResetSupplyAccountStatus() {
+	m.supply_account_status = nil
+}
+
+// SetSupplySource sets the "supply_source" field.
+func (m *UsageBillingEventMutation) SetSupplySource(s string) {
+	m.supply_source = &s
+}
+
+// SupplySource returns the value of the "supply_source" field in the mutation.
+func (m *UsageBillingEventMutation) SupplySource() (r string, exists bool) {
+	v := m.supply_source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSupplySource returns the old "supply_source" field's value of the UsageBillingEvent entity.
+// If the UsageBillingEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageBillingEventMutation) OldSupplySource(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSupplySource is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSupplySource requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSupplySource: %w", err)
+	}
+	return oldValue.SupplySource, nil
+}
+
+// ResetSupplySource resets all changes to the "supply_source" field.
+func (m *UsageBillingEventMutation) ResetSupplySource() {
+	m.supply_source = nil
+}
+
+// Where appends a list predicates to the UsageBillingEventMutation builder.
+func (m *UsageBillingEventMutation) Where(ps ...predicate.UsageBillingEvent) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the UsageBillingEventMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *UsageBillingEventMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.UsageBillingEvent, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *UsageBillingEventMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *UsageBillingEventMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (UsageBillingEvent).
+func (m *UsageBillingEventMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *UsageBillingEventMutation) Fields() []string {
+	fields := make([]string, 0, 32)
+	if m.created_at != nil {
+		fields = append(fields, usagebillingevent.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, usagebillingevent.FieldUpdatedAt)
+	}
+	if m.request_id != nil {
+		fields = append(fields, usagebillingevent.FieldRequestID)
+	}
+	if m.api_key_id != nil {
+		fields = append(fields, usagebillingevent.FieldAPIKeyID)
+	}
+	if m.request_fingerprint != nil {
+		fields = append(fields, usagebillingevent.FieldRequestFingerprint)
+	}
+	if m.request_payload_hash != nil {
+		fields = append(fields, usagebillingevent.FieldRequestPayloadHash)
+	}
+	if m.user_id != nil {
+		fields = append(fields, usagebillingevent.FieldUserID)
+	}
+	if m.group_id != nil {
+		fields = append(fields, usagebillingevent.FieldGroupID)
+	}
+	if m.account_id != nil {
+		fields = append(fields, usagebillingevent.FieldAccountID)
+	}
+	if m.account_type != nil {
+		fields = append(fields, usagebillingevent.FieldAccountType)
+	}
+	if m.model != nil {
+		fields = append(fields, usagebillingevent.FieldModel)
+	}
+	if m.service_tier != nil {
+		fields = append(fields, usagebillingevent.FieldServiceTier)
+	}
+	if m.reasoning_effort != nil {
+		fields = append(fields, usagebillingevent.FieldReasoningEffort)
+	}
+	if m.billing_type != nil {
+		fields = append(fields, usagebillingevent.FieldBillingType)
+	}
+	if m.input_tokens != nil {
+		fields = append(fields, usagebillingevent.FieldInputTokens)
+	}
+	if m.output_tokens != nil {
+		fields = append(fields, usagebillingevent.FieldOutputTokens)
+	}
+	if m.cache_creation_tokens != nil {
+		fields = append(fields, usagebillingevent.FieldCacheCreationTokens)
+	}
+	if m.cache_read_tokens != nil {
+		fields = append(fields, usagebillingevent.FieldCacheReadTokens)
+	}
+	if m.cache_creation_5m_tokens != nil {
+		fields = append(fields, usagebillingevent.FieldCacheCreation5mTokens)
+	}
+	if m.cache_creation_1h_tokens != nil {
+		fields = append(fields, usagebillingevent.FieldCacheCreation1hTokens)
+	}
+	if m.total_cost != nil {
+		fields = append(fields, usagebillingevent.FieldTotalCost)
+	}
+	if m.actual_cost != nil {
+		fields = append(fields, usagebillingevent.FieldActualCost)
+	}
+	if m.balance_cost != nil {
+		fields = append(fields, usagebillingevent.FieldBalanceCost)
+	}
+	if m.subscription_cost != nil {
+		fields = append(fields, usagebillingevent.FieldSubscriptionCost)
+	}
+	if m.api_key_quota_cost != nil {
+		fields = append(fields, usagebillingevent.FieldAPIKeyQuotaCost)
+	}
+	if m.api_key_rate_limit_cost != nil {
+		fields = append(fields, usagebillingevent.FieldAPIKeyRateLimitCost)
+	}
+	if m.account_quota_cost != nil {
+		fields = append(fields, usagebillingevent.FieldAccountQuotaCost)
+	}
+	if m.supply_reward_eligible != nil {
+		fields = append(fields, usagebillingevent.FieldSupplyRewardEligible)
+	}
+	if m.supply_owner_user_id != nil {
+		fields = append(fields, usagebillingevent.FieldSupplyOwnerUserID)
+	}
+	if m.supply_reward_multiplier != nil {
+		fields = append(fields, usagebillingevent.FieldSupplyRewardMultiplier)
+	}
+	if m.supply_account_status != nil {
+		fields = append(fields, usagebillingevent.FieldSupplyAccountStatus)
+	}
+	if m.supply_source != nil {
+		fields = append(fields, usagebillingevent.FieldSupplySource)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *UsageBillingEventMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case usagebillingevent.FieldCreatedAt:
+		return m.CreatedAt()
+	case usagebillingevent.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case usagebillingevent.FieldRequestID:
+		return m.RequestID()
+	case usagebillingevent.FieldAPIKeyID:
+		return m.APIKeyID()
+	case usagebillingevent.FieldRequestFingerprint:
+		return m.RequestFingerprint()
+	case usagebillingevent.FieldRequestPayloadHash:
+		return m.RequestPayloadHash()
+	case usagebillingevent.FieldUserID:
+		return m.UserID()
+	case usagebillingevent.FieldGroupID:
+		return m.GroupID()
+	case usagebillingevent.FieldAccountID:
+		return m.AccountID()
+	case usagebillingevent.FieldAccountType:
+		return m.AccountType()
+	case usagebillingevent.FieldModel:
+		return m.Model()
+	case usagebillingevent.FieldServiceTier:
+		return m.ServiceTier()
+	case usagebillingevent.FieldReasoningEffort:
+		return m.ReasoningEffort()
+	case usagebillingevent.FieldBillingType:
+		return m.BillingType()
+	case usagebillingevent.FieldInputTokens:
+		return m.InputTokens()
+	case usagebillingevent.FieldOutputTokens:
+		return m.OutputTokens()
+	case usagebillingevent.FieldCacheCreationTokens:
+		return m.CacheCreationTokens()
+	case usagebillingevent.FieldCacheReadTokens:
+		return m.CacheReadTokens()
+	case usagebillingevent.FieldCacheCreation5mTokens:
+		return m.CacheCreation5mTokens()
+	case usagebillingevent.FieldCacheCreation1hTokens:
+		return m.CacheCreation1hTokens()
+	case usagebillingevent.FieldTotalCost:
+		return m.TotalCost()
+	case usagebillingevent.FieldActualCost:
+		return m.ActualCost()
+	case usagebillingevent.FieldBalanceCost:
+		return m.BalanceCost()
+	case usagebillingevent.FieldSubscriptionCost:
+		return m.SubscriptionCost()
+	case usagebillingevent.FieldAPIKeyQuotaCost:
+		return m.APIKeyQuotaCost()
+	case usagebillingevent.FieldAPIKeyRateLimitCost:
+		return m.APIKeyRateLimitCost()
+	case usagebillingevent.FieldAccountQuotaCost:
+		return m.AccountQuotaCost()
+	case usagebillingevent.FieldSupplyRewardEligible:
+		return m.SupplyRewardEligible()
+	case usagebillingevent.FieldSupplyOwnerUserID:
+		return m.SupplyOwnerUserID()
+	case usagebillingevent.FieldSupplyRewardMultiplier:
+		return m.SupplyRewardMultiplier()
+	case usagebillingevent.FieldSupplyAccountStatus:
+		return m.SupplyAccountStatus()
+	case usagebillingevent.FieldSupplySource:
+		return m.SupplySource()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *UsageBillingEventMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case usagebillingevent.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case usagebillingevent.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case usagebillingevent.FieldRequestID:
+		return m.OldRequestID(ctx)
+	case usagebillingevent.FieldAPIKeyID:
+		return m.OldAPIKeyID(ctx)
+	case usagebillingevent.FieldRequestFingerprint:
+		return m.OldRequestFingerprint(ctx)
+	case usagebillingevent.FieldRequestPayloadHash:
+		return m.OldRequestPayloadHash(ctx)
+	case usagebillingevent.FieldUserID:
+		return m.OldUserID(ctx)
+	case usagebillingevent.FieldGroupID:
+		return m.OldGroupID(ctx)
+	case usagebillingevent.FieldAccountID:
+		return m.OldAccountID(ctx)
+	case usagebillingevent.FieldAccountType:
+		return m.OldAccountType(ctx)
+	case usagebillingevent.FieldModel:
+		return m.OldModel(ctx)
+	case usagebillingevent.FieldServiceTier:
+		return m.OldServiceTier(ctx)
+	case usagebillingevent.FieldReasoningEffort:
+		return m.OldReasoningEffort(ctx)
+	case usagebillingevent.FieldBillingType:
+		return m.OldBillingType(ctx)
+	case usagebillingevent.FieldInputTokens:
+		return m.OldInputTokens(ctx)
+	case usagebillingevent.FieldOutputTokens:
+		return m.OldOutputTokens(ctx)
+	case usagebillingevent.FieldCacheCreationTokens:
+		return m.OldCacheCreationTokens(ctx)
+	case usagebillingevent.FieldCacheReadTokens:
+		return m.OldCacheReadTokens(ctx)
+	case usagebillingevent.FieldCacheCreation5mTokens:
+		return m.OldCacheCreation5mTokens(ctx)
+	case usagebillingevent.FieldCacheCreation1hTokens:
+		return m.OldCacheCreation1hTokens(ctx)
+	case usagebillingevent.FieldTotalCost:
+		return m.OldTotalCost(ctx)
+	case usagebillingevent.FieldActualCost:
+		return m.OldActualCost(ctx)
+	case usagebillingevent.FieldBalanceCost:
+		return m.OldBalanceCost(ctx)
+	case usagebillingevent.FieldSubscriptionCost:
+		return m.OldSubscriptionCost(ctx)
+	case usagebillingevent.FieldAPIKeyQuotaCost:
+		return m.OldAPIKeyQuotaCost(ctx)
+	case usagebillingevent.FieldAPIKeyRateLimitCost:
+		return m.OldAPIKeyRateLimitCost(ctx)
+	case usagebillingevent.FieldAccountQuotaCost:
+		return m.OldAccountQuotaCost(ctx)
+	case usagebillingevent.FieldSupplyRewardEligible:
+		return m.OldSupplyRewardEligible(ctx)
+	case usagebillingevent.FieldSupplyOwnerUserID:
+		return m.OldSupplyOwnerUserID(ctx)
+	case usagebillingevent.FieldSupplyRewardMultiplier:
+		return m.OldSupplyRewardMultiplier(ctx)
+	case usagebillingevent.FieldSupplyAccountStatus:
+		return m.OldSupplyAccountStatus(ctx)
+	case usagebillingevent.FieldSupplySource:
+		return m.OldSupplySource(ctx)
+	}
+	return nil, fmt.Errorf("unknown UsageBillingEvent field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *UsageBillingEventMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case usagebillingevent.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case usagebillingevent.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case usagebillingevent.FieldRequestID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRequestID(v)
+		return nil
+	case usagebillingevent.FieldAPIKeyID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAPIKeyID(v)
+		return nil
+	case usagebillingevent.FieldRequestFingerprint:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRequestFingerprint(v)
+		return nil
+	case usagebillingevent.FieldRequestPayloadHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRequestPayloadHash(v)
+		return nil
+	case usagebillingevent.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case usagebillingevent.FieldGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGroupID(v)
+		return nil
+	case usagebillingevent.FieldAccountID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccountID(v)
+		return nil
+	case usagebillingevent.FieldAccountType:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccountType(v)
+		return nil
+	case usagebillingevent.FieldModel:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetModel(v)
+		return nil
+	case usagebillingevent.FieldServiceTier:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetServiceTier(v)
+		return nil
+	case usagebillingevent.FieldReasoningEffort:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReasoningEffort(v)
+		return nil
+	case usagebillingevent.FieldBillingType:
+		v, ok := value.(int8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBillingType(v)
+		return nil
+	case usagebillingevent.FieldInputTokens:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetInputTokens(v)
+		return nil
+	case usagebillingevent.FieldOutputTokens:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOutputTokens(v)
+		return nil
+	case usagebillingevent.FieldCacheCreationTokens:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCacheCreationTokens(v)
+		return nil
+	case usagebillingevent.FieldCacheReadTokens:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCacheReadTokens(v)
+		return nil
+	case usagebillingevent.FieldCacheCreation5mTokens:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCacheCreation5mTokens(v)
+		return nil
+	case usagebillingevent.FieldCacheCreation1hTokens:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCacheCreation1hTokens(v)
+		return nil
+	case usagebillingevent.FieldTotalCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTotalCost(v)
+		return nil
+	case usagebillingevent.FieldActualCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetActualCost(v)
+		return nil
+	case usagebillingevent.FieldBalanceCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBalanceCost(v)
+		return nil
+	case usagebillingevent.FieldSubscriptionCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubscriptionCost(v)
+		return nil
+	case usagebillingevent.FieldAPIKeyQuotaCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAPIKeyQuotaCost(v)
+		return nil
+	case usagebillingevent.FieldAPIKeyRateLimitCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAPIKeyRateLimitCost(v)
+		return nil
+	case usagebillingevent.FieldAccountQuotaCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccountQuotaCost(v)
+		return nil
+	case usagebillingevent.FieldSupplyRewardEligible:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSupplyRewardEligible(v)
+		return nil
+	case usagebillingevent.FieldSupplyOwnerUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSupplyOwnerUserID(v)
+		return nil
+	case usagebillingevent.FieldSupplyRewardMultiplier:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSupplyRewardMultiplier(v)
+		return nil
+	case usagebillingevent.FieldSupplyAccountStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSupplyAccountStatus(v)
+		return nil
+	case usagebillingevent.FieldSupplySource:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSupplySource(v)
+		return nil
+	}
+	return fmt.Errorf("unknown UsageBillingEvent field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *UsageBillingEventMutation) AddedFields() []string {
+	var fields []string
+	if m.addapi_key_id != nil {
+		fields = append(fields, usagebillingevent.FieldAPIKeyID)
+	}
+	if m.adduser_id != nil {
+		fields = append(fields, usagebillingevent.FieldUserID)
+	}
+	if m.addgroup_id != nil {
+		fields = append(fields, usagebillingevent.FieldGroupID)
+	}
+	if m.addaccount_id != nil {
+		fields = append(fields, usagebillingevent.FieldAccountID)
+	}
+	if m.addbilling_type != nil {
+		fields = append(fields, usagebillingevent.FieldBillingType)
+	}
+	if m.addinput_tokens != nil {
+		fields = append(fields, usagebillingevent.FieldInputTokens)
+	}
+	if m.addoutput_tokens != nil {
+		fields = append(fields, usagebillingevent.FieldOutputTokens)
+	}
+	if m.addcache_creation_tokens != nil {
+		fields = append(fields, usagebillingevent.FieldCacheCreationTokens)
+	}
+	if m.addcache_read_tokens != nil {
+		fields = append(fields, usagebillingevent.FieldCacheReadTokens)
+	}
+	if m.addcache_creation_5m_tokens != nil {
+		fields = append(fields, usagebillingevent.FieldCacheCreation5mTokens)
+	}
+	if m.addcache_creation_1h_tokens != nil {
+		fields = append(fields, usagebillingevent.FieldCacheCreation1hTokens)
+	}
+	if m.addtotal_cost != nil {
+		fields = append(fields, usagebillingevent.FieldTotalCost)
+	}
+	if m.addactual_cost != nil {
+		fields = append(fields, usagebillingevent.FieldActualCost)
+	}
+	if m.addbalance_cost != nil {
+		fields = append(fields, usagebillingevent.FieldBalanceCost)
+	}
+	if m.addsubscription_cost != nil {
+		fields = append(fields, usagebillingevent.FieldSubscriptionCost)
+	}
+	if m.addapi_key_quota_cost != nil {
+		fields = append(fields, usagebillingevent.FieldAPIKeyQuotaCost)
+	}
+	if m.addapi_key_rate_limit_cost != nil {
+		fields = append(fields, usagebillingevent.FieldAPIKeyRateLimitCost)
+	}
+	if m.addaccount_quota_cost != nil {
+		fields = append(fields, usagebillingevent.FieldAccountQuotaCost)
+	}
+	if m.addsupply_owner_user_id != nil {
+		fields = append(fields, usagebillingevent.FieldSupplyOwnerUserID)
+	}
+	if m.addsupply_reward_multiplier != nil {
+		fields = append(fields, usagebillingevent.FieldSupplyRewardMultiplier)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *UsageBillingEventMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case usagebillingevent.FieldAPIKeyID:
+		return m.AddedAPIKeyID()
+	case usagebillingevent.FieldUserID:
+		return m.AddedUserID()
+	case usagebillingevent.FieldGroupID:
+		return m.AddedGroupID()
+	case usagebillingevent.FieldAccountID:
+		return m.AddedAccountID()
+	case usagebillingevent.FieldBillingType:
+		return m.AddedBillingType()
+	case usagebillingevent.FieldInputTokens:
+		return m.AddedInputTokens()
+	case usagebillingevent.FieldOutputTokens:
+		return m.AddedOutputTokens()
+	case usagebillingevent.FieldCacheCreationTokens:
+		return m.AddedCacheCreationTokens()
+	case usagebillingevent.FieldCacheReadTokens:
+		return m.AddedCacheReadTokens()
+	case usagebillingevent.FieldCacheCreation5mTokens:
+		return m.AddedCacheCreation5mTokens()
+	case usagebillingevent.FieldCacheCreation1hTokens:
+		return m.AddedCacheCreation1hTokens()
+	case usagebillingevent.FieldTotalCost:
+		return m.AddedTotalCost()
+	case usagebillingevent.FieldActualCost:
+		return m.AddedActualCost()
+	case usagebillingevent.FieldBalanceCost:
+		return m.AddedBalanceCost()
+	case usagebillingevent.FieldSubscriptionCost:
+		return m.AddedSubscriptionCost()
+	case usagebillingevent.FieldAPIKeyQuotaCost:
+		return m.AddedAPIKeyQuotaCost()
+	case usagebillingevent.FieldAPIKeyRateLimitCost:
+		return m.AddedAPIKeyRateLimitCost()
+	case usagebillingevent.FieldAccountQuotaCost:
+		return m.AddedAccountQuotaCost()
+	case usagebillingevent.FieldSupplyOwnerUserID:
+		return m.AddedSupplyOwnerUserID()
+	case usagebillingevent.FieldSupplyRewardMultiplier:
+		return m.AddedSupplyRewardMultiplier()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *UsageBillingEventMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case usagebillingevent.FieldAPIKeyID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAPIKeyID(v)
+		return nil
+	case usagebillingevent.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUserID(v)
+		return nil
+	case usagebillingevent.FieldGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddGroupID(v)
+		return nil
+	case usagebillingevent.FieldAccountID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAccountID(v)
+		return nil
+	case usagebillingevent.FieldBillingType:
+		v, ok := value.(int8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddBillingType(v)
+		return nil
+	case usagebillingevent.FieldInputTokens:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddInputTokens(v)
+		return nil
+	case usagebillingevent.FieldOutputTokens:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddOutputTokens(v)
+		return nil
+	case usagebillingevent.FieldCacheCreationTokens:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCacheCreationTokens(v)
+		return nil
+	case usagebillingevent.FieldCacheReadTokens:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCacheReadTokens(v)
+		return nil
+	case usagebillingevent.FieldCacheCreation5mTokens:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCacheCreation5mTokens(v)
+		return nil
+	case usagebillingevent.FieldCacheCreation1hTokens:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCacheCreation1hTokens(v)
+		return nil
+	case usagebillingevent.FieldTotalCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTotalCost(v)
+		return nil
+	case usagebillingevent.FieldActualCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddActualCost(v)
+		return nil
+	case usagebillingevent.FieldBalanceCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddBalanceCost(v)
+		return nil
+	case usagebillingevent.FieldSubscriptionCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSubscriptionCost(v)
+		return nil
+	case usagebillingevent.FieldAPIKeyQuotaCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAPIKeyQuotaCost(v)
+		return nil
+	case usagebillingevent.FieldAPIKeyRateLimitCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAPIKeyRateLimitCost(v)
+		return nil
+	case usagebillingevent.FieldAccountQuotaCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAccountQuotaCost(v)
+		return nil
+	case usagebillingevent.FieldSupplyOwnerUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSupplyOwnerUserID(v)
+		return nil
+	case usagebillingevent.FieldSupplyRewardMultiplier:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSupplyRewardMultiplier(v)
+		return nil
+	}
+	return fmt.Errorf("unknown UsageBillingEvent numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *UsageBillingEventMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(usagebillingevent.FieldRequestPayloadHash) {
+		fields = append(fields, usagebillingevent.FieldRequestPayloadHash)
+	}
+	if m.FieldCleared(usagebillingevent.FieldGroupID) {
+		fields = append(fields, usagebillingevent.FieldGroupID)
+	}
+	if m.FieldCleared(usagebillingevent.FieldAccountType) {
+		fields = append(fields, usagebillingevent.FieldAccountType)
+	}
+	if m.FieldCleared(usagebillingevent.FieldSupplyOwnerUserID) {
+		fields = append(fields, usagebillingevent.FieldSupplyOwnerUserID)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *UsageBillingEventMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *UsageBillingEventMutation) ClearField(name string) error {
+	switch name {
+	case usagebillingevent.FieldRequestPayloadHash:
+		m.ClearRequestPayloadHash()
+		return nil
+	case usagebillingevent.FieldGroupID:
+		m.ClearGroupID()
+		return nil
+	case usagebillingevent.FieldAccountType:
+		m.ClearAccountType()
+		return nil
+	case usagebillingevent.FieldSupplyOwnerUserID:
+		m.ClearSupplyOwnerUserID()
+		return nil
+	}
+	return fmt.Errorf("unknown UsageBillingEvent nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *UsageBillingEventMutation) ResetField(name string) error {
+	switch name {
+	case usagebillingevent.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case usagebillingevent.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case usagebillingevent.FieldRequestID:
+		m.ResetRequestID()
+		return nil
+	case usagebillingevent.FieldAPIKeyID:
+		m.ResetAPIKeyID()
+		return nil
+	case usagebillingevent.FieldRequestFingerprint:
+		m.ResetRequestFingerprint()
+		return nil
+	case usagebillingevent.FieldRequestPayloadHash:
+		m.ResetRequestPayloadHash()
+		return nil
+	case usagebillingevent.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case usagebillingevent.FieldGroupID:
+		m.ResetGroupID()
+		return nil
+	case usagebillingevent.FieldAccountID:
+		m.ResetAccountID()
+		return nil
+	case usagebillingevent.FieldAccountType:
+		m.ResetAccountType()
+		return nil
+	case usagebillingevent.FieldModel:
+		m.ResetModel()
+		return nil
+	case usagebillingevent.FieldServiceTier:
+		m.ResetServiceTier()
+		return nil
+	case usagebillingevent.FieldReasoningEffort:
+		m.ResetReasoningEffort()
+		return nil
+	case usagebillingevent.FieldBillingType:
+		m.ResetBillingType()
+		return nil
+	case usagebillingevent.FieldInputTokens:
+		m.ResetInputTokens()
+		return nil
+	case usagebillingevent.FieldOutputTokens:
+		m.ResetOutputTokens()
+		return nil
+	case usagebillingevent.FieldCacheCreationTokens:
+		m.ResetCacheCreationTokens()
+		return nil
+	case usagebillingevent.FieldCacheReadTokens:
+		m.ResetCacheReadTokens()
+		return nil
+	case usagebillingevent.FieldCacheCreation5mTokens:
+		m.ResetCacheCreation5mTokens()
+		return nil
+	case usagebillingevent.FieldCacheCreation1hTokens:
+		m.ResetCacheCreation1hTokens()
+		return nil
+	case usagebillingevent.FieldTotalCost:
+		m.ResetTotalCost()
+		return nil
+	case usagebillingevent.FieldActualCost:
+		m.ResetActualCost()
+		return nil
+	case usagebillingevent.FieldBalanceCost:
+		m.ResetBalanceCost()
+		return nil
+	case usagebillingevent.FieldSubscriptionCost:
+		m.ResetSubscriptionCost()
+		return nil
+	case usagebillingevent.FieldAPIKeyQuotaCost:
+		m.ResetAPIKeyQuotaCost()
+		return nil
+	case usagebillingevent.FieldAPIKeyRateLimitCost:
+		m.ResetAPIKeyRateLimitCost()
+		return nil
+	case usagebillingevent.FieldAccountQuotaCost:
+		m.ResetAccountQuotaCost()
+		return nil
+	case usagebillingevent.FieldSupplyRewardEligible:
+		m.ResetSupplyRewardEligible()
+		return nil
+	case usagebillingevent.FieldSupplyOwnerUserID:
+		m.ResetSupplyOwnerUserID()
+		return nil
+	case usagebillingevent.FieldSupplyRewardMultiplier:
+		m.ResetSupplyRewardMultiplier()
+		return nil
+	case usagebillingevent.FieldSupplyAccountStatus:
+		m.ResetSupplyAccountStatus()
+		return nil
+	case usagebillingevent.FieldSupplySource:
+		m.ResetSupplySource()
+		return nil
+	}
+	return fmt.Errorf("unknown UsageBillingEvent field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *UsageBillingEventMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *UsageBillingEventMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *UsageBillingEventMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *UsageBillingEventMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *UsageBillingEventMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *UsageBillingEventMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *UsageBillingEventMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown UsageBillingEvent unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *UsageBillingEventMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown UsageBillingEvent edge %s", name)
 }
 
 // UsageCleanupTaskMutation represents an operation that mutates the UsageCleanupTask nodes in the graph.
@@ -37424,77 +43671,80 @@ func (m *UsageLogMutation) ResetEdge(name string) error {
 // UserMutation represents an operation that mutates the User nodes in the graph.
 type UserMutation struct {
 	config
-	op                            Op
-	typ                           string
-	id                            *int64
-	created_at                    *time.Time
-	updated_at                    *time.Time
-	deleted_at                    *time.Time
-	email                         *string
-	password_hash                 *string
-	role                          *string
-	balance                       *float64
-	addbalance                    *float64
-	concurrency                   *int
-	addconcurrency                *int
-	status                        *string
-	username                      *string
-	notes                         *string
-	totp_secret_encrypted         *string
-	totp_enabled                  *bool
-	totp_enabled_at               *time.Time
-	signup_source                 *string
-	last_login_at                 *time.Time
-	last_active_at                *time.Time
-	balance_notify_enabled        *bool
-	balance_notify_threshold_type *string
-	balance_notify_threshold      *float64
-	addbalance_notify_threshold   *float64
-	balance_notify_extra_emails   *string
-	total_recharged               *float64
-	addtotal_recharged            *float64
-	rpm_limit                     *int
-	addrpm_limit                  *int
-	clearedFields                 map[string]struct{}
-	api_keys                      map[int64]struct{}
-	removedapi_keys               map[int64]struct{}
-	clearedapi_keys               bool
-	redeem_codes                  map[int64]struct{}
-	removedredeem_codes           map[int64]struct{}
-	clearedredeem_codes           bool
-	subscriptions                 map[int64]struct{}
-	removedsubscriptions          map[int64]struct{}
-	clearedsubscriptions          bool
-	assigned_subscriptions        map[int64]struct{}
-	removedassigned_subscriptions map[int64]struct{}
-	clearedassigned_subscriptions bool
-	announcement_reads            map[int64]struct{}
-	removedannouncement_reads     map[int64]struct{}
-	clearedannouncement_reads     bool
-	allowed_groups                map[int64]struct{}
-	removedallowed_groups         map[int64]struct{}
-	clearedallowed_groups         bool
-	usage_logs                    map[int64]struct{}
-	removedusage_logs             map[int64]struct{}
-	clearedusage_logs             bool
-	attribute_values              map[int64]struct{}
-	removedattribute_values       map[int64]struct{}
-	clearedattribute_values       bool
-	promo_code_usages             map[int64]struct{}
-	removedpromo_code_usages      map[int64]struct{}
-	clearedpromo_code_usages      bool
-	payment_orders                map[int64]struct{}
-	removedpayment_orders         map[int64]struct{}
-	clearedpayment_orders         bool
-	auth_identities               map[int64]struct{}
-	removedauth_identities        map[int64]struct{}
-	clearedauth_identities        bool
-	pending_auth_sessions         map[int64]struct{}
-	removedpending_auth_sessions  map[int64]struct{}
-	clearedpending_auth_sessions  bool
-	done                          bool
-	oldValue                      func(context.Context) (*User, error)
-	predicates                    []predicate.User
+	op                             Op
+	typ                            string
+	id                             *int64
+	created_at                     *time.Time
+	updated_at                     *time.Time
+	deleted_at                     *time.Time
+	email                          *string
+	password_hash                  *string
+	role                           *string
+	balance                        *float64
+	addbalance                     *float64
+	concurrency                    *int
+	addconcurrency                 *int
+	status                         *string
+	username                       *string
+	notes                          *string
+	totp_secret_encrypted          *string
+	totp_enabled                   *bool
+	totp_enabled_at                *time.Time
+	signup_source                  *string
+	last_login_at                  *time.Time
+	last_active_at                 *time.Time
+	balance_notify_enabled         *bool
+	balance_notify_threshold_type  *string
+	balance_notify_threshold       *float64
+	addbalance_notify_threshold    *float64
+	balance_notify_extra_emails    *string
+	total_recharged                *float64
+	addtotal_recharged             *float64
+	rpm_limit                      *int
+	addrpm_limit                   *int
+	clearedFields                  map[string]struct{}
+	api_keys                       map[int64]struct{}
+	removedapi_keys                map[int64]struct{}
+	clearedapi_keys                bool
+	redeem_codes                   map[int64]struct{}
+	removedredeem_codes            map[int64]struct{}
+	clearedredeem_codes            bool
+	subscriptions                  map[int64]struct{}
+	removedsubscriptions           map[int64]struct{}
+	clearedsubscriptions           bool
+	assigned_subscriptions         map[int64]struct{}
+	removedassigned_subscriptions  map[int64]struct{}
+	clearedassigned_subscriptions  bool
+	announcement_reads             map[int64]struct{}
+	removedannouncement_reads      map[int64]struct{}
+	clearedannouncement_reads      bool
+	allowed_groups                 map[int64]struct{}
+	removedallowed_groups          map[int64]struct{}
+	clearedallowed_groups          bool
+	usage_logs                     map[int64]struct{}
+	removedusage_logs              map[int64]struct{}
+	clearedusage_logs              bool
+	attribute_values               map[int64]struct{}
+	removedattribute_values        map[int64]struct{}
+	clearedattribute_values        bool
+	promo_code_usages              map[int64]struct{}
+	removedpromo_code_usages       map[int64]struct{}
+	clearedpromo_code_usages       bool
+	payment_orders                 map[int64]struct{}
+	removedpayment_orders          map[int64]struct{}
+	clearedpayment_orders          bool
+	auth_identities                map[int64]struct{}
+	removedauth_identities         map[int64]struct{}
+	clearedauth_identities         bool
+	pending_auth_sessions          map[int64]struct{}
+	removedpending_auth_sessions   map[int64]struct{}
+	clearedpending_auth_sessions   bool
+	resource_supply_balance        map[int64]struct{}
+	removedresource_supply_balance map[int64]struct{}
+	clearedresource_supply_balance bool
+	done                           bool
+	oldValue                       func(context.Context) (*User, error)
+	predicates                     []predicate.User
 }
 
 var _ ent.Mutation = (*UserMutation)(nil)
@@ -39250,6 +45500,60 @@ func (m *UserMutation) ResetPendingAuthSessions() {
 	m.removedpending_auth_sessions = nil
 }
 
+// AddResourceSupplyBalanceIDs adds the "resource_supply_balance" edge to the ResourceSupplyBalance entity by ids.
+func (m *UserMutation) AddResourceSupplyBalanceIDs(ids ...int64) {
+	if m.resource_supply_balance == nil {
+		m.resource_supply_balance = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.resource_supply_balance[ids[i]] = struct{}{}
+	}
+}
+
+// ClearResourceSupplyBalance clears the "resource_supply_balance" edge to the ResourceSupplyBalance entity.
+func (m *UserMutation) ClearResourceSupplyBalance() {
+	m.clearedresource_supply_balance = true
+}
+
+// ResourceSupplyBalanceCleared reports if the "resource_supply_balance" edge to the ResourceSupplyBalance entity was cleared.
+func (m *UserMutation) ResourceSupplyBalanceCleared() bool {
+	return m.clearedresource_supply_balance
+}
+
+// RemoveResourceSupplyBalanceIDs removes the "resource_supply_balance" edge to the ResourceSupplyBalance entity by IDs.
+func (m *UserMutation) RemoveResourceSupplyBalanceIDs(ids ...int64) {
+	if m.removedresource_supply_balance == nil {
+		m.removedresource_supply_balance = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.resource_supply_balance, ids[i])
+		m.removedresource_supply_balance[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedResourceSupplyBalance returns the removed IDs of the "resource_supply_balance" edge to the ResourceSupplyBalance entity.
+func (m *UserMutation) RemovedResourceSupplyBalanceIDs() (ids []int64) {
+	for id := range m.removedresource_supply_balance {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResourceSupplyBalanceIDs returns the "resource_supply_balance" edge IDs in the mutation.
+func (m *UserMutation) ResourceSupplyBalanceIDs() (ids []int64) {
+	for id := range m.resource_supply_balance {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetResourceSupplyBalance resets all changes to the "resource_supply_balance" edge.
+func (m *UserMutation) ResetResourceSupplyBalance() {
+	m.resource_supply_balance = nil
+	m.clearedresource_supply_balance = false
+	m.removedresource_supply_balance = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -39859,7 +46163,7 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 12)
+	edges := make([]string, 0, 13)
 	if m.api_keys != nil {
 		edges = append(edges, user.EdgeAPIKeys)
 	}
@@ -39895,6 +46199,9 @@ func (m *UserMutation) AddedEdges() []string {
 	}
 	if m.pending_auth_sessions != nil {
 		edges = append(edges, user.EdgePendingAuthSessions)
+	}
+	if m.resource_supply_balance != nil {
+		edges = append(edges, user.EdgeResourceSupplyBalance)
 	}
 	return edges
 }
@@ -39975,13 +46282,19 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeResourceSupplyBalance:
+		ids := make([]ent.Value, 0, len(m.resource_supply_balance))
+		for id := range m.resource_supply_balance {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 12)
+	edges := make([]string, 0, 13)
 	if m.removedapi_keys != nil {
 		edges = append(edges, user.EdgeAPIKeys)
 	}
@@ -40017,6 +46330,9 @@ func (m *UserMutation) RemovedEdges() []string {
 	}
 	if m.removedpending_auth_sessions != nil {
 		edges = append(edges, user.EdgePendingAuthSessions)
+	}
+	if m.removedresource_supply_balance != nil {
+		edges = append(edges, user.EdgeResourceSupplyBalance)
 	}
 	return edges
 }
@@ -40097,13 +46413,19 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeResourceSupplyBalance:
+		ids := make([]ent.Value, 0, len(m.removedresource_supply_balance))
+		for id := range m.removedresource_supply_balance {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 12)
+	edges := make([]string, 0, 13)
 	if m.clearedapi_keys {
 		edges = append(edges, user.EdgeAPIKeys)
 	}
@@ -40140,6 +46462,9 @@ func (m *UserMutation) ClearedEdges() []string {
 	if m.clearedpending_auth_sessions {
 		edges = append(edges, user.EdgePendingAuthSessions)
 	}
+	if m.clearedresource_supply_balance {
+		edges = append(edges, user.EdgeResourceSupplyBalance)
+	}
 	return edges
 }
 
@@ -40171,6 +46496,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 		return m.clearedauth_identities
 	case user.EdgePendingAuthSessions:
 		return m.clearedpending_auth_sessions
+	case user.EdgeResourceSupplyBalance:
+		return m.clearedresource_supply_balance
 	}
 	return false
 }
@@ -40222,6 +46549,9 @@ func (m *UserMutation) ResetEdge(name string) error {
 		return nil
 	case user.EdgePendingAuthSessions:
 		m.ResetPendingAuthSessions()
+		return nil
+	case user.EdgeResourceSupplyBalance:
+		m.ResetResourceSupplyBalance()
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)

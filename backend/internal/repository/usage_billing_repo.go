@@ -54,6 +54,13 @@ func (r *usageBillingRepository) Apply(ctx context.Context, cmd *service.UsageBi
 	if err := r.applyUsageBillingEffects(ctx, tx, cmd, result); err != nil {
 		return nil, err
 	}
+	eventID, err := insertUsageBillingEvent(ctx, tx, cmd)
+	if err != nil {
+		return nil, err
+	}
+	if err := applyResourceSupplyReward(ctx, tx, cmd, eventID); err != nil {
+		return nil, err
+	}
 
 	if err := tx.Commit(); err != nil {
 		return nil, err
@@ -143,6 +150,171 @@ func (r *usageBillingRepository) applyUsageBillingEffects(ctx context.Context, t
 	}
 
 	return nil
+}
+
+func insertUsageBillingEvent(ctx context.Context, tx *sql.Tx, cmd *service.UsageBillingCommand) (int64, error) {
+	var eventID int64
+	err := tx.QueryRowContext(ctx, `
+		INSERT INTO usage_billing_events (
+			request_id,
+			api_key_id,
+			request_fingerprint,
+			request_payload_hash,
+			user_id,
+			group_id,
+			account_id,
+			account_type,
+			model,
+			service_tier,
+			reasoning_effort,
+			billing_type,
+			input_tokens,
+			output_tokens,
+			cache_creation_tokens,
+			cache_read_tokens,
+			cache_creation_5m_tokens,
+			cache_creation_1h_tokens,
+			total_cost,
+			actual_cost,
+			balance_cost,
+			subscription_cost,
+			api_key_quota_cost,
+			api_key_rate_limit_cost,
+			account_quota_cost,
+			supply_reward_eligible,
+			supply_owner_user_id,
+			supply_reward_multiplier,
+			supply_account_status,
+			supply_source,
+			created_at,
+			updated_at
+		)
+		VALUES (
+			$1, $2, $3, NULLIF($4, ''), $5, $6, $7, NULLIF($8, ''), $9, $10, $11, $12,
+			$13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, 'live', NOW(), NOW()
+		)
+		RETURNING id
+	`,
+		cmd.RequestID,
+		cmd.APIKeyID,
+		cmd.RequestFingerprint,
+		strings.TrimSpace(cmd.RequestPayloadHash),
+		cmd.UserID,
+		nullableInt64(cmd.GroupID),
+		cmd.AccountID,
+		strings.TrimSpace(cmd.AccountType),
+		strings.TrimSpace(cmd.Model),
+		strings.TrimSpace(cmd.ServiceTier),
+		strings.TrimSpace(cmd.ReasoningEffort),
+		cmd.BillingType,
+		cmd.InputTokens,
+		cmd.OutputTokens,
+		cmd.CacheCreationTokens,
+		cmd.CacheReadTokens,
+		cmd.CacheCreation5mTokens,
+		cmd.CacheCreation1hTokens,
+		cmd.TotalCost,
+		cmd.ActualCost,
+		cmd.BalanceCost,
+		cmd.SubscriptionCost,
+		cmd.APIKeyQuotaCost,
+		cmd.APIKeyRateLimitCost,
+		cmd.AccountQuotaCost,
+		cmd.SupplyRewardEligible,
+		nullableInt64(cmd.SupplyOwnerUserID),
+		cmd.SupplyRewardMultiplier,
+		strings.TrimSpace(cmd.SupplyAccountStatus),
+	).Scan(&eventID)
+	if err != nil {
+		return 0, err
+	}
+	return eventID, nil
+}
+
+func applyResourceSupplyReward(ctx context.Context, tx *sql.Tx, cmd *service.UsageBillingCommand, eventID int64) error {
+	if cmd == nil || !cmd.SupplyRewardEligible || cmd.SupplyOwnerUserID == nil || *cmd.SupplyOwnerUserID <= 0 {
+		return nil
+	}
+	if cmd.SupplyAccountStatus != service.ResourceSupplyStatusSchedulable {
+		return nil
+	}
+	if cmd.ActualCost <= 0 || cmd.SupplyRewardMultiplier <= 0 {
+		return nil
+	}
+
+	rewardAmount := cmd.ActualCost * cmd.SupplyRewardMultiplier
+	if rewardAmount <= 0 {
+		return nil
+	}
+
+	ownerUserID := *cmd.SupplyOwnerUserID
+	if ownerUserID == cmd.UserID {
+		return nil
+	}
+	var balanceAfter float64
+	if err := tx.QueryRowContext(ctx, `
+		INSERT INTO resource_supply_balances (
+			user_id,
+			available_amount,
+			lifetime_earned_amount,
+			lifetime_transferred_amount,
+			created_at,
+			updated_at
+		)
+		VALUES ($1, $2, $2, 0, NOW(), NOW())
+		ON CONFLICT (user_id) DO UPDATE SET
+			available_amount = resource_supply_balances.available_amount + EXCLUDED.available_amount,
+			lifetime_earned_amount = resource_supply_balances.lifetime_earned_amount + EXCLUDED.lifetime_earned_amount,
+			updated_at = NOW()
+		RETURNING available_amount::double precision
+	`, ownerUserID, rewardAmount).Scan(&balanceAfter); err != nil {
+		return err
+	}
+
+	_, err := tx.ExecContext(ctx, `
+		INSERT INTO resource_supply_ledger (
+			owner_user_id,
+			caller_user_id,
+			api_key_id,
+			group_id,
+			account_id,
+			usage_billing_event_id,
+			ledger_type,
+			amount,
+			balance_after,
+			actual_cost,
+			reward_multiplier,
+			billing_type,
+			model,
+			request_id,
+			created_at,
+			updated_at
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NULLIF($13, ''), $14, NOW(), NOW())
+	`,
+		ownerUserID,
+		cmd.UserID,
+		cmd.APIKeyID,
+		nullableInt64(cmd.GroupID),
+		cmd.AccountID,
+		eventID,
+		service.ResourceSupplyLedgerTypeReward,
+		rewardAmount,
+		balanceAfter,
+		cmd.ActualCost,
+		cmd.SupplyRewardMultiplier,
+		cmd.BillingType,
+		strings.TrimSpace(cmd.Model),
+		cmd.RequestID,
+	)
+	return err
+}
+
+func nullableInt64(value *int64) any {
+	if value == nil {
+		return nil
+	}
+	return *value
 }
 
 func incrementUsageBillingSubscription(ctx context.Context, tx *sql.Tx, subscriptionID int64, costUSD float64) error {

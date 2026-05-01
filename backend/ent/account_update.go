@@ -329,6 +329,161 @@ func (_u *AccountUpdate) SetNillableAutoPauseOnExpired(v *bool) *AccountUpdate {
 	return _u
 }
 
+// SetSupplyOwnerUserID sets the "supply_owner_user_id" field.
+func (_u *AccountUpdate) SetSupplyOwnerUserID(v int64) *AccountUpdate {
+	_u.mutation.ResetSupplyOwnerUserID()
+	_u.mutation.SetSupplyOwnerUserID(v)
+	return _u
+}
+
+// SetNillableSupplyOwnerUserID sets the "supply_owner_user_id" field if the given value is not nil.
+func (_u *AccountUpdate) SetNillableSupplyOwnerUserID(v *int64) *AccountUpdate {
+	if v != nil {
+		_u.SetSupplyOwnerUserID(*v)
+	}
+	return _u
+}
+
+// AddSupplyOwnerUserID adds value to the "supply_owner_user_id" field.
+func (_u *AccountUpdate) AddSupplyOwnerUserID(v int64) *AccountUpdate {
+	_u.mutation.AddSupplyOwnerUserID(v)
+	return _u
+}
+
+// ClearSupplyOwnerUserID clears the value of the "supply_owner_user_id" field.
+func (_u *AccountUpdate) ClearSupplyOwnerUserID() *AccountUpdate {
+	_u.mutation.ClearSupplyOwnerUserID()
+	return _u
+}
+
+// SetSupplySource sets the "supply_source" field.
+func (_u *AccountUpdate) SetSupplySource(v string) *AccountUpdate {
+	_u.mutation.SetSupplySource(v)
+	return _u
+}
+
+// SetNillableSupplySource sets the "supply_source" field if the given value is not nil.
+func (_u *AccountUpdate) SetNillableSupplySource(v *string) *AccountUpdate {
+	if v != nil {
+		_u.SetSupplySource(*v)
+	}
+	return _u
+}
+
+// ClearSupplySource clears the value of the "supply_source" field.
+func (_u *AccountUpdate) ClearSupplySource() *AccountUpdate {
+	_u.mutation.ClearSupplySource()
+	return _u
+}
+
+// SetSupplyStatus sets the "supply_status" field.
+func (_u *AccountUpdate) SetSupplyStatus(v string) *AccountUpdate {
+	_u.mutation.SetSupplyStatus(v)
+	return _u
+}
+
+// SetNillableSupplyStatus sets the "supply_status" field if the given value is not nil.
+func (_u *AccountUpdate) SetNillableSupplyStatus(v *string) *AccountUpdate {
+	if v != nil {
+		_u.SetSupplyStatus(*v)
+	}
+	return _u
+}
+
+// SetSupplyStatusReason sets the "supply_status_reason" field.
+func (_u *AccountUpdate) SetSupplyStatusReason(v string) *AccountUpdate {
+	_u.mutation.SetSupplyStatusReason(v)
+	return _u
+}
+
+// SetNillableSupplyStatusReason sets the "supply_status_reason" field if the given value is not nil.
+func (_u *AccountUpdate) SetNillableSupplyStatusReason(v *string) *AccountUpdate {
+	if v != nil {
+		_u.SetSupplyStatusReason(*v)
+	}
+	return _u
+}
+
+// ClearSupplyStatusReason clears the value of the "supply_status_reason" field.
+func (_u *AccountUpdate) ClearSupplyStatusReason() *AccountUpdate {
+	_u.mutation.ClearSupplyStatusReason()
+	return _u
+}
+
+// SetSupplySubmittedBy sets the "supply_submitted_by" field.
+func (_u *AccountUpdate) SetSupplySubmittedBy(v int64) *AccountUpdate {
+	_u.mutation.ResetSupplySubmittedBy()
+	_u.mutation.SetSupplySubmittedBy(v)
+	return _u
+}
+
+// SetNillableSupplySubmittedBy sets the "supply_submitted_by" field if the given value is not nil.
+func (_u *AccountUpdate) SetNillableSupplySubmittedBy(v *int64) *AccountUpdate {
+	if v != nil {
+		_u.SetSupplySubmittedBy(*v)
+	}
+	return _u
+}
+
+// AddSupplySubmittedBy adds value to the "supply_submitted_by" field.
+func (_u *AccountUpdate) AddSupplySubmittedBy(v int64) *AccountUpdate {
+	_u.mutation.AddSupplySubmittedBy(v)
+	return _u
+}
+
+// ClearSupplySubmittedBy clears the value of the "supply_submitted_by" field.
+func (_u *AccountUpdate) ClearSupplySubmittedBy() *AccountUpdate {
+	_u.mutation.ClearSupplySubmittedBy()
+	return _u
+}
+
+// SetSupplyReviewedBy sets the "supply_reviewed_by" field.
+func (_u *AccountUpdate) SetSupplyReviewedBy(v int64) *AccountUpdate {
+	_u.mutation.ResetSupplyReviewedBy()
+	_u.mutation.SetSupplyReviewedBy(v)
+	return _u
+}
+
+// SetNillableSupplyReviewedBy sets the "supply_reviewed_by" field if the given value is not nil.
+func (_u *AccountUpdate) SetNillableSupplyReviewedBy(v *int64) *AccountUpdate {
+	if v != nil {
+		_u.SetSupplyReviewedBy(*v)
+	}
+	return _u
+}
+
+// AddSupplyReviewedBy adds value to the "supply_reviewed_by" field.
+func (_u *AccountUpdate) AddSupplyReviewedBy(v int64) *AccountUpdate {
+	_u.mutation.AddSupplyReviewedBy(v)
+	return _u
+}
+
+// ClearSupplyReviewedBy clears the value of the "supply_reviewed_by" field.
+func (_u *AccountUpdate) ClearSupplyReviewedBy() *AccountUpdate {
+	_u.mutation.ClearSupplyReviewedBy()
+	return _u
+}
+
+// SetSupplyReviewedAt sets the "supply_reviewed_at" field.
+func (_u *AccountUpdate) SetSupplyReviewedAt(v time.Time) *AccountUpdate {
+	_u.mutation.SetSupplyReviewedAt(v)
+	return _u
+}
+
+// SetNillableSupplyReviewedAt sets the "supply_reviewed_at" field if the given value is not nil.
+func (_u *AccountUpdate) SetNillableSupplyReviewedAt(v *time.Time) *AccountUpdate {
+	if v != nil {
+		_u.SetSupplyReviewedAt(*v)
+	}
+	return _u
+}
+
+// ClearSupplyReviewedAt clears the value of the "supply_reviewed_at" field.
+func (_u *AccountUpdate) ClearSupplyReviewedAt() *AccountUpdate {
+	_u.mutation.ClearSupplyReviewedAt()
+	return _u
+}
+
 // SetSchedulable sets the "schedulable" field.
 func (_u *AccountUpdate) SetSchedulable(v bool) *AccountUpdate {
 	_u.mutation.SetSchedulable(v)
@@ -655,6 +810,16 @@ func (_u *AccountUpdate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Account.status": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.SupplySource(); ok {
+		if err := account.SupplySourceValidator(v); err != nil {
+			return &ValidationError{Name: "supply_source", err: fmt.Errorf(`ent: validator failed for field "Account.supply_source": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.SupplyStatus(); ok {
+		if err := account.SupplyStatusValidator(v); err != nil {
+			return &ValidationError{Name: "supply_status", err: fmt.Errorf(`ent: validator failed for field "Account.supply_status": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.SessionWindowStatus(); ok {
 		if err := account.SessionWindowStatusValidator(v); err != nil {
 			return &ValidationError{Name: "session_window_status", err: fmt.Errorf(`ent: validator failed for field "Account.session_window_status": %w`, err)}
@@ -755,6 +920,54 @@ func (_u *AccountUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AutoPauseOnExpired(); ok {
 		_spec.SetField(account.FieldAutoPauseOnExpired, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.SupplyOwnerUserID(); ok {
+		_spec.SetField(account.FieldSupplyOwnerUserID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedSupplyOwnerUserID(); ok {
+		_spec.AddField(account.FieldSupplyOwnerUserID, field.TypeInt64, value)
+	}
+	if _u.mutation.SupplyOwnerUserIDCleared() {
+		_spec.ClearField(account.FieldSupplyOwnerUserID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.SupplySource(); ok {
+		_spec.SetField(account.FieldSupplySource, field.TypeString, value)
+	}
+	if _u.mutation.SupplySourceCleared() {
+		_spec.ClearField(account.FieldSupplySource, field.TypeString)
+	}
+	if value, ok := _u.mutation.SupplyStatus(); ok {
+		_spec.SetField(account.FieldSupplyStatus, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.SupplyStatusReason(); ok {
+		_spec.SetField(account.FieldSupplyStatusReason, field.TypeString, value)
+	}
+	if _u.mutation.SupplyStatusReasonCleared() {
+		_spec.ClearField(account.FieldSupplyStatusReason, field.TypeString)
+	}
+	if value, ok := _u.mutation.SupplySubmittedBy(); ok {
+		_spec.SetField(account.FieldSupplySubmittedBy, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedSupplySubmittedBy(); ok {
+		_spec.AddField(account.FieldSupplySubmittedBy, field.TypeInt64, value)
+	}
+	if _u.mutation.SupplySubmittedByCleared() {
+		_spec.ClearField(account.FieldSupplySubmittedBy, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.SupplyReviewedBy(); ok {
+		_spec.SetField(account.FieldSupplyReviewedBy, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedSupplyReviewedBy(); ok {
+		_spec.AddField(account.FieldSupplyReviewedBy, field.TypeInt64, value)
+	}
+	if _u.mutation.SupplyReviewedByCleared() {
+		_spec.ClearField(account.FieldSupplyReviewedBy, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.SupplyReviewedAt(); ok {
+		_spec.SetField(account.FieldSupplyReviewedAt, field.TypeTime, value)
+	}
+	if _u.mutation.SupplyReviewedAtCleared() {
+		_spec.ClearField(account.FieldSupplyReviewedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.Schedulable(); ok {
 		_spec.SetField(account.FieldSchedulable, field.TypeBool, value)
@@ -1256,6 +1469,161 @@ func (_u *AccountUpdateOne) SetNillableAutoPauseOnExpired(v *bool) *AccountUpdat
 	return _u
 }
 
+// SetSupplyOwnerUserID sets the "supply_owner_user_id" field.
+func (_u *AccountUpdateOne) SetSupplyOwnerUserID(v int64) *AccountUpdateOne {
+	_u.mutation.ResetSupplyOwnerUserID()
+	_u.mutation.SetSupplyOwnerUserID(v)
+	return _u
+}
+
+// SetNillableSupplyOwnerUserID sets the "supply_owner_user_id" field if the given value is not nil.
+func (_u *AccountUpdateOne) SetNillableSupplyOwnerUserID(v *int64) *AccountUpdateOne {
+	if v != nil {
+		_u.SetSupplyOwnerUserID(*v)
+	}
+	return _u
+}
+
+// AddSupplyOwnerUserID adds value to the "supply_owner_user_id" field.
+func (_u *AccountUpdateOne) AddSupplyOwnerUserID(v int64) *AccountUpdateOne {
+	_u.mutation.AddSupplyOwnerUserID(v)
+	return _u
+}
+
+// ClearSupplyOwnerUserID clears the value of the "supply_owner_user_id" field.
+func (_u *AccountUpdateOne) ClearSupplyOwnerUserID() *AccountUpdateOne {
+	_u.mutation.ClearSupplyOwnerUserID()
+	return _u
+}
+
+// SetSupplySource sets the "supply_source" field.
+func (_u *AccountUpdateOne) SetSupplySource(v string) *AccountUpdateOne {
+	_u.mutation.SetSupplySource(v)
+	return _u
+}
+
+// SetNillableSupplySource sets the "supply_source" field if the given value is not nil.
+func (_u *AccountUpdateOne) SetNillableSupplySource(v *string) *AccountUpdateOne {
+	if v != nil {
+		_u.SetSupplySource(*v)
+	}
+	return _u
+}
+
+// ClearSupplySource clears the value of the "supply_source" field.
+func (_u *AccountUpdateOne) ClearSupplySource() *AccountUpdateOne {
+	_u.mutation.ClearSupplySource()
+	return _u
+}
+
+// SetSupplyStatus sets the "supply_status" field.
+func (_u *AccountUpdateOne) SetSupplyStatus(v string) *AccountUpdateOne {
+	_u.mutation.SetSupplyStatus(v)
+	return _u
+}
+
+// SetNillableSupplyStatus sets the "supply_status" field if the given value is not nil.
+func (_u *AccountUpdateOne) SetNillableSupplyStatus(v *string) *AccountUpdateOne {
+	if v != nil {
+		_u.SetSupplyStatus(*v)
+	}
+	return _u
+}
+
+// SetSupplyStatusReason sets the "supply_status_reason" field.
+func (_u *AccountUpdateOne) SetSupplyStatusReason(v string) *AccountUpdateOne {
+	_u.mutation.SetSupplyStatusReason(v)
+	return _u
+}
+
+// SetNillableSupplyStatusReason sets the "supply_status_reason" field if the given value is not nil.
+func (_u *AccountUpdateOne) SetNillableSupplyStatusReason(v *string) *AccountUpdateOne {
+	if v != nil {
+		_u.SetSupplyStatusReason(*v)
+	}
+	return _u
+}
+
+// ClearSupplyStatusReason clears the value of the "supply_status_reason" field.
+func (_u *AccountUpdateOne) ClearSupplyStatusReason() *AccountUpdateOne {
+	_u.mutation.ClearSupplyStatusReason()
+	return _u
+}
+
+// SetSupplySubmittedBy sets the "supply_submitted_by" field.
+func (_u *AccountUpdateOne) SetSupplySubmittedBy(v int64) *AccountUpdateOne {
+	_u.mutation.ResetSupplySubmittedBy()
+	_u.mutation.SetSupplySubmittedBy(v)
+	return _u
+}
+
+// SetNillableSupplySubmittedBy sets the "supply_submitted_by" field if the given value is not nil.
+func (_u *AccountUpdateOne) SetNillableSupplySubmittedBy(v *int64) *AccountUpdateOne {
+	if v != nil {
+		_u.SetSupplySubmittedBy(*v)
+	}
+	return _u
+}
+
+// AddSupplySubmittedBy adds value to the "supply_submitted_by" field.
+func (_u *AccountUpdateOne) AddSupplySubmittedBy(v int64) *AccountUpdateOne {
+	_u.mutation.AddSupplySubmittedBy(v)
+	return _u
+}
+
+// ClearSupplySubmittedBy clears the value of the "supply_submitted_by" field.
+func (_u *AccountUpdateOne) ClearSupplySubmittedBy() *AccountUpdateOne {
+	_u.mutation.ClearSupplySubmittedBy()
+	return _u
+}
+
+// SetSupplyReviewedBy sets the "supply_reviewed_by" field.
+func (_u *AccountUpdateOne) SetSupplyReviewedBy(v int64) *AccountUpdateOne {
+	_u.mutation.ResetSupplyReviewedBy()
+	_u.mutation.SetSupplyReviewedBy(v)
+	return _u
+}
+
+// SetNillableSupplyReviewedBy sets the "supply_reviewed_by" field if the given value is not nil.
+func (_u *AccountUpdateOne) SetNillableSupplyReviewedBy(v *int64) *AccountUpdateOne {
+	if v != nil {
+		_u.SetSupplyReviewedBy(*v)
+	}
+	return _u
+}
+
+// AddSupplyReviewedBy adds value to the "supply_reviewed_by" field.
+func (_u *AccountUpdateOne) AddSupplyReviewedBy(v int64) *AccountUpdateOne {
+	_u.mutation.AddSupplyReviewedBy(v)
+	return _u
+}
+
+// ClearSupplyReviewedBy clears the value of the "supply_reviewed_by" field.
+func (_u *AccountUpdateOne) ClearSupplyReviewedBy() *AccountUpdateOne {
+	_u.mutation.ClearSupplyReviewedBy()
+	return _u
+}
+
+// SetSupplyReviewedAt sets the "supply_reviewed_at" field.
+func (_u *AccountUpdateOne) SetSupplyReviewedAt(v time.Time) *AccountUpdateOne {
+	_u.mutation.SetSupplyReviewedAt(v)
+	return _u
+}
+
+// SetNillableSupplyReviewedAt sets the "supply_reviewed_at" field if the given value is not nil.
+func (_u *AccountUpdateOne) SetNillableSupplyReviewedAt(v *time.Time) *AccountUpdateOne {
+	if v != nil {
+		_u.SetSupplyReviewedAt(*v)
+	}
+	return _u
+}
+
+// ClearSupplyReviewedAt clears the value of the "supply_reviewed_at" field.
+func (_u *AccountUpdateOne) ClearSupplyReviewedAt() *AccountUpdateOne {
+	_u.mutation.ClearSupplyReviewedAt()
+	return _u
+}
+
 // SetSchedulable sets the "schedulable" field.
 func (_u *AccountUpdateOne) SetSchedulable(v bool) *AccountUpdateOne {
 	_u.mutation.SetSchedulable(v)
@@ -1595,6 +1963,16 @@ func (_u *AccountUpdateOne) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Account.status": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.SupplySource(); ok {
+		if err := account.SupplySourceValidator(v); err != nil {
+			return &ValidationError{Name: "supply_source", err: fmt.Errorf(`ent: validator failed for field "Account.supply_source": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.SupplyStatus(); ok {
+		if err := account.SupplyStatusValidator(v); err != nil {
+			return &ValidationError{Name: "supply_status", err: fmt.Errorf(`ent: validator failed for field "Account.supply_status": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.SessionWindowStatus(); ok {
 		if err := account.SessionWindowStatusValidator(v); err != nil {
 			return &ValidationError{Name: "session_window_status", err: fmt.Errorf(`ent: validator failed for field "Account.session_window_status": %w`, err)}
@@ -1712,6 +2090,54 @@ func (_u *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err er
 	}
 	if value, ok := _u.mutation.AutoPauseOnExpired(); ok {
 		_spec.SetField(account.FieldAutoPauseOnExpired, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.SupplyOwnerUserID(); ok {
+		_spec.SetField(account.FieldSupplyOwnerUserID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedSupplyOwnerUserID(); ok {
+		_spec.AddField(account.FieldSupplyOwnerUserID, field.TypeInt64, value)
+	}
+	if _u.mutation.SupplyOwnerUserIDCleared() {
+		_spec.ClearField(account.FieldSupplyOwnerUserID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.SupplySource(); ok {
+		_spec.SetField(account.FieldSupplySource, field.TypeString, value)
+	}
+	if _u.mutation.SupplySourceCleared() {
+		_spec.ClearField(account.FieldSupplySource, field.TypeString)
+	}
+	if value, ok := _u.mutation.SupplyStatus(); ok {
+		_spec.SetField(account.FieldSupplyStatus, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.SupplyStatusReason(); ok {
+		_spec.SetField(account.FieldSupplyStatusReason, field.TypeString, value)
+	}
+	if _u.mutation.SupplyStatusReasonCleared() {
+		_spec.ClearField(account.FieldSupplyStatusReason, field.TypeString)
+	}
+	if value, ok := _u.mutation.SupplySubmittedBy(); ok {
+		_spec.SetField(account.FieldSupplySubmittedBy, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedSupplySubmittedBy(); ok {
+		_spec.AddField(account.FieldSupplySubmittedBy, field.TypeInt64, value)
+	}
+	if _u.mutation.SupplySubmittedByCleared() {
+		_spec.ClearField(account.FieldSupplySubmittedBy, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.SupplyReviewedBy(); ok {
+		_spec.SetField(account.FieldSupplyReviewedBy, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedSupplyReviewedBy(); ok {
+		_spec.AddField(account.FieldSupplyReviewedBy, field.TypeInt64, value)
+	}
+	if _u.mutation.SupplyReviewedByCleared() {
+		_spec.ClearField(account.FieldSupplyReviewedBy, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.SupplyReviewedAt(); ok {
+		_spec.SetField(account.FieldSupplyReviewedAt, field.TypeTime, value)
+	}
+	if _u.mutation.SupplyReviewedAtCleared() {
+		_spec.ClearField(account.FieldSupplyReviewedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.Schedulable(); ok {
 		_spec.SetField(account.FieldSchedulable, field.TypeBool, value)

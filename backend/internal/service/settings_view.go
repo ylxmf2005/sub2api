@@ -104,15 +104,16 @@ type SystemSettings struct {
 	CustomMenuItems             string // JSON array of custom menu items
 	CustomEndpoints             string // JSON array of custom endpoints
 
-	DefaultConcurrency           int
-	DefaultBalance               float64
-	AffiliateEnabled             bool
-	AffiliateRebateRate          float64
-	AffiliateRebateFreezeHours   int
-	AffiliateRebateDurationDays  int
-	AffiliateRebatePerInviteeCap float64
-	DefaultUserRPMLimit          int
-	DefaultSubscriptions         []DefaultSubscriptionSetting
+	DefaultConcurrency               int
+	DefaultBalance                   float64
+	AffiliateEnabled                 bool
+	ResourceSupplySelfServiceEnabled bool
+	AffiliateRebateRate              float64
+	AffiliateRebateFreezeHours       int
+	AffiliateRebateDurationDays      int
+	AffiliateRebatePerInviteeCap     float64
+	DefaultUserRPMLimit              int
+	DefaultSubscriptions             []DefaultSubscriptionSetting
 
 	// Model fallback configuration
 	EnableModelFallback      bool   `json:"enable_model_fallback"`
@@ -232,6 +233,9 @@ type PublicSettings struct {
 
 	// Affiliate (邀请返利) feature toggle
 	AffiliateEnabled bool `json:"affiliate_enabled"`
+
+	// Resource supply self-service intake feature toggle
+	ResourceSupplySelfServiceEnabled bool `json:"resource_supply_self_service_enabled"`
 }
 
 type WeChatConnectOAuthConfig struct {
