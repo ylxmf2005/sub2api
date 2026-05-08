@@ -2767,7 +2767,7 @@
         <div>
           <label class="input-label">{{ t('admin.accounts.form.supplyOwnerUserId') }}</label>
           <UserSearchCombobox
-            :clear-on-select="true"
+            v-model="supplyOwnerSearchText"
             :placeholder="t('admin.accounts.form.supplyOwnerPlaceholder')"
             @select="handleSupplyOwnerSelect"
             @search-error="handleSupplyOwnerSearchError"
@@ -3595,11 +3595,13 @@ const form = reactive({
 })
 
 const supplyOwnerUser = ref<SimpleUser | null>(null)
+const supplyOwnerSearchText = ref('')
+const formatSupplyOwnerLabel = (user: SimpleUser) => `${user.email} (#${user.id})`
 const supplyOwnerLabel = computed(() => {
   const userID = form.supply_owner_user_id
   if (!userID) return ''
   if (supplyOwnerUser.value && supplyOwnerUser.value.id === userID) {
-    return `${supplyOwnerUser.value.email} (#${userID})`
+    return formatSupplyOwnerLabel(supplyOwnerUser.value)
   }
   return `#${userID}`
 })
@@ -3607,16 +3609,39 @@ const supplyOwnerLabel = computed(() => {
 const handleSupplyOwnerSelect = (user: SimpleUser) => {
   form.supply_owner_user_id = user.id
   supplyOwnerUser.value = user
+  supplyOwnerSearchText.value = formatSupplyOwnerLabel(user)
 }
 
 const clearSupplyOwner = () => {
   form.supply_owner_user_id = null
   supplyOwnerUser.value = null
+  supplyOwnerSearchText.value = ''
 }
 
 const handleSupplyOwnerSearchError = (error: unknown) => {
   const message = error instanceof Error ? error.message : t('admin.users.failedToLoad')
   appStore.showError(message)
+}
+
+watch(supplyOwnerSearchText, (value) => {
+  const searchText = value.trim()
+  if (!searchText) {
+    form.supply_owner_user_id = null
+    supplyOwnerUser.value = null
+    return
+  }
+  if (supplyOwnerUser.value && searchText !== formatSupplyOwnerLabel(supplyOwnerUser.value)) {
+    form.supply_owner_user_id = null
+    supplyOwnerUser.value = null
+  }
+})
+
+const ensureSupplyOwnerSelectionIsResolved = () => {
+  if (!form.supply_owner_user_id && supplyOwnerSearchText.value.trim()) {
+    appStore.showError(t('admin.accounts.form.supplyOwnerSelectionRequired'))
+    return false
+  }
+  return true
 }
 
 // Helper to check if current type needs OAuth flow
@@ -4139,6 +4164,7 @@ const resetForm = () => {
   form.expires_at = null
   form.supply_owner_user_id = null
   supplyOwnerUser.value = null
+  supplyOwnerSearchText.value = ''
   accountCategory.value = 'oauth-based'
   addMethod.value = 'oauth'
   apiKeyBaseUrl.value = isResourceSupply.value ? 'https://api.openai.com' : 'https://api.anthropic.com'
@@ -4428,6 +4454,10 @@ const handleResourceSupplyExchange = async (authCode: string) => {
 }
 
 const handleSubmit = async () => {
+  if (!ensureSupplyOwnerSelectionIsResolved()) {
+    return
+  }
+
   // For OAuth-based type, handle OAuth flow (goes to step 2)
   if (isOAuthFlow.value) {
     if (!isResourceSupply.value && !form.name.trim()) {

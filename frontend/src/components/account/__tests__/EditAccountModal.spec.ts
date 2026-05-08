@@ -2,14 +2,15 @@ import { describe, expect, it, vi } from 'vitest'
 import { defineComponent } from 'vue'
 import { mount } from '@vue/test-utils'
 
-const { updateAccountMock, checkMixedChannelRiskMock } = vi.hoisted(() => ({
+const { updateAccountMock, checkMixedChannelRiskMock, showErrorMock } = vi.hoisted(() => ({
   updateAccountMock: vi.fn(),
-  checkMixedChannelRiskMock: vi.fn()
+  checkMixedChannelRiskMock: vi.fn(),
+  showErrorMock: vi.fn()
 }))
 
 vi.mock('@/stores/app', () => ({
   useAppStore: () => ({
-    showError: vi.fn(),
+    showError: showErrorMock,
     showSuccess: vi.fn(),
     showInfo: vi.fn()
   })
@@ -115,6 +116,33 @@ const SelectStub = defineComponent({
   `
 })
 
+const UserSearchComboboxStub = defineComponent({
+  name: 'UserSearchCombobox',
+  props: {
+    modelValue: {
+      type: String,
+      default: ''
+    }
+  },
+  emits: ['update:modelValue', 'select'],
+  template: `
+    <div>
+      <input
+        data-testid="supply-owner-search"
+        :value="modelValue"
+        @input="$emit('update:modelValue', $event.target.value)"
+      />
+      <button
+        type="button"
+        data-testid="select-supply-owner"
+        @click="$emit('select', { id: 2, email: '319126768@qq.com', username: 'Chiaro\\'s Father' })"
+      >
+        select owner
+      </button>
+    </div>
+  `
+})
+
 function buildAccount() {
   return {
     id: 1,
@@ -156,7 +184,8 @@ function mountModal(account = buildAccount()) {
         Icon: true,
         ProxySelector: true,
         GroupSelector: true,
-        ModelWhitelistSelector: ModelWhitelistSelectorStub
+        ModelWhitelistSelector: ModelWhitelistSelectorStub,
+        UserSearchCombobox: UserSearchComboboxStub
       }
     }
   })
@@ -236,5 +265,41 @@ describe('EditAccountModal', () => {
     expect(updateAccountMock).toHaveBeenCalledTimes(1)
     expect(updateAccountMock.mock.calls[0]?.[1]?.extra?.codex_image_generation_bridge).toBe(true)
     expect(updateAccountMock.mock.calls[0]?.[1]?.extra).not.toHaveProperty('codex_image_generation_bridge_enabled')
+  })
+
+  it('shows and submits the selected supply owner', async () => {
+    const account = buildAccount()
+    updateAccountMock.mockReset()
+    checkMixedChannelRiskMock.mockReset()
+    showErrorMock.mockReset()
+    updateAccountMock.mockResolvedValue({ ...account, supply_owner_user_id: 2 })
+
+    const wrapper = mountModal(account)
+
+    await wrapper.get('[data-testid="select-supply-owner"]').trigger('click')
+
+    expect((wrapper.get('[data-testid="supply-owner-search"]').element as HTMLInputElement).value)
+      .toBe('319126768@qq.com (#2)')
+
+    await wrapper.get('form#edit-account-form').trigger('submit.prevent')
+
+    expect(updateAccountMock).toHaveBeenCalledTimes(1)
+    expect(updateAccountMock.mock.calls[0]?.[1]?.supply_owner_user_id).toBe(2)
+    expect(showErrorMock).not.toHaveBeenCalled()
+  })
+
+  it('does not submit a typed supply owner search without selecting a result', async () => {
+    const account = buildAccount()
+    updateAccountMock.mockReset()
+    checkMixedChannelRiskMock.mockReset()
+    showErrorMock.mockReset()
+
+    const wrapper = mountModal(account)
+
+    await wrapper.get('[data-testid="supply-owner-search"]').setValue('319126768')
+    await wrapper.get('form#edit-account-form').trigger('submit.prevent')
+
+    expect(updateAccountMock).not.toHaveBeenCalled()
+    expect(showErrorMock).toHaveBeenCalledWith('admin.accounts.form.supplyOwnerSelectionRequired')
   })
 })

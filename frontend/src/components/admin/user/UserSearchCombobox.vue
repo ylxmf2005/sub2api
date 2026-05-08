@@ -5,7 +5,7 @@
         <Icon name="search" size="sm" class="text-gray-400" />
       </div>
       <input
-        v-model="keyword"
+        :value="keyword"
         type="text"
         autocomplete="off"
         class="input w-full pl-9 pr-9"
@@ -58,29 +58,32 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, ref } from 'vue'
+import { onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { searchUsers, type SimpleUser } from '@/api/admin/usage'
 import Icon from '@/components/icons/Icon.vue'
 
 const props = withDefaults(defineProps<{
+  modelValue?: string
   placeholder?: string
   clearOnSelect?: boolean
   debounceMs?: number
 }>(), {
+  modelValue: '',
   placeholder: '',
   clearOnSelect: false,
   debounceMs: 300
 })
 
 const emit = defineEmits<{
+  (e: 'update:modelValue', value: string): void
   (e: 'select', user: SimpleUser): void
   (e: 'search-error', error: unknown): void
 }>()
 
 const { t } = useI18n()
 const rootRef = ref<HTMLElement | null>(null)
-const keyword = ref('')
+const keyword = ref(props.modelValue)
 const results = ref<SimpleUser[]>([])
 const loading = ref(false)
 const searched = ref(false)
@@ -89,6 +92,25 @@ const activeIndex = ref(-1)
 
 let searchTimer: number | null = null
 let requestVersion = 0
+
+watch(
+  () => props.modelValue,
+  (value) => {
+    const next = value ?? ''
+    if (next !== keyword.value) {
+      keyword.value = next
+    }
+  }
+)
+
+function setKeyword(value: string) {
+  keyword.value = value
+  emit('update:modelValue', value)
+}
+
+function formatUserLabel(user: SimpleUser) {
+  return `${user.email} (#${user.id})`
+}
 
 function openDropdown() {
   dropdownOpen.value = true
@@ -99,7 +121,9 @@ function closeDropdown() {
   activeIndex.value = -1
 }
 
-function handleInput() {
+function handleInput(event: Event) {
+  const target = event.target as HTMLInputElement | null
+  setKeyword(target?.value ?? '')
   openDropdown()
   searched.value = false
   activeIndex.value = -1
@@ -149,18 +173,18 @@ function selectActive() {
 function selectUser(user: SimpleUser) {
   emit('select', user)
   if (props.clearOnSelect) {
-    keyword.value = ''
+    setKeyword('')
     results.value = []
     searched.value = false
   } else {
-    keyword.value = user.email
+    setKeyword(formatUserLabel(user))
   }
   closeDropdown()
 }
 
 function clear() {
   requestVersion++
-  keyword.value = ''
+  setKeyword('')
   results.value = []
   searched.value = false
   closeDropdown()

@@ -3989,6 +3989,7 @@ export default {
       supplyOwnerUserId: 'Supply Owner',
       supplyOwnerPlaceholder: 'Search email, username, or user ID',
       supplyOwnerHint: 'When bound to an owner, scheduling this account generates supply earnings',
+      supplyOwnerSelectionRequired: 'Select a supply owner from the search results',
       supplyStatus: 'Supply Status'
     },
 

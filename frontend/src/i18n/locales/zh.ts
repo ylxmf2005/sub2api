@@ -3345,6 +3345,7 @@ export default {
         supplyOwnerUserId: '供给主人',
         supplyOwnerPlaceholder: '搜索邮箱、用户名或 User ID',
         supplyOwnerHint: '绑定账号主人后，该账号被调度时产生供给收益',
+        supplyOwnerSelectionRequired: '请从搜索结果中选择供给主人',
         supplyStatus: '供给状态',
       },
       filters: {

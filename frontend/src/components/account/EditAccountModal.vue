@@ -2126,7 +2126,7 @@
       <div>
         <label class="input-label">{{ t('admin.accounts.form.supplyOwnerUserId') }}</label>
         <UserSearchCombobox
-          :clear-on-select="true"
+          v-model="supplyOwnerSearchText"
           :placeholder="t('admin.accounts.form.supplyOwnerPlaceholder')"
           @select="handleSupplyOwnerSelect"
           @search-error="handleSupplyOwnerSearchError"
@@ -2543,13 +2543,16 @@ const form = reactive({
 })
 
 const supplyOwnerUser = ref<SimpleUser | null>(null)
+const supplyOwnerSearchText = ref('')
 let supplyOwnerLoadVersion = 0
+
+const formatSupplyOwnerLabel = (user: SimpleUser) => `${user.email} (#${user.id})`
 
 const supplyOwnerLabel = computed(() => {
   const userID = form.supply_owner_user_id
   if (!userID) return ''
   if (supplyOwnerUser.value && supplyOwnerUser.value.id === userID) {
-    return `${supplyOwnerUser.value.email} (#${userID})`
+    return formatSupplyOwnerLabel(supplyOwnerUser.value)
   }
   return `#${userID}`
 })
@@ -2557,11 +2560,13 @@ const supplyOwnerLabel = computed(() => {
 const handleSupplyOwnerSelect = (user: SimpleUser) => {
   form.supply_owner_user_id = user.id
   supplyOwnerUser.value = user
+  supplyOwnerSearchText.value = formatSupplyOwnerLabel(user)
 }
 
 const clearSupplyOwner = () => {
   form.supply_owner_user_id = null
   supplyOwnerUser.value = null
+  supplyOwnerSearchText.value = ''
 }
 
 const handleSupplyOwnerSearchError = (error: unknown) => {
@@ -2573,20 +2578,36 @@ const loadSupplyOwnerUser = async (userID: number | null) => {
   const version = ++supplyOwnerLoadVersion
   if (!userID) {
     supplyOwnerUser.value = null
+    supplyOwnerSearchText.value = ''
     return
   }
   try {
     const user = await adminAPI.users.getById(userID)
     if (version === supplyOwnerLoadVersion) {
-      supplyOwnerUser.value = { id: user.id, email: user.email }
+      supplyOwnerUser.value = { id: user.id, email: user.email, username: user.username }
+      supplyOwnerSearchText.value = formatSupplyOwnerLabel(supplyOwnerUser.value)
     }
   } catch (error) {
     if (version === supplyOwnerLoadVersion) {
       supplyOwnerUser.value = null
+      supplyOwnerSearchText.value = ''
     }
     handleSupplyOwnerSearchError(error)
   }
 }
+
+watch(supplyOwnerSearchText, (value) => {
+  const searchText = value.trim()
+  if (!searchText) {
+    form.supply_owner_user_id = null
+    supplyOwnerUser.value = null
+    return
+  }
+  if (supplyOwnerUser.value && searchText !== formatSupplyOwnerLabel(supplyOwnerUser.value)) {
+    form.supply_owner_user_id = null
+    supplyOwnerUser.value = null
+  }
+})
 
 const statusOptions = computed(() => {
   const options = [
@@ -3397,6 +3418,11 @@ const handleSubmit = async () => {
 
   const updatePayload: Record<string, unknown> = { ...form }
   try {
+    if (!form.supply_owner_user_id && supplyOwnerSearchText.value.trim()) {
+      appStore.showError(t('admin.accounts.form.supplyOwnerSelectionRequired'))
+      return
+    }
+
     // 后端期望 proxy_id: 0 表示清除代理，而不是 null
     if (updatePayload.proxy_id === null) {
       updatePayload.proxy_id = 0
