@@ -569,14 +569,6 @@ func nullableInt64Ptr(value sql.NullInt64) *int64 {
 	return &v
 }
 
-func nullableFloat64Ptr(value sql.NullFloat64) *float64 {
-	if !value.Valid {
-		return nil
-	}
-	v := value.Float64
-	return &v
-}
-
 func nullableStringPtr(value sql.NullString) *string {
 	if !value.Valid {
 		return nil
