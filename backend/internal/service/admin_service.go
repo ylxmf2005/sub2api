@@ -526,6 +526,7 @@ const (
 )
 
 var ErrRPMStatusUnavailable = infraerrors.New(http.StatusNotImplemented, "RPM_STATUS_UNAVAILABLE", "RPM cache not available")
+var ErrSupplyOwnerUserNotFound = infraerrors.BadRequest("SUPPLY_OWNER_USER_NOT_FOUND", "supply owner user_id does not exist")
 
 // adminServiceImpl implements AdminService
 type adminServiceImpl struct {
@@ -2436,6 +2437,9 @@ func (s *adminServiceImpl) CreateAccount(ctx context.Context, input *CreateAccou
 		Schedulable: true,
 	}
 	if input.SupplyOwnerUserID != nil && *input.SupplyOwnerUserID > 0 {
+		if err := s.validateSupplyOwnerUserID(ctx, *input.SupplyOwnerUserID); err != nil {
+			return nil, err
+		}
 		source := ResourceSupplySourceAdmin
 		if input.SupplySource != nil && strings.TrimSpace(*input.SupplySource) != "" {
 			source = strings.TrimSpace(*input.SupplySource)
@@ -2614,6 +2618,9 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 			account.SupplyReviewedBy = nil
 			account.SupplyReviewedAt = nil
 		} else {
+			if err := s.validateSupplyOwnerUserID(ctx, *input.SupplyOwnerUserID); err != nil {
+				return nil, err
+			}
 			account.SupplyOwnerUserID = input.SupplyOwnerUserID
 			if account.SupplySource == nil || strings.TrimSpace(*account.SupplySource) == "" {
 				source := ResourceSupplySourceAdmin
@@ -2688,6 +2695,24 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 		return nil, err
 	}
 	return updated, nil
+}
+
+func (s *adminServiceImpl) validateSupplyOwnerUserID(ctx context.Context, userID int64) error {
+	if userID <= 0 {
+		return nil
+	}
+	if s.userRepo == nil {
+		return infraerrors.InternalServer("SUPPLY_OWNER_USER_VALIDATION_UNAVAILABLE", "supply owner validation is unavailable")
+	}
+	if _, err := s.userRepo.GetByID(ctx, userID); err != nil {
+		if errors.Is(err, ErrUserNotFound) || infraerrors.IsNotFound(err) {
+			return ErrSupplyOwnerUserNotFound.WithMetadata(map[string]string{
+				"user_id": strconv.FormatInt(userID, 10),
+			})
+		}
+		return err
+	}
+	return nil
 }
 
 // BulkUpdateAccounts updates multiple accounts in one request.

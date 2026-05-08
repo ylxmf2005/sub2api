@@ -3986,8 +3986,8 @@ export default {
       usageError: 'Fetch Error'
     },
     form: {
-      supplyOwnerUserId: 'Supply Owner (User ID)',
-      supplyOwnerPlaceholder: 'Leave empty for no owner',
+      supplyOwnerUserId: 'Supply Owner',
+      supplyOwnerPlaceholder: 'Search email, username, or user ID',
       supplyOwnerHint: 'When bound to an owner, scheduling this account generates supply earnings',
       supplyStatus: 'Supply Status'
     },

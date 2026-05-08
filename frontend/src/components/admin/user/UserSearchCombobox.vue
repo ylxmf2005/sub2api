@@ -45,7 +45,9 @@
       >
         <span class="min-w-0">
           <span class="block truncate font-medium text-gray-900 dark:text-white">{{ user.email }}</span>
-          <span class="text-xs text-gray-500 dark:text-gray-400">#{{ user.id }}</span>
+          <span class="text-xs text-gray-500 dark:text-gray-400">
+            #{{ user.id }}<span v-if="user.username"> - {{ user.username }}</span>
+          </span>
         </span>
       </button>
       <div v-if="!loading && results.length === 0 && searched" class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">

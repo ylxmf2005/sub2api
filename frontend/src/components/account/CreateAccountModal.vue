@@ -2766,7 +2766,26 @@
         <!-- Resource Supply Owner -->
         <div>
           <label class="input-label">{{ t('admin.accounts.form.supplyOwnerUserId') }}</label>
-          <input v-model.number="form.supply_owner_user_id" type="number" min="0" class="input" :placeholder="t('admin.accounts.form.supplyOwnerPlaceholder')" />
+          <UserSearchCombobox
+            :clear-on-select="true"
+            :placeholder="t('admin.accounts.form.supplyOwnerPlaceholder')"
+            @select="handleSupplyOwnerSelect"
+            @search-error="handleSupplyOwnerSearchError"
+          />
+          <div
+            v-if="form.supply_owner_user_id"
+            class="mt-2 flex items-center justify-between gap-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 dark:border-dark-600 dark:bg-dark-800"
+          >
+            <span class="min-w-0 truncate text-sm text-gray-700 dark:text-gray-200">{{ supplyOwnerLabel }}</span>
+            <button
+              type="button"
+              class="shrink-0 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200"
+              :title="t('common.clear')"
+              @click="clearSupplyOwner"
+            >
+              <Icon name="x" size="sm" />
+            </button>
+          </div>
           <p class="mt-1 text-xs text-gray-500">{{ t('admin.accounts.form.supplyOwnerHint') }}</p>
         </div>
       </div>
@@ -3182,8 +3201,10 @@ import Select from '@/components/common/Select.vue'
 import Icon from '@/components/icons/Icon.vue'
 import ProxySelector from '@/components/common/ProxySelector.vue'
 import GroupSelector from '@/components/common/GroupSelector.vue'
+import UserSearchCombobox from '@/components/admin/user/UserSearchCombobox.vue'
 import ModelWhitelistSelector from '@/components/account/ModelWhitelistSelector.vue'
 import QuotaLimitCard from '@/components/account/QuotaLimitCard.vue'
+import type { SimpleUser } from '@/api/admin/usage'
 import { applyInterceptWarmup } from '@/components/account/credentialsBuilder'
 import { formatDateTimeLocalInput, parseDateTimeLocalInput } from '@/utils/format'
 import { createStableObjectKeyResolver } from '@/utils/stableObjectKey'
@@ -3572,6 +3593,31 @@ const form = reactive({
   expires_at: null as number | null,
   supply_owner_user_id: null as number | null
 })
+
+const supplyOwnerUser = ref<SimpleUser | null>(null)
+const supplyOwnerLabel = computed(() => {
+  const userID = form.supply_owner_user_id
+  if (!userID) return ''
+  if (supplyOwnerUser.value && supplyOwnerUser.value.id === userID) {
+    return `${supplyOwnerUser.value.email} (#${userID})`
+  }
+  return `#${userID}`
+})
+
+const handleSupplyOwnerSelect = (user: SimpleUser) => {
+  form.supply_owner_user_id = user.id
+  supplyOwnerUser.value = user
+}
+
+const clearSupplyOwner = () => {
+  form.supply_owner_user_id = null
+  supplyOwnerUser.value = null
+}
+
+const handleSupplyOwnerSearchError = (error: unknown) => {
+  const message = error instanceof Error ? error.message : t('admin.users.failedToLoad')
+  appStore.showError(message)
+}
 
 // Helper to check if current type needs OAuth flow
 const isOAuthFlow = computed(() => {
@@ -4092,6 +4138,7 @@ const resetForm = () => {
   form.group_ids = []
   form.expires_at = null
   form.supply_owner_user_id = null
+  supplyOwnerUser.value = null
   accountCategory.value = 'oauth-based'
   addMethod.value = 'oauth'
   apiKeyBaseUrl.value = isResourceSupply.value ? 'https://api.openai.com' : 'https://api.anthropic.com'
