@@ -57,6 +57,32 @@ func (h *CcgoHandler) ResolveWorkspace(c *gin.Context) {
 	response.Success(c, resolution)
 }
 
+type ccgoStartWorkstationRequest struct {
+	WorkspaceID int64 `json:"workspace_id" binding:"required"`
+}
+
+func (h *CcgoHandler) StartWorkstation(c *gin.Context) {
+	subject, ok := middleware2.GetAuthSubjectFromContext(c)
+	if !ok || subject.UserID <= 0 {
+		response.Unauthorized(c, "User not authenticated")
+		return
+	}
+	var req ccgoStartWorkstationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	result, err := h.ccgoService.StartWorkstation(c.Request.Context(), service.CcgoStartWorkstationInput{
+		UserID:      subject.UserID,
+		WorkspaceID: req.WorkspaceID,
+	})
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, result)
+}
+
 func (h *CcgoHandler) ConnectAgent(c *gin.Context) {
 	if h == nil || h.ccgoService == nil {
 		response.ErrorFrom(c, service.ErrCcgoWorkspaceUnavailable)

@@ -15,6 +15,16 @@ func (f resolverFunc) Resolve(ctx context.Context, localPath string) (*Workspace
 	return f(ctx, localPath)
 }
 
+func (f resolverFunc) StartWorkstation(context.Context, int64) (*StartWorkstationResult, error) {
+	return &StartWorkstationResult{
+		Run: WorkstationRun{
+			WorkspaceID: 42,
+			RunID:       "run_test",
+			Status:      "running",
+		},
+	}, nil
+}
+
 func TestStartResolvesWorkspaceAndConnectsAgent(t *testing.T) {
 	var connected agent.ConnectorOptions
 	result, err := Start(context.Background(), StartOptions{
@@ -48,6 +58,8 @@ func TestStartResolvesWorkspaceAndConnectsAgent(t *testing.T) {
 	require.Equal(t, "/Users/alice/project", result.LocalRoot)
 	require.Equal(t, ".../project", result.LocalRootRedacted)
 	require.True(t, result.AgentConnected)
+	require.Equal(t, "run_test", result.RunID)
+	require.Equal(t, "running", result.RunStatus)
 	require.Equal(t, "https://ccgo.example.com", connected.Server)
 	require.Equal(t, "agent_token", connected.Token)
 	require.Equal(t, "agent_nonce", connected.Nonce)

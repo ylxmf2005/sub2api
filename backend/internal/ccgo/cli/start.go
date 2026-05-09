@@ -14,6 +14,7 @@ type StartOptions struct {
 	NoAgent    bool
 	Resolver   interface {
 		Resolve(context.Context, string) (*WorkspaceResolution, error)
+		StartWorkstation(context.Context, int64) (*StartWorkstationResult, error)
 	}
 	Connector func(context.Context, agent.ConnectorOptions) error
 }
@@ -23,6 +24,9 @@ type StartResult struct {
 	LocalRoot         string
 	LocalRootRedacted string
 	AgentConnected    bool
+	RunID             string
+	RunStatus         string
+	ReusedRun         bool
 }
 
 func Start(ctx context.Context, opts StartOptions) (*StartResult, error) {
@@ -59,5 +63,12 @@ func Start(ctx context.Context, opts StartOptions) (*StartResult, error) {
 		return nil, err
 	}
 	result.AgentConnected = true
+	started, err := resolver.StartWorkstation(ctx, resolution.Workspace.ID)
+	if err != nil {
+		return nil, err
+	}
+	result.RunID = started.Run.RunID
+	result.RunStatus = started.Run.Status
+	result.ReusedRun = started.Reused
 	return result, nil
 }

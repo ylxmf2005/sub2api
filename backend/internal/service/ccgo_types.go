@@ -18,6 +18,12 @@ const (
 	CcgoWorkspaceStatusActive   = "active"
 	CcgoWorkspaceStatusArchived = "archived"
 
+	CcgoRunStatusStarting = "starting"
+	CcgoRunStatusRunning  = "running"
+	CcgoRunStatusStopping = "stopping"
+	CcgoRunStatusStopped  = "stopped"
+	CcgoRunStatusFailed   = "failed"
+
 	CcgoAgentCredentialStatusActive  = "active"
 	CcgoAgentCredentialStatusUsed    = "used"
 	CcgoAgentCredentialStatusRevoked = "revoked"
@@ -35,6 +41,9 @@ var (
 	ErrCcgoInvalidPathStyle        = infraerrors.BadRequest("CCGO_INVALID_PATH_STYLE", "invalid ccgo path style")
 	ErrCcgoDeviceMismatch          = infraerrors.Conflict("CCGO_DEVICE_MISMATCH", "ccgo workspace is already bound to another device")
 	ErrCcgoWorkspaceUnavailable    = infraerrors.ServiceUnavailable("CCGO_WORKSPACE_UNAVAILABLE", "ccgo workspace service unavailable")
+	ErrCcgoWorkspaceNotFound       = infraerrors.NotFound("CCGO_WORKSPACE_NOT_FOUND", "ccgo workspace not found")
+	ErrCcgoWorkspaceForbidden      = infraerrors.Forbidden("CCGO_WORKSPACE_FORBIDDEN", "ccgo workspace belongs to another user")
+	ErrCcgoAgentDisconnected       = infraerrors.ServiceUnavailable("AGENT_DISCONNECTED", "ccgo local agent is not connected")
 	ErrCcgoAgentCredentialExpired  = infraerrors.Unauthorized("CCGO_AGENT_CREDENTIAL_EXPIRED", "ccgo agent credential has expired")
 	ErrCcgoAgentCredentialRevoked  = infraerrors.Unauthorized("CCGO_AGENT_CREDENTIAL_REVOKED", "ccgo agent credential has been revoked")
 	ErrCcgoAgentCredentialInvalid  = infraerrors.Unauthorized("CCGO_AGENT_CREDENTIAL_INVALID", "invalid ccgo agent credential")
@@ -107,9 +116,45 @@ type CcgoAgentConnection struct {
 	LastSeenAt  time.Time `json:"last_seen_at"`
 }
 
+type CcgoWorkstationRun struct {
+	ID              int64      `json:"id,omitempty"`
+	WorkspaceID     int64      `json:"workspace_id"`
+	UserID          int64      `json:"user_id,omitempty"`
+	RunID           string     `json:"run_id"`
+	Status          string     `json:"status"`
+	ServerPID       string     `json:"server_pid,omitempty"`
+	StartedAt       *time.Time `json:"started_at,omitempty"`
+	StoppedAt       *time.Time `json:"stopped_at,omitempty"`
+	StopReason      string     `json:"stop_reason,omitempty"`
+	LastHeartbeatAt *time.Time `json:"last_heartbeat_at,omitempty"`
+	CreatedAt       time.Time  `json:"created_at,omitempty"`
+	UpdatedAt       time.Time  `json:"updated_at,omitempty"`
+}
+
+type CcgoStartWorkstationInput struct {
+	UserID      int64
+	WorkspaceID int64
+}
+
+type CcgoStartWorkstationResult struct {
+	Workspace *CcgoWorkspace       `json:"workspace"`
+	Run       *CcgoWorkstationRun  `json:"run"`
+	Agent     *CcgoAgentConnection `json:"agent"`
+	Reused    bool                 `json:"reused"`
+}
+
+type CcgoRunStarter interface {
+	StartCcgoRun(ctx context.Context, workspace *CcgoWorkspace) (*CcgoWorkstationRun, bool, error)
+}
+
 type CcgoRepository interface {
 	ResolveWorkspace(ctx context.Context, input CcgoResolveWorkspaceInput) (*CcgoWorkspaceResolution, error)
 	IssueAgentCredential(ctx context.Context, workspace *CcgoWorkspace, ttl time.Duration) (*CcgoIssuedCredential, error)
 	FindAgentCredentialByTokenHash(ctx context.Context, tokenHash string) (*CcgoAgentCredential, error)
 	MarkAgentCredentialUsed(ctx context.Context, credentialID int64) error
+	GetWorkspace(ctx context.Context, workspaceID int64) (*CcgoWorkspace, error)
+	FindActiveWorkstationRun(ctx context.Context, workspaceID int64) (*CcgoWorkstationRun, error)
+	CreateWorkstationRun(ctx context.Context, workspace *CcgoWorkspace, runID string, now time.Time) (*CcgoWorkstationRun, error)
+	MarkWorkstationRunRunning(ctx context.Context, runID string, serverPID string, now time.Time) (*CcgoWorkstationRun, error)
+	MarkWorkstationRunFailed(ctx context.Context, runID string, reason string, now time.Time) error
 }

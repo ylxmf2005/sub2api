@@ -12,6 +12,7 @@ import (
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/ccgoagentcredential"
 	"github.com/Wei-Shaw/sub2api/ent/ccgoworkspace"
+	"github.com/Wei-Shaw/sub2api/ent/ccgoworkstationrun"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
@@ -129,6 +130,99 @@ func (r *ccgoRepository) MarkAgentCredentialUsed(ctx context.Context, credential
 		Exec(ctx)
 }
 
+func (r *ccgoRepository) GetWorkspace(ctx context.Context, workspaceID int64) (*service.CcgoWorkspace, error) {
+	if workspaceID <= 0 {
+		return nil, service.ErrCcgoWorkspaceNotFound
+	}
+	workspace, err := clientFromContext(ctx, r.client).CcgoWorkspace.Get(ctx, workspaceID)
+	if err != nil {
+		return nil, translatePersistenceError(err, service.ErrCcgoWorkspaceNotFound, nil)
+	}
+	return ccgoWorkspaceFromEnt(workspace), nil
+}
+
+func (r *ccgoRepository) FindActiveWorkstationRun(ctx context.Context, workspaceID int64) (*service.CcgoWorkstationRun, error) {
+	if workspaceID <= 0 {
+		return nil, service.ErrCcgoWorkspaceNotFound
+	}
+	run, err := clientFromContext(ctx, r.client).CcgoWorkstationRun.Query().
+		Where(
+			ccgoworkstationrun.WorkspaceIDEQ(workspaceID),
+			ccgoworkstationrun.StatusIn(service.CcgoRunStatusStarting, service.CcgoRunStatusRunning),
+		).
+		Order(dbent.Desc(ccgoworkstationrun.FieldCreatedAt)).
+		First(ctx)
+	if err != nil {
+		if dbent.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, translatePersistenceError(err, service.ErrCcgoWorkspaceNotFound, nil)
+	}
+	return ccgoWorkstationRunFromEnt(run), nil
+}
+
+func (r *ccgoRepository) CreateWorkstationRun(ctx context.Context, workspace *service.CcgoWorkspace, runID string, now time.Time) (*service.CcgoWorkstationRun, error) {
+	if workspace == nil || workspace.ID <= 0 || workspace.UserID <= 0 {
+		return nil, service.ErrCcgoWorkspaceNotFound
+	}
+	runID = strings.TrimSpace(runID)
+	if runID == "" {
+		return nil, service.ErrCcgoWorkspaceUnavailable
+	}
+	run, err := clientFromContext(ctx, r.client).CcgoWorkstationRun.Create().
+		SetWorkspaceID(workspace.ID).
+		SetUserID(workspace.UserID).
+		SetRunID(runID).
+		SetStatus(service.CcgoRunStatusStarting).
+		SetStartedAt(now).
+		SetLastHeartbeatAt(now).
+		Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return ccgoWorkstationRunFromEnt(run), nil
+}
+
+func (r *ccgoRepository) MarkWorkstationRunRunning(ctx context.Context, runID string, serverPID string, now time.Time) (*service.CcgoWorkstationRun, error) {
+	runID = strings.TrimSpace(runID)
+	if runID == "" {
+		return nil, service.ErrCcgoWorkspaceUnavailable
+	}
+	run, err := clientFromContext(ctx, r.client).CcgoWorkstationRun.Query().
+		Where(ccgoworkstationrun.RunIDEQ(runID)).
+		Only(ctx)
+	if err != nil {
+		return nil, translatePersistenceError(err, service.ErrCcgoWorkspaceNotFound, nil)
+	}
+	updated, err := clientFromContext(ctx, r.client).CcgoWorkstationRun.UpdateOne(run).
+		SetStatus(service.CcgoRunStatusRunning).
+		SetServerPid(strings.TrimSpace(serverPID)).
+		SetLastHeartbeatAt(now).
+		Save(ctx)
+	if err != nil {
+		return nil, translatePersistenceError(err, service.ErrCcgoWorkspaceNotFound, nil)
+	}
+	return ccgoWorkstationRunFromEnt(updated), nil
+}
+
+func (r *ccgoRepository) MarkWorkstationRunFailed(ctx context.Context, runID string, reason string, now time.Time) error {
+	runID = strings.TrimSpace(runID)
+	if runID == "" {
+		return service.ErrCcgoWorkspaceUnavailable
+	}
+	run, err := clientFromContext(ctx, r.client).CcgoWorkstationRun.Query().
+		Where(ccgoworkstationrun.RunIDEQ(runID)).
+		Only(ctx)
+	if err != nil {
+		return translatePersistenceError(err, service.ErrCcgoWorkspaceNotFound, nil)
+	}
+	return clientFromContext(ctx, r.client).CcgoWorkstationRun.UpdateOne(run).
+		SetStatus(service.CcgoRunStatusFailed).
+		SetStoppedAt(now).
+		SetStopReason(strings.TrimSpace(reason)).
+		Exec(ctx)
+}
+
 func ccgoWorkspaceFromEnt(w *dbent.CcgoWorkspace) *service.CcgoWorkspace {
 	if w == nil {
 		return nil
@@ -148,6 +242,26 @@ func ccgoWorkspaceFromEnt(w *dbent.CcgoWorkspace) *service.CcgoWorkspace {
 		LastSeenAt:        w.LastSeenAt,
 		CreatedAt:         w.CreatedAt,
 		UpdatedAt:         w.UpdatedAt,
+	}
+}
+
+func ccgoWorkstationRunFromEnt(r *dbent.CcgoWorkstationRun) *service.CcgoWorkstationRun {
+	if r == nil {
+		return nil
+	}
+	return &service.CcgoWorkstationRun{
+		ID:              r.ID,
+		WorkspaceID:     r.WorkspaceID,
+		UserID:          r.UserID,
+		RunID:           r.RunID,
+		Status:          r.Status,
+		ServerPID:       r.ServerPid,
+		StartedAt:       r.StartedAt,
+		StoppedAt:       r.StoppedAt,
+		StopReason:      r.StopReason,
+		LastHeartbeatAt: r.LastHeartbeatAt,
+		CreatedAt:       r.CreatedAt,
+		UpdatedAt:       r.UpdatedAt,
 	}
 }
 

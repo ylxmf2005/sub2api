@@ -4,18 +4,21 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/ccgo/hub"
 	"github.com/Wei-Shaw/sub2api/internal/ccgo/protocol"
+	"github.com/google/uuid"
 )
 
 type CcgoService struct {
 	repo          CcgoRepository
 	workspaceBase string
 	agentHub      *hub.ConnectionManager
+	runStarter    CcgoRunStarter
 }
 
 func NewCcgoService(repo CcgoRepository, agentHub *hub.ConnectionManager) *CcgoService {
@@ -23,6 +26,13 @@ func NewCcgoService(repo CcgoRepository, agentHub *hub.ConnectionManager) *CcgoS
 		agentHub = hub.NewConnectionManager()
 	}
 	return &CcgoService{repo: repo, workspaceBase: "/var/lib/ccgo/workspaces", agentHub: agentHub}
+}
+
+func (s *CcgoService) SetRunStarterForTest(starter CcgoRunStarter) {
+	if s == nil {
+		return
+	}
+	s.runStarter = starter
 }
 
 func (s *CcgoService) SetWorkspaceBaseForTest(base string) {
@@ -134,6 +144,71 @@ func (s *CcgoService) Exec(ctx context.Context, workspaceID int64, req protocol.
 		return protocol.ExecResponse{}, protocol.NewError(protocol.ErrorInvalidRequest, "command is required")
 	}
 	return s.agentHub.Exec(ctx, workspaceID, req)
+}
+
+func (s *CcgoService) StartWorkstation(ctx context.Context, input CcgoStartWorkstationInput) (*CcgoStartWorkstationResult, error) {
+	if input.UserID <= 0 {
+		return nil, ErrCcgoInvalidUser
+	}
+	if input.WorkspaceID <= 0 {
+		return nil, protocol.NewError(protocol.ErrorInvalidRequest, "workspace id is required")
+	}
+	if s == nil || s.repo == nil || s.agentHub == nil {
+		return nil, ErrCcgoWorkspaceUnavailable
+	}
+	workspace, err := s.repo.GetWorkspace(ctx, input.WorkspaceID)
+	if err != nil {
+		return nil, err
+	}
+	if workspace.UserID != input.UserID {
+		return nil, ErrCcgoWorkspaceForbidden
+	}
+	agent, err := s.AgentConnectionStatus(workspace.ID)
+	if err != nil {
+		if isProtocolErrorCode(err, protocol.ErrorAgentDisconnected) {
+			return nil, ErrCcgoAgentDisconnected.WithCause(err)
+		}
+		return nil, err
+	}
+	if s.runStarter != nil {
+		run, reused, err := s.runStarter.StartCcgoRun(ctx, workspace)
+		if err != nil {
+			return nil, err
+		}
+		return &CcgoStartWorkstationResult{Workspace: workspace, Run: run, Agent: agent, Reused: reused}, nil
+	}
+	run, reused, err := s.startRepositoryBackedRun(ctx, workspace)
+	if err != nil {
+		return nil, err
+	}
+	return &CcgoStartWorkstationResult{Workspace: workspace, Run: run, Agent: agent, Reused: reused}, nil
+}
+
+func (s *CcgoService) startRepositoryBackedRun(ctx context.Context, workspace *CcgoWorkspace) (*CcgoWorkstationRun, bool, error) {
+	existing, err := s.repo.FindActiveWorkstationRun(ctx, workspace.ID)
+	if err != nil {
+		return nil, false, err
+	}
+	if existing != nil {
+		return existing, true, nil
+	}
+	now := time.Now()
+	runID := "run_" + uuid.NewString()
+	run, err := s.repo.CreateWorkstationRun(ctx, workspace, runID, now)
+	if err != nil {
+		return nil, false, err
+	}
+	updated, err := s.repo.MarkWorkstationRunRunning(ctx, run.RunID, "", now)
+	if err != nil {
+		_ = s.repo.MarkWorkstationRunFailed(ctx, run.RunID, err.Error(), time.Now())
+		return nil, false, err
+	}
+	return updated, false, nil
+}
+
+func isProtocolErrorCode(err error, code string) bool {
+	var protocolErr *protocol.Error
+	return errors.As(err, &protocolErr) && protocolErr.Code == code
 }
 
 func ParseCcgoWorkspaceID(value string) (int64, error) {

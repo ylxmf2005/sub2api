@@ -52,11 +52,17 @@ func run(args []string) error {
 			WorkspaceID       int64  `json:"workspace_id"`
 			LocalRootRedacted string `json:"local_root_redacted"`
 			AgentConnected    bool   `json:"agent_connected"`
+			RunID             string `json:"run_id,omitempty"`
+			RunStatus         string `json:"run_status,omitempty"`
+			ReusedRun         bool   `json:"reused_run,omitempty"`
 		}{
 			LocalRoot:         result.LocalRoot,
 			WorkspaceID:       result.WorkspaceID,
 			LocalRootRedacted: result.LocalRootRedacted,
 			AgentConnected:    result.AgentConnected,
+			RunID:             result.RunID,
+			RunStatus:         result.RunStatus,
+			ReusedRun:         result.ReusedRun,
 		}, "", "  ")
 		if err != nil {
 			return err

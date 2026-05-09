@@ -21,5 +21,6 @@ func RegisterCcgoRoutes(
 	authenticated.Use(middleware.BackendModeUserGuard(settingService))
 	{
 		authenticated.POST("/workspaces/resolve", h.Ccgo.ResolveWorkspace)
+		authenticated.POST("/workstations/start", h.Ccgo.StartWorkstation)
 	}
 }

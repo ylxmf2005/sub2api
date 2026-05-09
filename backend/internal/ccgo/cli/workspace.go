@@ -13,6 +13,7 @@ import (
 )
 
 const workspaceResolvePath = "/api/v1/ccgo/workspaces/resolve"
+const workstationStartPath = "/api/v1/ccgo/workstations/start"
 
 type Workspace struct {
 	ID                int64  `json:"id"`
@@ -118,6 +119,74 @@ func (c WorkspaceClient) Resolve(ctx context.Context, localPath string) (*Worksp
 		return nil, fmt.Errorf("workspace response is missing agent credentials")
 	}
 	return &result, nil
+}
+
+type WorkstationRun struct {
+	WorkspaceID int64  `json:"workspace_id"`
+	RunID       string `json:"run_id"`
+	Status      string `json:"status"`
+}
+
+type StartWorkstationResult struct {
+	Workspace Workspace      `json:"workspace"`
+	Run       WorkstationRun `json:"run"`
+	Reused    bool           `json:"reused"`
+}
+
+func (c WorkspaceClient) StartWorkstation(ctx context.Context, workspaceID int64) (*StartWorkstationResult, error) {
+	if workspaceID <= 0 {
+		return nil, fmt.Errorf("workspace id is required")
+	}
+	cfg := c.Config
+	var err error
+	if cfg == nil {
+		cfg, err = LoadConfig(c.ConfigPath)
+		if err != nil {
+			return nil, err
+		}
+	}
+	payload := map[string]int64{"workspace_id": workspaceID}
+	var body bytes.Buffer
+	if err := json.NewEncoder(&body).Encode(payload); err != nil {
+		return nil, fmt.Errorf("encode workstation start request: %w", err)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, joinURL(cfg.Server, workstationStartPath), &body)
+	if err != nil {
+		return nil, fmt.Errorf("build workstation start request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+cfg.Token)
+	client := c.HTTPClient
+	if client == nil {
+		client = &http.Client{Timeout: 30 * time.Second}
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("start ccgo workstation: %w", err)
+	}
+	defer resp.Body.Close()
+	data, err := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
+	if err != nil {
+		return nil, fmt.Errorf("read workstation start response: %w", err)
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, decodeAPIError(resp.StatusCode, data)
+	}
+	var envelope struct {
+		Code    int                    `json:"code"`
+		Message string                 `json:"message"`
+		Data    StartWorkstationResult `json:"data"`
+	}
+	if err := json.Unmarshal(data, &envelope); err != nil {
+		return nil, fmt.Errorf("parse workstation start response: %w", err)
+	}
+	if envelope.Code != 0 {
+		return nil, fmt.Errorf("start ccgo workstation: %s", envelope.Message)
+	}
+	if strings.TrimSpace(envelope.Data.Run.RunID) == "" || strings.TrimSpace(envelope.Data.Run.Status) == "" {
+		return nil, fmt.Errorf("workstation start response is incomplete")
+	}
+	return &envelope.Data, nil
 }
 
 func joinURL(base, path string) string {
