@@ -20,4 +20,10 @@ describe('User SettlementPoolsView history selection', () => {
     expect(viewSource).toContain('summary.can_join_active_cycle')
     expect(viewSource).not.toContain('can_exit_active_cycle')
   })
+
+  it('shows current-cycle account usage for eligible users', () => {
+    expect(viewSource).toContain('settlementPools.accountUsage')
+    expect(viewSource).toContain('function accountUsageRows(summary: SettlementPoolSummary): SettlementPoolAccountUsage[]')
+    expect(viewSource).toContain('return displayEstimate(summary)?.account_usage || []')
+  })
 })

@@ -28,4 +28,10 @@ describe('Admin SettlementPoolsView history selection', () => {
     expect(viewSource).toContain('settlementPoolsAPI.removeCurrentParticipant')
     expect(viewSource).not.toContain('syncParticipants')
   })
+
+  it('shows current-cycle account usage', () => {
+    expect(viewSource).toContain('settlementPools.accountUsage')
+    expect(viewSource).toContain('const accountUsageRows = computed<SettlementPoolAccountUsage[]>')
+    expect(viewSource).toContain('return displayEstimate.value?.account_usage || []')
+  })
 })

@@ -654,6 +654,116 @@ func (r *settlementPoolRepository) SumUsageByUsers(ctx context.Context, groupID 
 	return out, rows.Err()
 }
 
+func (r *settlementPoolRepository) ListEnabledAccountUsage(ctx context.Context, groupID int64, startedAt time.Time, endedAt *time.Time) ([]service.SettlementPoolAccountUsage, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		WITH enabled_accounts AS (
+			SELECT DISTINCT a.id, a.name, a.platform, a.type, a.status, a.schedulable, ag.priority AS group_priority, a.priority AS account_priority
+			FROM account_groups ag
+			JOIN accounts a ON a.id = ag.account_id AND a.deleted_at IS NULL
+			WHERE ag.group_id = $1
+				AND a.status = $5
+				AND a.schedulable = TRUE
+		),
+		durable_usage AS (
+			SELECT
+				account_id,
+				COUNT(*) AS requests,
+				COALESCE(SUM(input_tokens), 0) AS input_tokens,
+				COALESCE(SUM(output_tokens), 0) AS output_tokens,
+				COALESCE(SUM(cache_creation_tokens), 0) AS cache_creation_tokens,
+				COALESCE(SUM(cache_read_tokens), 0) AS cache_read_tokens,
+				COALESCE(SUM(total_cost), 0) AS total_usage
+			FROM usage_billing_events
+			WHERE group_id = $1
+				AND created_at >= $2
+				AND ($3::timestamptz IS NULL OR created_at < $3)
+				AND billing_type = $4
+			GROUP BY account_id
+		),
+		legacy_usage AS (
+			SELECT
+				ul.account_id,
+				COUNT(*) AS requests,
+				COALESCE(SUM(ul.input_tokens), 0) AS input_tokens,
+				COALESCE(SUM(ul.output_tokens), 0) AS output_tokens,
+				COALESCE(SUM(ul.cache_creation_tokens), 0) AS cache_creation_tokens,
+				COALESCE(SUM(ul.cache_read_tokens), 0) AS cache_read_tokens,
+				COALESCE(SUM(ul.total_cost), 0) AS total_usage
+			FROM usage_logs ul
+			LEFT JOIN usage_billing_events e
+				ON e.request_id = ul.request_id
+				AND e.api_key_id = ul.api_key_id
+			WHERE ul.group_id = $1
+				AND ul.created_at >= $2
+				AND ($3::timestamptz IS NULL OR ul.created_at < $3)
+				AND ul.billing_type = $4
+				AND e.id IS NULL
+			GROUP BY ul.account_id
+		),
+		usage_totals AS (
+			SELECT
+				account_id,
+				COALESCE(SUM(requests), 0) AS requests,
+				COALESCE(SUM(input_tokens), 0) AS input_tokens,
+				COALESCE(SUM(output_tokens), 0) AS output_tokens,
+				COALESCE(SUM(cache_creation_tokens), 0) AS cache_creation_tokens,
+				COALESCE(SUM(cache_read_tokens), 0) AS cache_read_tokens,
+				COALESCE(SUM(total_usage), 0) AS total_usage
+			FROM (
+				SELECT * FROM durable_usage
+				UNION ALL
+				SELECT * FROM legacy_usage
+			) usage_source
+			GROUP BY account_id
+		)
+		SELECT
+			ea.id,
+			ea.name,
+			ea.platform,
+			ea.type,
+			ea.status,
+			ea.schedulable,
+			COALESCE(ut.requests, 0),
+			COALESCE(ut.input_tokens, 0),
+			COALESCE(ut.output_tokens, 0),
+			COALESCE(ut.cache_creation_tokens, 0),
+			COALESCE(ut.cache_read_tokens, 0),
+			COALESCE(ut.input_tokens + ut.output_tokens + ut.cache_creation_tokens + ut.cache_read_tokens, 0) AS total_tokens,
+			COALESCE(ut.total_usage, 0)
+		FROM enabled_accounts ea
+		LEFT JOIN usage_totals ut ON ut.account_id = ea.id
+		ORDER BY COALESCE(ut.total_usage, 0) DESC, ea.group_priority ASC, ea.account_priority ASC, ea.id ASC
+	`, groupID, startedAt, endedAt, service.BillingTypeSettlementPool, service.StatusActive)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+
+	out := make([]service.SettlementPoolAccountUsage, 0)
+	for rows.Next() {
+		var item service.SettlementPoolAccountUsage
+		if err := rows.Scan(
+			&item.AccountID,
+			&item.Name,
+			&item.Platform,
+			&item.Type,
+			&item.Status,
+			&item.Schedulable,
+			&item.Requests,
+			&item.InputTokens,
+			&item.OutputTokens,
+			&item.CacheCreationTokens,
+			&item.CacheReadTokens,
+			&item.TotalTokens,
+			&item.TotalUsage,
+		); err != nil {
+			return nil, err
+		}
+		out = append(out, item)
+	}
+	return out, rows.Err()
+}
+
 const settlementCycleSelectSQL = `
 		SELECT id, group_id, status, started_at, ended_at, total_cost, base_ratio, market_cap, tiers, snapshot, created_at, updated_at
 `

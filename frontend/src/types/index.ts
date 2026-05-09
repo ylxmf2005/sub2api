@@ -729,6 +729,22 @@ export interface SettlementPoolParticipantEstimate {
   total_due: number
 }
 
+export interface SettlementPoolAccountUsage {
+  account_id: number
+  name: string
+  platform: AccountPlatform
+  type: AccountType
+  status: string
+  schedulable: boolean
+  requests: number
+  input_tokens: number
+  output_tokens: number
+  cache_creation_tokens: number
+  cache_read_tokens: number
+  total_tokens: number
+  total_usage: number
+}
+
 export interface SettlementPoolParticipant {
   user_id: number
   email: string
@@ -757,6 +773,7 @@ export interface SettlementPoolEstimate {
   effective_dynamic_rate: number
   owner_covered_loss: number
   participants: SettlementPoolParticipantEstimate[]
+  account_usage: SettlementPoolAccountUsage[]
 }
 
 export interface SettlementPoolSummary {

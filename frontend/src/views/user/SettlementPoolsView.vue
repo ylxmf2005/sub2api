@@ -88,6 +88,35 @@
           </section>
 
           <section class="card p-4">
+            <h3 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">{{ t('settlementPools.accountUsage') }}</h3>
+            <DataTable
+              :columns="accountUsageColumns"
+              :data="accountUsageRows(summary)"
+              row-key="account_id"
+              :loading="loading"
+            >
+              <template #cell-account="{ row }">
+                <div class="font-medium text-gray-900 dark:text-white">{{ row.name }}</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  #{{ row.account_id }} · {{ row.platform }} / {{ row.type }}
+                </div>
+              </template>
+              <template #cell-requests="{ value }">
+                <span class="tabular-nums">{{ integer(value) }}</span>
+              </template>
+              <template #cell-total_tokens="{ value }">
+                <span class="tabular-nums">{{ integer(value) }}</span>
+              </template>
+              <template #cell-total_usage="{ value }">
+                <span class="font-medium tabular-nums text-gray-900 dark:text-white">{{ usdMoney(value) }}</span>
+              </template>
+              <template #empty>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('settlementPools.noAccountUsage') }}</p>
+              </template>
+            </DataTable>
+          </section>
+
+          <section class="card p-4">
             <h3 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">{{ t('settlementPools.cycles') }}</h3>
             <DataTable
               :columns="cycleColumns"
@@ -142,7 +171,7 @@ import settlementPoolsAPI from '@/api/settlementPools'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 import type { Column } from '@/components/common/types'
-import type { SettlementPoolCycle, SettlementPoolEstimate, SettlementPoolParticipantEstimate, SettlementPoolSummary, SettlementPoolTier } from '@/types'
+import type { SettlementPoolAccountUsage, SettlementPoolCycle, SettlementPoolEstimate, SettlementPoolParticipantEstimate, SettlementPoolSummary, SettlementPoolTier } from '@/types'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -166,6 +195,12 @@ const cycleColumns = computed<Column[]>(() => [
   { key: 'status', label: t('common.status') },
   { key: 'total_due', label: t('settlementPools.totalDue'), class: rightAlignedColumnClass },
   { key: 'actions', label: '', class: rightAlignedColumnClass }
+])
+const accountUsageColumns = computed<Column[]>(() => [
+  { key: 'account', label: t('settlementPools.account'), class: 'min-w-[220px]' },
+  { key: 'requests', label: t('settlementPools.requests'), class: rightAlignedColumnClass },
+  { key: 'total_tokens', label: t('settlementPools.totalTokens'), class: rightAlignedColumnClass },
+  { key: 'total_usage', label: t('settlementPools.cycleUsage'), class: rightAlignedColumnClass }
 ])
 
 type CycleRow = {
@@ -200,6 +235,10 @@ function summaryCycles(summary: SettlementPoolSummary): SettlementPoolCycle[] {
 
 function participantRows(summary: SettlementPoolSummary): SettlementPoolParticipantEstimate[] {
   return displayEstimate(summary)?.participants || []
+}
+
+function accountUsageRows(summary: SettlementPoolSummary): SettlementPoolAccountUsage[] {
+  return displayEstimate(summary)?.account_usage || []
 }
 
 function cycleRows(summary: SettlementPoolSummary): CycleRow[] {
@@ -237,6 +276,10 @@ function usdMoney(value: number | null | undefined) {
 
 function cnyMoney(value: number | null | undefined) {
   return `¥${Number(value || 0).toFixed(4)}`
+}
+
+function integer(value: number | null | undefined) {
+  return Number(value || 0).toLocaleString()
 }
 
 function date(value?: string | null) {

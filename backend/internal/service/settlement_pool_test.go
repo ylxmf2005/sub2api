@@ -287,6 +287,9 @@ func TestSettlementPoolStartNextCycle_RotatesWithLockedSnapshot(t *testing.T) {
 			{UserID: 7, Email: "user@example.com", Status: StatusActive},
 		},
 		rawUsage: map[int64]float64{7: 40},
+		accountUsage: []SettlementPoolAccountUsage{
+			{AccountID: 101, Name: "open account", Platform: PlatformOpenAI, Type: AccountTypeOAuth, Status: StatusActive, Schedulable: true, Requests: 2, TotalUsage: 40},
+		},
 	}
 	svc := NewSettlementPoolService(repo, &settlementGroupRepoStub{
 		groups: map[int64]*Group{
@@ -307,6 +310,10 @@ func TestSettlementPoolStartNextCycle_RotatesWithLockedSnapshot(t *testing.T) {
 	require.NotNil(t, repo.sumUsageEndedAt)
 	require.Equal(t, *repo.rotatedSnapshot.EndedAt, *repo.sumUsageEndedAt)
 	require.Len(t, repo.rotatedSnapshot.Participants, 1)
+	require.Len(t, repo.rotatedSnapshot.AccountUsage, 1)
+	require.Equal(t, int64(101), repo.rotatedSnapshot.AccountUsage[0].AccountID)
+	require.NotNil(t, repo.listAccountUsageEndedAt)
+	require.Equal(t, *repo.rotatedSnapshot.EndedAt, *repo.listAccountUsageEndedAt)
 	require.InDelta(t, 100, repo.rotatedSnapshot.TotalCost, 1e-9)
 	require.NotNil(t, repo.rotatedNext)
 	require.Equal(t, SettlementPoolCycleStatusActive, repo.rotatedNext.Status)
@@ -408,31 +415,34 @@ func TestSettlementPoolRemoveCurrentParticipant_DoesNotCheckUsage(t *testing.T) 
 }
 
 type settlementPoolRepoStub struct {
-	config                *SettlementPoolConfig
-	active                *SettlementPoolCycle
-	candidateGroupIDs     []int64
-	currentGroupIDs       []int64
-	candidates            map[int64]bool
-	currentParticipants   map[int64]bool
-	cycles                []SettlementPoolCycle
-	userCycles            []SettlementPoolCycle
-	participants          []SettlementPoolParticipant
-	candidateRows         []SettlementPoolParticipant
-	rawUsage              map[int64]float64
-	sumUsageEndedAt       *time.Time
-	listParticipantsCalls int
-	sumUsageCalls         int
-	rotateCalls           int
-	joinCurrentCalls      int
-	removeCurrentCalls    int
-	forceJoinCalls        int
-	rotatedActiveID       int64
-	rotatedSnapshot       *SettlementPoolEstimate
-	rotatedNext           *SettlementPoolCycle
-	joinedGroupID         int64
-	joinedUserID          int64
-	removedGroupID        int64
-	removedUserID         int64
+	config                  *SettlementPoolConfig
+	active                  *SettlementPoolCycle
+	candidateGroupIDs       []int64
+	currentGroupIDs         []int64
+	candidates              map[int64]bool
+	currentParticipants     map[int64]bool
+	cycles                  []SettlementPoolCycle
+	userCycles              []SettlementPoolCycle
+	participants            []SettlementPoolParticipant
+	candidateRows           []SettlementPoolParticipant
+	rawUsage                map[int64]float64
+	accountUsage            []SettlementPoolAccountUsage
+	sumUsageEndedAt         *time.Time
+	listAccountUsageEndedAt *time.Time
+	listParticipantsCalls   int
+	sumUsageCalls           int
+	listAccountUsageCalls   int
+	rotateCalls             int
+	joinCurrentCalls        int
+	removeCurrentCalls      int
+	forceJoinCalls          int
+	rotatedActiveID         int64
+	rotatedSnapshot         *SettlementPoolEstimate
+	rotatedNext             *SettlementPoolCycle
+	joinedGroupID           int64
+	joinedUserID            int64
+	removedGroupID          int64
+	removedUserID           int64
 }
 
 func (s *settlementPoolRepoStub) GetConfig(context.Context, int64) (*SettlementPoolConfig, error) {
@@ -588,6 +598,15 @@ func (s *settlementPoolRepoStub) SumUsageByUsers(_ context.Context, _ int64, _ [
 		s.sumUsageEndedAt = &capturedEndedAt
 	}
 	return s.rawUsage, nil
+}
+
+func (s *settlementPoolRepoStub) ListEnabledAccountUsage(_ context.Context, _ int64, _ time.Time, endedAt *time.Time) ([]SettlementPoolAccountUsage, error) {
+	s.listAccountUsageCalls++
+	if endedAt != nil {
+		capturedEndedAt := *endedAt
+		s.listAccountUsageEndedAt = &capturedEndedAt
+	}
+	return s.accountUsage, nil
 }
 
 type settlementPoolAuthCacheStub struct {
