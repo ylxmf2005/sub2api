@@ -5,6 +5,8 @@ import (
 	"io"
 	"os/exec"
 	"sync"
+
+	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 type Session struct {
@@ -14,6 +16,8 @@ type Session struct {
 	PTY         PTY
 	Bridge      *ExecBridge
 	Mount       interface{ Unmount() error }
+	stopped     bool
+	stopMu      sync.Mutex
 }
 
 func (s *Session) Attach(input io.Reader, output io.Writer) error {
@@ -27,6 +31,13 @@ func (s *Session) Stop() error {
 	if s == nil {
 		return nil
 	}
+	s.stopMu.Lock()
+	if s.stopped {
+		s.stopMu.Unlock()
+		return nil
+	}
+	s.stopped = true
+	s.stopMu.Unlock()
 	if s.Cmd != nil && s.Cmd.Process != nil {
 		_ = s.Cmd.Process.Kill()
 	}
@@ -40,6 +51,25 @@ func (s *Session) Stop() error {
 		return s.Mount.Unmount()
 	}
 	return nil
+}
+
+func (s *Session) RuntimeStatus() (*service.CcgoRunnerStatus, bool) {
+	if s == nil || s.WorkspaceID <= 0 {
+		return nil, false
+	}
+	status := &service.CcgoRunnerStatus{
+		WorkspaceID:       s.WorkspaceID,
+		RunID:             s.RunID,
+		Running:           s.Cmd != nil && s.Cmd.Process != nil,
+		ProjectionMounted: s.Mount != nil,
+		ExecBridgeRunning: s.Bridge != nil && !s.Bridge.IsClosed(),
+		TerminalReady:     s.PTY != nil,
+		LastCheckedAt:     timeNow(),
+	}
+	if s.Cmd != nil && s.Cmd.Process != nil {
+		status.ServerPID = fmt.Sprintf("%d", s.Cmd.Process.Pid)
+	}
+	return status, true
 }
 
 type ProcessStore struct {
@@ -85,4 +115,17 @@ func (s *ProcessStore) Delete(workspaceID int64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.runs, workspaceID)
+}
+
+func (s *ProcessStore) Take(workspaceID int64) (*Session, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	session, ok := s.runs[workspaceID]
+	if ok {
+		delete(s.runs, workspaceID)
+	}
+	if !ok || session == nil {
+		return nil, false
+	}
+	return session, true
 }

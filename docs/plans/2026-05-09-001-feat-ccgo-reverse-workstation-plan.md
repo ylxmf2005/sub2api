@@ -265,7 +265,7 @@ flowchart TB
   U6 --> U7
 ```
 
-- [ ] **Unit 1: Persistence And Domain Model**
+- [x] **Unit 1: Persistence And Domain Model**
 
 **Goal:** Add durable platform state for workspace mappings, device/login flow, agent credentials, active workstation runs, and command audit metadata.
 
@@ -319,7 +319,7 @@ flowchart TB
 - Agent credentials are one-time visible or hashed after issuance.
 - Command audit records can be created without storing command output.
 
-- [ ] **Unit 2: CLI Login And Workspace APIs**
+- [x] **Unit 2: CLI Login And Workspace APIs**
 
 **Goal:** Implement user-facing `ccgo login`, `ccgo login <token>`, `ccgo <path>`, and platform APIs that resolve workspace mappings and issue short-lived agent credentials.
 
@@ -375,7 +375,7 @@ flowchart TB
 - Users can authenticate and create/reuse workspace mappings without SSH or manual server commands.
 - CLI config never lands in the selected project directory.
 
-- [ ] **Unit 3: Agent Transport, Protocol, And Local Capabilities**
+- [x] **Unit 3: Agent Transport, Protocol, And Local Capabilities**
 
 **Goal:** Build the local `ccgo-agent` runtime and platform connection hub that provide file and exec capabilities for exactly one selected project root.
 
@@ -431,7 +431,7 @@ flowchart TB
 - Server components can ask for file/exec capabilities only through an authorized agent connection.
 - No server-local fallback exists in the transport layer.
 
-- [ ] **Unit 4: Server Projection Filesystem**
+- [x] **Unit 4: Server Projection Filesystem**
 
 **Goal:** Mount a stable server workspace root that Claude Code's file tools can use as a real directory while all authoritative file operations are served by the local agent.
 
@@ -479,7 +479,7 @@ flowchart TB
 - Claude Code can start in a stable directory that behaves like a project tree.
 - No project data is silently materialized as an authoritative server copy.
 
-- [ ] **Unit 5: Claude Runner, Terminal Attach, And Shell Wrapper**
+- [x] **Unit 5: Claude Runner, Terminal Attach, And Shell Wrapper**
 
 **Goal:** Start Claude Code on the server in the stable workspace projection, attach the local CLI to its terminal, and route Claude-initiated shell commands back to the local agent.
 
@@ -532,7 +532,7 @@ flowchart TB
 - A user can run `ccgo .` and interact with a server-hosted Claude Code process from the local terminal.
 - Local shell/git/npm/docker/test commands execute on the local machine or fail explicitly.
 
-- [ ] **Unit 6: Claude Context And Path Semantics**
+- [x] **Unit 6: Claude Context And Path Semantics**
 
 **Goal:** Make Claude Code understand that the local project root is canonical, the server workspace root is internal, and relative paths are preferred, without modifying the user's project instructions.
 
@@ -578,7 +578,7 @@ flowchart TB
 - Claude receives stronger session-level path guidance without changing project files.
 - The plan's path semantics match the product truth: local root canonical, server root internal.
 
-- [ ] **Unit 7: Lifecycle, Audit, Packaging, And Operations**
+- [x] **Unit 7: Lifecycle, Audit, Packaging, And Operations**
 
 **Goal:** Complete the MVP lifecycle with `status`, `stop`, health checks, command audit metadata, explicit errors, packaging, and deployment documentation.
 

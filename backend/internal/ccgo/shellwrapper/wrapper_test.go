@@ -58,6 +58,8 @@ func TestRunnerSendsMappedExecRequestAndReturnsExitCode(t *testing.T) {
 	require.Equal(t, "err\n", stderr.String())
 	req := <-requestCh
 	require.Equal(t, int64(42), req.WorkspaceID)
+	require.NotEmpty(t, req.RequestID)
+	require.Equal(t, "/srv/ccgo/ws/project", req.ServerCwd)
 	require.Equal(t, "/Users/alice/project", req.Cwd)
 	require.Equal(t, "cat '/Users/alice/project/package.json'", req.Command)
 }

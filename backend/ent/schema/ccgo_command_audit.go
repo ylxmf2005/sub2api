@@ -1,6 +1,8 @@
 package schema
 
 import (
+	"fmt"
+
 	"github.com/Wei-Shaw/sub2api/ent/schema/mixins"
 
 	"entgo.io/ent"
@@ -56,7 +58,8 @@ func (CcgoCommandAudit) Fields() []ent.Field {
 			Nillable(),
 		field.String("status").
 			MaxLen(32).
-			Default("requested"),
+			Default("requested").
+			Validate(validateCcgoCommandAuditStatus),
 		field.String("failure_reason").
 			SchemaType(map[string]string{dialect.Postgres: "text"}).
 			Default(""),
@@ -70,6 +73,15 @@ func (CcgoCommandAudit) Fields() []ent.Field {
 			SchemaType(map[string]string{dialect.Postgres: "timestamptz"}),
 		field.Int64("duration_ms").
 			Default(0),
+	}
+}
+
+func validateCcgoCommandAuditStatus(value string) error {
+	switch value {
+	case "requested", "succeeded", "failed", "timeout", "not_executed":
+		return nil
+	default:
+		return fmt.Errorf("invalid ccgo command audit status")
 	}
 }
 

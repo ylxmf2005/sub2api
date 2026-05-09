@@ -2,6 +2,7 @@ package shellwrapper
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/Wei-Shaw/sub2api/internal/ccgo/protocol"
 )
@@ -24,6 +27,8 @@ const (
 
 type ExecBridgeRequest struct {
 	WorkspaceID int64  `json:"workspace_id"`
+	RequestID   string `json:"request_id"`
+	ServerCwd   string `json:"server_cwd"`
 	Cwd         string `json:"cwd"`
 	Command     string `json:"command"`
 	TimeoutMS   int64  `json:"timeout_ms,omitempty"`
@@ -95,6 +100,8 @@ func (r Runner) Run(ctx context.Context) int {
 	timeoutMS := parseTimeoutMS(env(EnvExecTimeout))
 	resp, err := r.exec(ctx, socketPath, ExecBridgeRequest{
 		WorkspaceID: workspaceID,
+		RequestID:   uuid.NewString(),
+		ServerCwd:   serverCwd,
 		Cwd:         localCwd,
 		Command:     mapper.MapCommand(command),
 		TimeoutMS:   timeoutMS,
@@ -119,6 +126,11 @@ func (r Runner) Run(ctx context.Context) int {
 		return 1
 	}
 	return resp.ExitCode
+}
+
+func HashCommand(command string) string {
+	sum := sha256.Sum256([]byte(command))
+	return fmt.Sprintf("%x", sum[:])
 }
 
 func (r Runner) exec(ctx context.Context, socketPath string, req ExecBridgeRequest) (ExecBridgeResponse, error) {

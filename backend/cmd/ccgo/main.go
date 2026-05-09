@@ -23,8 +23,16 @@ func run(args []string) error {
 	}
 	switch args[0] {
 	case "login":
-		if len(args) < 2 {
-			return fmt.Errorf("device login is not implemented in this slice; use ccgo login <token>")
+		if len(args) > 2 {
+			return fmt.Errorf("usage: ccgo login [token]")
+		}
+		if len(args) == 1 {
+			result, err := ccgocli.Login(context.Background(), ccgocli.LoginOptions{Output: os.Stdout})
+			if err != nil {
+				return err
+			}
+			fmt.Printf("Logged in to %s with token %s\n", result.Server, result.RedactedToken)
+			return nil
 		}
 		result, err := ccgocli.LoginWithToken(ccgocli.LoginOptions{Token: args[1]})
 		if err != nil {
@@ -32,8 +40,39 @@ func run(args []string) error {
 		}
 		fmt.Printf("Logged in to %s with token %s\n", result.Server, result.RedactedToken)
 		return nil
-	case "status", "stop":
-		return fmt.Errorf("ccgo %s is not implemented yet", args[0])
+	case "status":
+		workspaceID, err := optionalWorkspaceID(args[1:])
+		if err != nil {
+			return err
+		}
+		status, err := ccgocli.Status(context.Background(), ccgocli.StatusOptions{WorkspaceID: workspaceID})
+		if err != nil {
+			return err
+		}
+		encoded, err := json.MarshalIndent(status, "", "  ")
+		if err != nil {
+			return err
+		}
+		fmt.Println(string(encoded))
+		return nil
+	case "stop":
+		workspaceID, err := optionalWorkspaceID(args[1:])
+		if err != nil {
+			return err
+		}
+		result, err := ccgocli.Stop(context.Background(), ccgocli.StopOptions{
+			WorkspaceID: workspaceID,
+			Reason:      "ccgo stop",
+		})
+		if err != nil {
+			return err
+		}
+		encoded, err := json.MarshalIndent(result, "", "  ")
+		if err != nil {
+			return err
+		}
+		fmt.Println(string(encoded))
+		return nil
 	case "attach":
 		if len(args) < 2 {
 			return fmt.Errorf("usage: ccgo attach <workspace_id>")
@@ -57,8 +96,20 @@ func run(args []string) error {
 			noAgent = true
 			localPath = args[1]
 		}
-		result, err := ccgocli.Start(context.Background(), ccgocli.StartOptions{LocalPath: localPath, NoAgent: noAgent})
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		result, err := ccgocli.Start(ctx, ccgocli.StartOptions{LocalPath: localPath, NoAgent: noAgent})
 		if err != nil {
+			return err
+		}
+		if !noAgent {
+			fmt.Fprintf(os.Stderr, "Connected %s as workspace %d. Attaching Claude Code...\n", result.LocalRootRedacted, result.WorkspaceID)
+			err := ccgocli.Attach(ctx, ccgocli.AttachOptions{
+				WorkspaceID: result.WorkspaceID,
+				Input:       os.Stdin,
+				Output:      os.Stdout,
+			})
+			cancel()
 			return err
 		}
 		encoded, err := json.MarshalIndent(struct {
@@ -89,4 +140,18 @@ func run(args []string) error {
 		}
 		return nil
 	}
+}
+
+func optionalWorkspaceID(args []string) (int64, error) {
+	if len(args) == 0 {
+		return 0, nil
+	}
+	if len(args) > 1 {
+		return 0, fmt.Errorf("usage: ccgo status [workspace_id] | ccgo stop [workspace_id]")
+	}
+	workspaceID, err := strconv.ParseInt(args[0], 10, 64)
+	if err != nil || workspaceID <= 0 {
+		return 0, fmt.Errorf("workspace id is required")
+	}
+	return workspaceID, nil
 }

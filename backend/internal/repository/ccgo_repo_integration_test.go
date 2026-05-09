@@ -91,7 +91,7 @@ func TestCcgoService_ValidateAgentCredential_AllowsOnlyOneUse(t *testing.T) {
 	txCtx := dbent.NewTxContext(ctx, tx)
 	client := tx.Client()
 	repo := NewCcgoRepository(client)
-	ccgoService := service.NewCcgoService(repo, nil, nil, nil)
+	ccgoService := service.NewCcgoService(repo, nil, nil)
 	user := mustCreateUser(t, client, &service.User{
 		Email:        fmt.Sprintf("ccgo-credential-%d@example.com", time.Now().UnixNano()),
 		PasswordHash: "hash",

@@ -14,10 +14,11 @@ const (
 )
 
 type Config struct {
-	Server   string `json:"server"`
-	User     string `json:"user,omitempty"`
-	Token    string `json:"token"`
-	DeviceID string `json:"device_id"`
+	Server          string `json:"server"`
+	User            string `json:"user,omitempty"`
+	Token           string `json:"token"`
+	DeviceID        string `json:"device_id"`
+	LastWorkspaceID int64  `json:"last_workspace_id,omitempty"`
 }
 
 func DefaultConfigPath() (string, error) {

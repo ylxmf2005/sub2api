@@ -159,6 +159,27 @@ func ProvideManager(repo service.CcgoRepository, requester WorkspaceRequester) *
 	return NewManager(repo, requester)
 }
 
+func ProvideRunStarter(manager *Manager) service.CcgoRunStarter {
+	if manager == nil {
+		return nil
+	}
+	return manager
+}
+
+func ProvideTerminalAttacher(manager *Manager) service.CcgoTerminalAttacher {
+	if manager == nil {
+		return nil
+	}
+	return manager
+}
+
+func ProvideRunnerController(manager *Manager) service.CcgoRunnerController {
+	if manager == nil {
+		return nil
+	}
+	return manager
+}
+
 func (m *Manager) StartCcgoRun(ctx context.Context, workspace *service.CcgoWorkspace) (*service.CcgoWorkstationRun, bool, error) {
 	if workspace == nil || workspace.ID <= 0 {
 		return nil, false, fmt.Errorf("ccgo workspace is required")
@@ -224,6 +245,78 @@ func (m *Manager) Attach(workspaceID int64, input io.Reader, output io.Writer) e
 	return session.Attach(input, output)
 }
 
+func (m *Manager) RuntimeStatus(ctx context.Context, workspaceID int64) (*service.CcgoRunnerStatus, error) {
+	if workspaceID <= 0 {
+		return nil, fmt.Errorf("ccgo workspace id is required")
+	}
+	if m == nil || m.Store == nil {
+		return &service.CcgoRunnerStatus{
+			WorkspaceID:   workspaceID,
+			LastCheckedAt: timeNow(),
+		}, nil
+	}
+	session, ok := m.Store.Get(workspaceID)
+	if !ok {
+		return &service.CcgoRunnerStatus{
+			WorkspaceID:   workspaceID,
+			LastCheckedAt: timeNow(),
+		}, nil
+	}
+	status, ok := session.RuntimeStatus()
+	if !ok {
+		return &service.CcgoRunnerStatus{
+			WorkspaceID:   workspaceID,
+			LastCheckedAt: timeNow(),
+		}, nil
+	}
+	return status, nil
+}
+
+func (m *Manager) StopCcgoRun(ctx context.Context, workspaceID int64, reason string) (*service.CcgoWorkstationRun, *service.CcgoRunnerStatus, error) {
+	if workspaceID <= 0 {
+		return nil, nil, fmt.Errorf("ccgo workspace id is required")
+	}
+	if m == nil || m.Store == nil || m.Repo == nil {
+		return nil, nil, fmt.Errorf("ccgo runner is not configured")
+	}
+	session, ok := m.Store.Take(workspaceID)
+	status := &service.CcgoRunnerStatus{
+		WorkspaceID:   workspaceID,
+		LastCheckedAt: timeNow(),
+	}
+	if !ok {
+		run, err := m.Repo.FindActiveWorkstationRun(ctx, workspaceID)
+		if err != nil {
+			return nil, status, err
+		}
+		if run == nil {
+			return nil, status, nil
+		}
+		stopped, err := m.Repo.MarkWorkstationRunStopped(ctx, run.RunID, normalizedStopReason(reason), timeNow())
+		return stopped, status, err
+	}
+	if current, ok := session.RuntimeStatus(); ok {
+		status = current
+	}
+	stopErr := session.Stop()
+	status.Running = false
+	status.ProjectionMounted = false
+	status.ExecBridgeRunning = false
+	status.TerminalReady = false
+	status.LastCheckedAt = timeNow()
+	if stopErr != nil {
+		return nil, status, service.ErrCcgoRunnerCleanupFailed.WithCause(stopErr)
+	}
+	if session.RunID == "" {
+		return nil, status, nil
+	}
+	stopped, err := m.Repo.MarkWorkstationRunStopped(ctx, session.RunID, normalizedStopReason(reason), timeNow())
+	if err != nil {
+		return nil, status, err
+	}
+	return stopped, status, nil
+}
+
 func (m *Manager) launchSession(ctx context.Context, workspace *service.CcgoWorkspace, run *service.CcgoWorkstationRun) (*Session, error) {
 	starter := m.PTYStarter
 	if starter == nil {
@@ -240,7 +333,10 @@ func (m *Manager) launchSession(ctx context.Context, workspace *service.CcgoWork
 	if err != nil {
 		return nil, fmt.Errorf("prepare ccgo projection: %w", err)
 	}
-	bridge, err := StartExecBridge(execSocketPath(m.RuntimeBase, workspace.ID), m.Requester)
+	bridge, err := StartExecBridge(execSocketPath(m.RuntimeBase, workspace.ID), execRequesterWithAudit{
+		requester: m.Requester,
+		recorder:  &commandAuditRecorder{repo: m.Repo, workspace: workspace, run: run},
+	})
 	if err != nil {
 		_ = mount.Unmount()
 		return nil, err
@@ -281,6 +377,9 @@ func (m *Manager) waitAndCleanup(runID string, workspaceID int64, session *Sessi
 	if m.Store != nil {
 		m.Store.Delete(workspaceID)
 	}
+	if m.Repo != nil && runID != "" {
+		_, _ = m.Repo.MarkWorkstationRunStopped(context.Background(), runID, "process exited", timeNow())
+	}
 }
 
 func timeNow() time.Time {
@@ -312,6 +411,14 @@ func overrideEnv(env []string, key string, value string) []string {
 	return out
 }
 
+func normalizedStopReason(reason string) string {
+	reason = strings.TrimSpace(reason)
+	if reason == "" {
+		return "stopped by user"
+	}
+	return reason
+}
+
 type WorkspaceRequester interface {
 	ExecRequester
 	FileStat(context.Context, int64, protocol.FileStatRequest) (protocol.FileStatResponse, error)
@@ -323,4 +430,106 @@ type WorkspaceRequester interface {
 	FileRename(context.Context, int64, protocol.FileRenameRequest) error
 	FileTruncate(context.Context, int64, protocol.FileTruncateRequest) (protocol.FileStatResponse, error)
 	FileChmod(context.Context, int64, protocol.FileChmodRequest) (protocol.FileStatResponse, error)
+}
+
+type execRequesterWithAudit struct {
+	requester ExecRequester
+	recorder  CommandAuditor
+}
+
+func (r execRequesterWithAudit) Exec(ctx context.Context, workspaceID int64, req protocol.ExecRequest) (protocol.ExecResponse, error) {
+	return r.requester.Exec(ctx, workspaceID, req)
+}
+
+func (r execRequesterWithAudit) RecordCommandAudit(ctx context.Context, event CommandAuditEvent) error {
+	if r.recorder == nil {
+		return nil
+	}
+	return r.recorder.RecordCommandAudit(ctx, event)
+}
+
+type commandAuditRecorder struct {
+	repo      service.CcgoRepository
+	workspace *service.CcgoWorkspace
+	run       *service.CcgoWorkstationRun
+}
+
+func (r *commandAuditRecorder) RecordCommandAudit(ctx context.Context, event CommandAuditEvent) error {
+	if r == nil || r.repo == nil || r.workspace == nil {
+		return nil
+	}
+	input := commandAuditInputFromEvent(r.workspace, r.run, event)
+	return r.repo.CreateCommandAudit(ctx, input)
+}
+
+func commandAuditInputFromEvent(workspace *service.CcgoWorkspace, run *service.CcgoWorkstationRun, event CommandAuditEvent) service.CcgoCommandAuditInput {
+	var runDatabaseID *int64
+	if run != nil && run.ID > 0 {
+		value := run.ID
+		runDatabaseID = &value
+	}
+	exitCode := event.ExitCode
+	status := service.CcgoCommandAuditStatusSucceeded
+	failureReason := ""
+	if event.Error != nil {
+		failureReason = event.Error.Code
+		switch event.Error.Code {
+		case protocol.ErrorRequestTimeout:
+			status = service.CcgoCommandAuditStatusTimeout
+		case protocol.ErrorAgentDisconnected:
+			status = service.CcgoCommandAuditStatusNotExecuted
+		default:
+			status = service.CcgoCommandAuditStatusFailed
+		}
+	} else if exitCode != 0 {
+		status = service.CcgoCommandAuditStatusFailed
+	}
+	userID := int64(0)
+	if workspace != nil {
+		userID = workspace.UserID
+	}
+	return service.CcgoCommandAuditInput{
+		WorkspaceID:     event.WorkspaceID,
+		UserID:          userID,
+		RunDatabaseID:   runDatabaseID,
+		RequestID:       event.RequestID,
+		CommandHash:     shellwrapper.HashCommand(event.Command),
+		RedactedCommand: redactCommand(event.Command),
+		ServerCwd:       event.ServerCwd,
+		LocalCwd:        event.LocalCwd,
+		ExitCode:        &exitCode,
+		Status:          status,
+		FailureReason:   failureReason,
+		StartedAt:       event.StartedAt,
+		FinishedAt:      event.FinishedAt,
+		DurationMS:      event.FinishedAt.Sub(event.StartedAt).Milliseconds(),
+	}
+}
+
+func redactCommand(command string) string {
+	command = strings.TrimSpace(command)
+	if command == "" {
+		return ""
+	}
+	fields := strings.Fields(command)
+	for i := 0; i < len(fields); i++ {
+		lower := strings.ToLower(fields[i])
+		switch lower {
+		case "--token", "--password", "--secret", "--api-key":
+			if i+1 < len(fields) {
+				fields[i+1] = "[REDACTED]"
+			}
+			continue
+		}
+		for _, marker := range []string{"token=", "password=", "secret=", "api_key=", "apikey="} {
+			if strings.Contains(lower, marker) {
+				parts := strings.SplitN(fields[i], "=", 2)
+				if len(parts) == 2 {
+					fields[i] = parts[0] + "=[REDACTED]"
+				}
+				break
+			}
+		}
+	}
+	return strings.Join(fields, " ")
 }

@@ -17,4 +17,12 @@ describe('route ownership', () => {
     expect(channelStatusRoutes[0].name).toBe('ChannelStatus')
     expect(router.resolve('/channel-status').name).toBe('ChannelStatus')
   })
+
+  it('registers an authenticated ccgo device approval route', () => {
+    const route = router.getRoutes().find(route => route.path === '/ccgo/device')
+
+    expect(route?.name).toBe('CcgoDeviceLogin')
+    expect(route?.meta.requiresAuth).toBe(true)
+    expect(router.resolve('/ccgo/device?code=ABCD-EFGH').name).toBe('CcgoDeviceLogin')
+  })
 })

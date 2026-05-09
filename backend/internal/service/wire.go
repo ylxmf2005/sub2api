@@ -516,6 +516,8 @@ var ProviderSet = wire.NewSet(
 	NewAffiliateService,
 	NewResourceSupplyService,
 	hub.ProvideConnectionManager,
+	ProvideCcgoDeviceLoginUserReader,
+	ProvideCcgoDeviceLoginTokenIssuer,
 	NewCcgoService,
 	ProvidePaymentConfigService,
 	NewPaymentService,
@@ -562,4 +564,12 @@ func ProvideChannelMonitorRunner(svc *ChannelMonitorService, settingService *Set
 	svc.SetScheduler(r)
 	r.Start()
 	return r
+}
+
+func ProvideCcgoDeviceLoginUserReader(repo UserRepository) CcgoDeviceLoginUserReader {
+	return repo
+}
+
+func ProvideCcgoDeviceLoginTokenIssuer(authService *AuthService) CcgoDeviceLoginTokenIssuer {
+	return authService
 }

@@ -604,7 +604,21 @@ func init() {
 	// ccgocommandaudit.DefaultStatus holds the default value on creation for the status field.
 	ccgocommandaudit.DefaultStatus = ccgocommandauditDescStatus.Default.(string)
 	// ccgocommandaudit.StatusValidator is a validator for the "status" field. It is called by the builders before save.
-	ccgocommandaudit.StatusValidator = ccgocommandauditDescStatus.Validators[0].(func(string) error)
+	ccgocommandaudit.StatusValidator = func() func(string) error {
+		validators := ccgocommandauditDescStatus.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(status string) error {
+			for _, fn := range fns {
+				if err := fn(status); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	// ccgocommandauditDescFailureReason is the schema descriptor for failure_reason field.
 	ccgocommandauditDescFailureReason := ccgocommandauditFields[10].Descriptor()
 	// ccgocommandaudit.DefaultFailureReason holds the default value on creation for the failure_reason field.

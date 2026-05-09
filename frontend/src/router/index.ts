@@ -66,6 +66,15 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/ccgo/device',
+    name: 'CcgoDeviceLogin',
+    component: () => import('@/views/auth/CcgoDeviceLoginView.vue'),
+    meta: {
+      requiresAuth: true,
+      title: 'Authorize ccgo'
+    }
+  },
+  {
     path: '/auth/callback',
     name: 'OAuthCallback',
     alias: '/auth/oauth/callback',

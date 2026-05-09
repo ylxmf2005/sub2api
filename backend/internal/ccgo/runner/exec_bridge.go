@@ -8,9 +8,11 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/ccgo/protocol"
 	"github.com/Wei-Shaw/sub2api/internal/ccgo/shellwrapper"
+	"github.com/google/uuid"
 )
 
 type ExecRequester interface {
@@ -59,6 +61,18 @@ func (b *ExecBridge) SocketPath() string {
 	return b.socketPath
 }
 
+func (b *ExecBridge) IsClosed() bool {
+	if b == nil {
+		return true
+	}
+	select {
+	case <-b.closed:
+		return true
+	default:
+		return false
+	}
+}
+
 func (b *ExecBridge) Close() error {
 	if b == nil {
 		return nil
@@ -104,6 +118,10 @@ func (b *ExecBridge) handle(conn net.Conn) {
 		})
 		return
 	}
+	if req.RequestID == "" {
+		req.RequestID = uuid.NewString()
+	}
+	startedAt := timeNow()
 	resp, err := b.requester.Exec(context.Background(), req.WorkspaceID, protocol.ExecRequest{
 		Cwd:       req.Cwd,
 		Command:   req.Command,
@@ -120,7 +138,36 @@ func (b *ExecBridge) handle(conn net.Conn) {
 			out.ExitCode = 1
 		}
 	}
+	if auditor, ok := b.requester.(CommandAuditor); ok {
+		_ = auditor.RecordCommandAudit(context.Background(), CommandAuditEvent{
+			WorkspaceID: req.WorkspaceID,
+			RequestID:   req.RequestID,
+			Command:     req.Command,
+			ServerCwd:   req.ServerCwd,
+			LocalCwd:    req.Cwd,
+			ExitCode:    out.ExitCode,
+			Error:       out.Error,
+			StartedAt:   startedAt,
+			FinishedAt:  timeNow(),
+		})
+	}
 	_ = json.NewEncoder(conn).Encode(out)
+}
+
+type CommandAuditEvent struct {
+	WorkspaceID int64
+	RequestID   string
+	Command     string
+	ServerCwd   string
+	LocalCwd    string
+	ExitCode    int
+	Error       *protocol.Error
+	StartedAt   time.Time
+	FinishedAt  time.Time
+}
+
+type CommandAuditor interface {
+	RecordCommandAudit(context.Context, CommandAuditEvent) error
 }
 
 func protocolError(err error) *protocol.Error {

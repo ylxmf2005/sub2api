@@ -20,13 +20,34 @@ import (
 type runnerRepoStub struct {
 	workspace *service.CcgoWorkspace
 	activeRun *service.CcgoWorkstationRun
+	latestRun *service.CcgoWorkstationRun
 	created   *service.CcgoWorkstationRun
 	running   *service.CcgoWorkstationRun
+	stopped   *service.CcgoWorkstationRun
+	audits    []service.CcgoCommandAuditInput
 	failed    bool
 }
 
 func (r *runnerRepoStub) ResolveWorkspace(context.Context, service.CcgoResolveWorkspaceInput) (*service.CcgoWorkspaceResolution, error) {
 	return nil, service.ErrCcgoWorkspaceUnavailable
+}
+func (r *runnerRepoStub) CreateDeviceLogin(context.Context, string, string, string, time.Time) (*service.CcgoDeviceLogin, error) {
+	return nil, service.ErrCcgoWorkspaceUnavailable
+}
+func (r *runnerRepoStub) FindDeviceLoginByDeviceCodeHash(context.Context, string) (*service.CcgoDeviceLogin, error) {
+	return nil, service.ErrCcgoDeviceLoginNotFound
+}
+func (r *runnerRepoStub) FindDeviceLoginByUserCodeHash(context.Context, string) (*service.CcgoDeviceLogin, error) {
+	return nil, service.ErrCcgoDeviceLoginNotFound
+}
+func (r *runnerRepoStub) ApproveDeviceLogin(context.Context, int64, int64, time.Time) (*service.CcgoDeviceLogin, error) {
+	return nil, service.ErrCcgoDeviceLoginNotFound
+}
+func (r *runnerRepoStub) ConsumeDeviceLogin(context.Context, int64, time.Time) (*service.CcgoDeviceLogin, error) {
+	return nil, service.ErrCcgoDeviceLoginNotFound
+}
+func (r *runnerRepoStub) ExpireDeviceLogin(context.Context, int64, time.Time) (*service.CcgoDeviceLogin, error) {
+	return nil, service.ErrCcgoDeviceLoginNotFound
 }
 func (r *runnerRepoStub) IssueAgentCredential(context.Context, *service.CcgoWorkspace, time.Duration) (*service.CcgoIssuedCredential, error) {
 	return nil, service.ErrCcgoWorkspaceUnavailable
@@ -43,6 +64,12 @@ func (r *runnerRepoStub) GetWorkspace(context.Context, int64) (*service.CcgoWork
 func (r *runnerRepoStub) FindActiveWorkstationRun(context.Context, int64) (*service.CcgoWorkstationRun, error) {
 	return r.activeRun, nil
 }
+func (r *runnerRepoStub) FindLatestWorkstationRun(context.Context, int64) (*service.CcgoWorkstationRun, error) {
+	if r.latestRun != nil {
+		return r.latestRun, nil
+	}
+	return r.activeRun, nil
+}
 func (r *runnerRepoStub) CreateWorkstationRun(context.Context, *service.CcgoWorkspace, string, time.Time) (*service.CcgoWorkstationRun, error) {
 	r.created = &service.CcgoWorkstationRun{WorkspaceID: r.workspace.ID, UserID: r.workspace.UserID, RunID: "run_test", Status: service.CcgoRunStatusStarting}
 	return r.created, nil
@@ -51,8 +78,16 @@ func (r *runnerRepoStub) MarkWorkstationRunRunning(context.Context, string, stri
 	r.running = &service.CcgoWorkstationRun{WorkspaceID: r.workspace.ID, UserID: r.workspace.UserID, RunID: "run_test", Status: service.CcgoRunStatusRunning, ServerPID: "1234"}
 	return r.running, nil
 }
+func (r *runnerRepoStub) MarkWorkstationRunStopped(context.Context, string, string, time.Time) (*service.CcgoWorkstationRun, error) {
+	r.stopped = &service.CcgoWorkstationRun{WorkspaceID: r.workspace.ID, UserID: r.workspace.UserID, RunID: "run_test", Status: service.CcgoRunStatusStopped}
+	return r.stopped, nil
+}
 func (r *runnerRepoStub) MarkWorkstationRunFailed(context.Context, string, string, time.Time) error {
 	r.failed = true
+	return nil
+}
+func (r *runnerRepoStub) CreateCommandAudit(_ context.Context, input service.CcgoCommandAuditInput) error {
+	r.audits = append(r.audits, input)
 	return nil
 }
 
@@ -184,6 +219,41 @@ func TestManagerStartCcgoRunLaunchesProjectionBridgeAndPTY(t *testing.T) {
 	require.Contains(t, starter.started.Args, "--append-system-prompt-file")
 	require.NotEmpty(t, envValue(starter.started.Env, "CCGO_EXEC_SOCKET"))
 	require.False(t, mount.unmounted)
+}
+
+func TestManagerStopCcgoRunCleansRuntimeAndMarksRunStopped(t *testing.T) {
+	workspace := &service.CcgoWorkspace{
+		ID:               42,
+		UserID:           7,
+		ServerRoot:       "/srv/ccgo/workspaces/u7/project",
+		LocalRootDisplay: "/Users/alice/project",
+		PathStyle:        service.CcgoPathStylePOSIX,
+	}
+	repo := &runnerRepoStub{workspace: workspace}
+	starter := &fakePTYStarter{}
+	mount := &fakeMount{}
+	manager := NewManager(repo, runnerRequesterStub{})
+	manager.PTYStarter = starter
+	manager.RuntimeBase = shortSocketDir(t)
+	manager.ConfigBase = t.TempDir()
+	manager.ClaudeBinary = "/bin/claude-test"
+	manager.WrapperBinary = "/bin/ccgo-wrapper-test"
+	manager.DisableAutoCleanup = true
+	manager.Mount = func(string, projection.Backend) (interface{ Unmount() error }, error) {
+		return mount, nil
+	}
+	_, _, err := manager.StartCcgoRun(context.Background(), workspace)
+	require.NoError(t, err)
+
+	stopped, status, err := manager.StopCcgoRun(context.Background(), workspace.ID, "test stop")
+	require.NoError(t, err)
+	require.NotNil(t, stopped)
+	require.Equal(t, service.CcgoRunStatusStopped, stopped.Status)
+	require.False(t, status.Running)
+	require.False(t, status.ProjectionMounted)
+	require.True(t, mount.unmounted)
+	_, ok := manager.Store.Get(workspace.ID)
+	require.False(t, ok)
 }
 
 func shortSocketDir(t *testing.T) string {

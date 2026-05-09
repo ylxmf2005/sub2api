@@ -159,6 +159,85 @@ func TestWorkspaceClientStartWorkstationSurfacesAgentOffline(t *testing.T) {
 	require.ErrorContains(t, err, "AGENT_DISCONNECTED")
 }
 
+func TestWorkspaceClientWorkstationStatusGetsWorkspaceStatus(t *testing.T) {
+	var gotAuth string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "/api/v1/ccgo/workstations/42/status", r.URL.Path)
+		gotAuth = r.Header.Get("Authorization")
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"code": 0,
+			"message": "success",
+			"data": {
+				"workspace": {"id": 42, "local_root_redacted": ".../project"},
+				"agent_connected": true,
+				"runner": {
+					"workspace_id": 42,
+					"run_id": "run_123",
+					"running": true,
+					"projection_mounted": true,
+					"exec_bridge_running": true,
+					"terminal_ready": true,
+					"last_checked_at": "2026-05-09T10:00:00Z"
+				},
+				"latest_run": {"workspace_id": 42, "run_id": "run_123", "status": "running"},
+				"resumable": false
+			}
+		}`))
+	}))
+	defer server.Close()
+
+	result, err := WorkspaceClient{Config: &Config{
+		Server:   server.URL,
+		Token:    "ccgo_cli_token",
+		DeviceID: "dev_123",
+	}}.WorkstationStatus(context.Background(), 42)
+	require.NoError(t, err)
+	require.Equal(t, "Bearer ccgo_cli_token", gotAuth)
+	require.True(t, result.AgentConnected)
+	require.True(t, result.Runner.Running)
+	require.Equal(t, "run_123", result.LatestRun.RunID)
+}
+
+func TestWorkspaceClientStopWorkstationPostsStopRequest(t *testing.T) {
+	var gotAuth string
+	var gotPayload map[string]string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "/api/v1/ccgo/workstations/42/stop", r.URL.Path)
+		gotAuth = r.Header.Get("Authorization")
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&gotPayload))
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"code": 0,
+			"message": "success",
+			"data": {
+				"workspace": {"id": 42, "local_root_redacted": ".../project"},
+				"run": {"workspace_id": 42, "run_id": "run_123", "status": "stopped"},
+				"runner": {
+					"workspace_id": 42,
+					"running": false,
+					"last_checked_at": "2026-05-09T10:00:00Z"
+				},
+				"stopped": true,
+				"agent_disconnected": true
+			}
+		}`))
+	}))
+	defer server.Close()
+
+	result, err := WorkspaceClient{Config: &Config{
+		Server:   server.URL,
+		Token:    "ccgo_cli_token",
+		DeviceID: "dev_123",
+	}}.StopWorkstation(context.Background(), 42, "test")
+	require.NoError(t, err)
+	require.Equal(t, "Bearer ccgo_cli_token", gotAuth)
+	require.Equal(t, "test", gotPayload["reason"])
+	require.True(t, result.Stopped)
+	require.True(t, result.AgentDisconnected)
+	require.Equal(t, "stopped", result.Run.Status)
+}
+
 func jsonEscape(value string) string {
 	data, _ := json.Marshal(value)
 	return string(data[1 : len(data)-1])
