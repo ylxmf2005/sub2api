@@ -39,6 +39,41 @@ func TestFileServiceReadWriteListStatInsideRoot(t *testing.T) {
 	require.Equal(t, []string{"existing.txt", "new.txt"}, fileListNames(listResp.Entries))
 }
 
+func TestFileServiceNamespaceMutationsStayInsideRoot(t *testing.T) {
+	root := t.TempDir()
+	localRoot, err := NewLocalRoot(root)
+	require.NoError(t, err)
+	files := NewFileService(localRoot)
+	ctx := context.Background()
+
+	mkdirResp, err := files.Mkdir(ctx, protocol.FileMkdirRequest{Path: "dir", Mode: 0o755})
+	require.NoError(t, err)
+	require.True(t, mkdirResp.IsDir)
+
+	_, err = files.Write(ctx, protocol.FileWriteRequest{Path: "dir/file.txt", Data: []byte("hello world"), Truncate: true})
+	require.NoError(t, err)
+	truncated, err := files.Truncate(ctx, protocol.FileTruncateRequest{Path: "dir/file.txt", Size: 5})
+	require.NoError(t, err)
+	require.Equal(t, int64(5), truncated.Size)
+
+	err = files.Rename(ctx, protocol.FileRenameRequest{OldPath: "dir/file.txt", NewPath: "dir/renamed.txt"})
+	require.NoError(t, err)
+	renamed, err := os.ReadFile(filepath.Join(root, "dir", "renamed.txt"))
+	require.NoError(t, err)
+	require.Equal(t, []byte("hello"), renamed)
+
+	_, err = files.Chmod(ctx, protocol.FileChmodRequest{Path: "dir/renamed.txt", Mode: 0o600})
+	require.NoError(t, err)
+
+	require.NoError(t, files.Remove(ctx, protocol.FileRemoveRequest{Path: "dir/renamed.txt"}))
+	require.NoFileExists(t, filepath.Join(root, "dir", "renamed.txt"))
+	err = files.Remove(ctx, protocol.FileRemoveRequest{Path: "dir"})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), protocol.ErrorInvalidRequest)
+	require.NoError(t, files.Remove(ctx, protocol.FileRemoveRequest{Path: "dir", Dir: true}))
+	require.NoDirExists(t, filepath.Join(root, "dir"))
+}
+
 func TestFileServiceRejectsTraversal(t *testing.T) {
 	root := t.TempDir()
 	localRoot, err := NewLocalRoot(root)

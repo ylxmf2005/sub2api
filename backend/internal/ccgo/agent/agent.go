@@ -84,6 +84,54 @@ func (a *Agent) Handle(ctx context.Context, env protocol.Envelope) (protocol.Env
 			return protocol.NewErrorResponse(env.RequestID, protocolError(err)), nil
 		}
 		payload = resp
+	case protocol.MethodFileMkdir:
+		req, err := protocol.DecodePayload[protocol.FileMkdirRequest](env)
+		if err != nil {
+			return protocol.Envelope{}, err
+		}
+		resp, err := a.files.Mkdir(ctx, req)
+		if err != nil {
+			return protocol.NewErrorResponse(env.RequestID, protocolError(err)), nil
+		}
+		payload = resp
+	case protocol.MethodFileRemove:
+		req, err := protocol.DecodePayload[protocol.FileRemoveRequest](env)
+		if err != nil {
+			return protocol.Envelope{}, err
+		}
+		if err := a.files.Remove(ctx, req); err != nil {
+			return protocol.NewErrorResponse(env.RequestID, protocolError(err)), nil
+		}
+		payload = map[string]bool{"ok": true}
+	case protocol.MethodFileRename:
+		req, err := protocol.DecodePayload[protocol.FileRenameRequest](env)
+		if err != nil {
+			return protocol.Envelope{}, err
+		}
+		if err := a.files.Rename(ctx, req); err != nil {
+			return protocol.NewErrorResponse(env.RequestID, protocolError(err)), nil
+		}
+		payload = map[string]bool{"ok": true}
+	case protocol.MethodFileTruncate:
+		req, err := protocol.DecodePayload[protocol.FileTruncateRequest](env)
+		if err != nil {
+			return protocol.Envelope{}, err
+		}
+		resp, err := a.files.Truncate(ctx, req)
+		if err != nil {
+			return protocol.NewErrorResponse(env.RequestID, protocolError(err)), nil
+		}
+		payload = resp
+	case protocol.MethodFileChmod:
+		req, err := protocol.DecodePayload[protocol.FileChmodRequest](env)
+		if err != nil {
+			return protocol.Envelope{}, err
+		}
+		resp, err := a.files.Chmod(ctx, req)
+		if err != nil {
+			return protocol.NewErrorResponse(env.RequestID, protocolError(err)), nil
+		}
+		payload = resp
 	case protocol.MethodExec:
 		req, err := protocol.DecodePayload[protocol.ExecRequest](env)
 		if err != nil {

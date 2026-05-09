@@ -127,6 +127,88 @@ func (s *FileService) List(_ context.Context, req protocol.FileListRequest) (pro
 	return protocol.FileListResponse{Entries: out}, nil
 }
 
+func (s *FileService) Mkdir(ctx context.Context, req protocol.FileMkdirRequest) (protocol.FileStatResponse, error) {
+	path, err := s.root.ResolveProjectPath(req.Path)
+	if err != nil {
+		return protocol.FileStatResponse{}, err
+	}
+	mode := req.Mode
+	if mode == 0 {
+		mode = 0o755
+	}
+	if err := os.Mkdir(path, os.FileMode(mode)); err != nil {
+		return protocol.FileStatResponse{}, localPathError(err)
+	}
+	return s.Stat(ctx, protocol.FileStatRequest{Path: req.Path})
+}
+
+func (s *FileService) Remove(_ context.Context, req protocol.FileRemoveRequest) error {
+	path, err := s.root.ResolveProjectPath(req.Path)
+	if err != nil {
+		return err
+	}
+	info, err := os.Lstat(path)
+	if err != nil {
+		return localPathError(err)
+	}
+	if req.Dir {
+		if !info.IsDir() {
+			return protocol.NewError(protocol.ErrorInvalidRequest, "rmdir requires a directory")
+		}
+		if err := os.Remove(path); err != nil {
+			return localPathError(err)
+		}
+		return nil
+	}
+	if info.IsDir() {
+		return protocol.NewError(protocol.ErrorInvalidRequest, "unlink does not remove directories")
+	}
+	if err := os.Remove(path); err != nil {
+		return localPathError(err)
+	}
+	return nil
+}
+
+func (s *FileService) Rename(_ context.Context, req protocol.FileRenameRequest) error {
+	oldPath, err := s.root.ResolveProjectPath(req.OldPath)
+	if err != nil {
+		return err
+	}
+	newPath, err := s.root.ResolveProjectPath(req.NewPath)
+	if err != nil {
+		return err
+	}
+	if err := os.Rename(oldPath, newPath); err != nil {
+		return localPathError(err)
+	}
+	return nil
+}
+
+func (s *FileService) Truncate(ctx context.Context, req protocol.FileTruncateRequest) (protocol.FileStatResponse, error) {
+	if req.Size < 0 {
+		return protocol.FileStatResponse{}, protocol.NewError(protocol.ErrorInvalidRequest, "truncate size must be non-negative")
+	}
+	path, err := s.root.ResolveProjectPath(req.Path)
+	if err != nil {
+		return protocol.FileStatResponse{}, err
+	}
+	if err := os.Truncate(path, req.Size); err != nil {
+		return protocol.FileStatResponse{}, localPathError(err)
+	}
+	return s.Stat(ctx, protocol.FileStatRequest{Path: req.Path})
+}
+
+func (s *FileService) Chmod(ctx context.Context, req protocol.FileChmodRequest) (protocol.FileStatResponse, error) {
+	path, err := s.root.ResolveProjectPath(req.Path)
+	if err != nil {
+		return protocol.FileStatResponse{}, err
+	}
+	if err := os.Chmod(path, os.FileMode(req.Mode)); err != nil {
+		return protocol.FileStatResponse{}, localPathError(err)
+	}
+	return s.Stat(ctx, protocol.FileStatRequest{Path: req.Path})
+}
+
 func fileStatResponse(rel string, info os.FileInfo) protocol.FileStatResponse {
 	return protocol.FileStatResponse{
 		Path:    filepath.ToSlash(rel),

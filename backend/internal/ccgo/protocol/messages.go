@@ -11,11 +11,16 @@ const (
 	MessageTypeResponse  = "response"
 	MessageTypeHeartbeat = "heartbeat"
 
-	MethodFileStat  = "file.stat"
-	MethodFileRead  = "file.read"
-	MethodFileWrite = "file.write"
-	MethodFileList  = "file.list"
-	MethodExec      = "exec"
+	MethodFileStat     = "file.stat"
+	MethodFileRead     = "file.read"
+	MethodFileWrite    = "file.write"
+	MethodFileList     = "file.list"
+	MethodFileMkdir    = "file.mkdir"
+	MethodFileRemove   = "file.remove"
+	MethodFileRename   = "file.rename"
+	MethodFileTruncate = "file.truncate"
+	MethodFileChmod    = "file.chmod"
+	MethodExec         = "exec"
 )
 
 type Envelope struct {
@@ -74,6 +79,31 @@ type FileListEntry struct {
 
 type FileListResponse struct {
 	Entries []FileListEntry `json:"entries"`
+}
+
+type FileMkdirRequest struct {
+	Path string `json:"path"`
+	Mode uint32 `json:"mode"`
+}
+
+type FileRemoveRequest struct {
+	Path string `json:"path"`
+	Dir  bool   `json:"dir"`
+}
+
+type FileRenameRequest struct {
+	OldPath string `json:"old_path"`
+	NewPath string `json:"new_path"`
+}
+
+type FileTruncateRequest struct {
+	Path string `json:"path"`
+	Size int64  `json:"size"`
+}
+
+type FileChmodRequest struct {
+	Path string `json:"path"`
+	Mode uint32 `json:"mode"`
 }
 
 type ExecRequest struct {
