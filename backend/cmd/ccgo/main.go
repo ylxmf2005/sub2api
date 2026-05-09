@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"time"
 
 	ccgocli "github.com/Wei-Shaw/sub2api/internal/ccgo/cli"
 )
@@ -19,7 +18,7 @@ func main() {
 
 func run(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("usage: ccgo login <token> | ccgo <local_path>")
+		return fmt.Errorf("usage: ccgo login <token> | ccgo [--no-agent] <local_path>")
 	}
 	switch args[0] {
 	case "login":
@@ -35,28 +34,39 @@ func run(args []string) error {
 	case "status", "stop":
 		return fmt.Errorf("ccgo %s is not implemented yet", args[0])
 	default:
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
-		resolution, err := ccgocli.WorkspaceClient{}.Resolve(ctx, args[0])
+		noAgent := false
+		localPath := args[0]
+		if args[0] == "--no-agent" {
+			if len(args) < 2 {
+				return fmt.Errorf("usage: ccgo --no-agent <local_path>")
+			}
+			noAgent = true
+			localPath = args[1]
+		}
+		result, err := ccgocli.Start(context.Background(), ccgocli.StartOptions{LocalPath: localPath, NoAgent: noAgent})
 		if err != nil {
 			return err
 		}
 		encoded, err := json.MarshalIndent(struct {
-			LocalRoot          string `json:"local_root"`
-			WorkspaceID        int64  `json:"workspace_id"`
-			LocalRootRedacted  string `json:"local_root_redacted"`
-			AgentCredentialTTL string `json:"agent_credential_expires_at"`
+			LocalRoot         string `json:"local_root"`
+			WorkspaceID       int64  `json:"workspace_id"`
+			LocalRootRedacted string `json:"local_root_redacted"`
+			AgentConnected    bool   `json:"agent_connected"`
 		}{
-			LocalRoot:          resolution.LocalPath.LocalRootDisplay,
-			WorkspaceID:        resolution.Workspace.ID,
-			LocalRootRedacted:  resolution.Workspace.LocalRootRedacted,
-			AgentCredentialTTL: resolution.AgentCredential.ExpiresAt.Format(time.RFC3339),
+			LocalRoot:         result.LocalRoot,
+			WorkspaceID:       result.WorkspaceID,
+			LocalRootRedacted: result.LocalRootRedacted,
+			AgentConnected:    result.AgentConnected,
 		}, "", "  ")
 		if err != nil {
 			return err
 		}
 		fmt.Println(string(encoded))
-		fmt.Println("Workspace resolved. Agent start/terminal attach lands in the next ccgo slice.")
+		if noAgent {
+			fmt.Println("Workspace resolved without starting the local agent.")
+		} else {
+			fmt.Println("Local agent connection ended.")
+		}
 		return nil
 	}
 }
