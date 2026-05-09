@@ -1,9 +1,14 @@
 package handler
 
 import (
+	"log"
+	"strings"
+
+	"github.com/Wei-Shaw/sub2api/internal/ccgo/hub"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/Wei-Shaw/sub2api/internal/service"
+	coderws "github.com/coder/websocket"
 
 	"github.com/gin-gonic/gin"
 )
@@ -50,4 +55,49 @@ func (h *CcgoHandler) ResolveWorkspace(c *gin.Context) {
 		return
 	}
 	response.Success(c, resolution)
+}
+
+func (h *CcgoHandler) ConnectAgent(c *gin.Context) {
+	if h == nil || h.ccgoService == nil {
+		response.ErrorFrom(c, service.ErrCcgoWorkspaceUnavailable)
+		return
+	}
+	token := bearerToken(c.GetHeader("Authorization"))
+	nonce := strings.TrimSpace(c.GetHeader("X-CCGO-Nonce"))
+	if token == "" || nonce == "" {
+		response.Unauthorized(c, "Missing ccgo agent credential")
+		return
+	}
+
+	wsConn, err := coderws.Accept(c.Writer, c.Request, &coderws.AcceptOptions{
+		CompressionMode: coderws.CompressionDisabled,
+	})
+	if err != nil {
+		return
+	}
+	defer func() {
+		_ = wsConn.CloseNow()
+	}()
+	wsConn.SetReadLimit(16 * 1024 * 1024)
+	transport := hub.NewWebSocketTransport(wsConn)
+
+	connection, err := h.ccgoService.RegisterAgentConnection(c.Request.Context(), token, nonce, transport)
+	if err != nil {
+		_ = wsConn.Close(coderws.StatusPolicyViolation, err.Error())
+		return
+	}
+	log.Printf("[INFO] ccgo agent connected workspace_id=%d user_id=%d", connection.WorkspaceID, connection.UserID)
+	<-c.Request.Context().Done()
+}
+
+func bearerToken(header string) string {
+	header = strings.TrimSpace(header)
+	if header == "" {
+		return ""
+	}
+	const prefix = "Bearer "
+	if !strings.HasPrefix(header, prefix) {
+		return ""
+	}
+	return strings.TrimSpace(strings.TrimPrefix(header, prefix))
 }

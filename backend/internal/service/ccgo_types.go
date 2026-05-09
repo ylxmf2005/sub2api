@@ -101,6 +101,12 @@ type CcgoAgentCredential struct {
 	UpdatedAt   time.Time
 }
 
+type CcgoAgentConnection struct {
+	WorkspaceID int64     `json:"workspace_id"`
+	UserID      int64     `json:"user_id,omitempty"`
+	LastSeenAt  time.Time `json:"last_seen_at"`
+}
+
 type CcgoRepository interface {
 	ResolveWorkspace(ctx context.Context, input CcgoResolveWorkspaceInput) (*CcgoWorkspaceResolution, error)
 	IssueAgentCredential(ctx context.Context, workspace *CcgoWorkspace, ttl time.Duration) (*CcgoIssuedCredential, error)

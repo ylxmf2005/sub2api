@@ -4,17 +4,25 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/Wei-Shaw/sub2api/internal/ccgo/hub"
+	"github.com/Wei-Shaw/sub2api/internal/ccgo/protocol"
 )
 
 type CcgoService struct {
 	repo          CcgoRepository
 	workspaceBase string
+	agentHub      *hub.ConnectionManager
 }
 
-func NewCcgoService(repo CcgoRepository) *CcgoService {
-	return &CcgoService{repo: repo, workspaceBase: "/var/lib/ccgo/workspaces"}
+func NewCcgoService(repo CcgoRepository, agentHub *hub.ConnectionManager) *CcgoService {
+	if agentHub == nil {
+		agentHub = hub.NewConnectionManager()
+	}
+	return &CcgoService{repo: repo, workspaceBase: "/var/lib/ccgo/workspaces", agentHub: agentHub}
 }
 
 func (s *CcgoService) SetWorkspaceBaseForTest(base string) {
@@ -76,6 +84,64 @@ func (s *CcgoService) ValidateAgentCredential(ctx context.Context, token, nonce 
 		return nil, err
 	}
 	return credential, nil
+}
+
+func (s *CcgoService) RegisterAgentConnection(ctx context.Context, token, nonce string, transport hub.Transport) (*CcgoAgentConnection, error) {
+	if s == nil || s.agentHub == nil || transport == nil {
+		return nil, ErrCcgoWorkspaceUnavailable
+	}
+	credential, err := s.ValidateAgentCredential(ctx, token, nonce)
+	if err != nil {
+		return nil, err
+	}
+	conn := s.agentHub.Register(credential.WorkspaceID, transport)
+	return &CcgoAgentConnection{
+		WorkspaceID: credential.WorkspaceID,
+		UserID:      credential.UserID,
+		LastSeenAt:  conn.LastSeen(),
+	}, nil
+}
+
+func (s *CcgoService) AgentConnectionStatus(workspaceID int64) (*CcgoAgentConnection, error) {
+	if s == nil || s.agentHub == nil {
+		return nil, ErrCcgoWorkspaceUnavailable
+	}
+	conn, ok := s.agentHub.Get(workspaceID)
+	if !ok {
+		return nil, protocol.NewError(protocol.ErrorAgentDisconnected, "agent is not connected")
+	}
+	return &CcgoAgentConnection{WorkspaceID: workspaceID, LastSeenAt: conn.LastSeen()}, nil
+}
+
+func (s *CcgoService) FileStat(ctx context.Context, workspaceID int64, req protocol.FileStatRequest) (protocol.FileStatResponse, error) {
+	if s == nil || s.agentHub == nil {
+		return protocol.FileStatResponse{}, ErrCcgoWorkspaceUnavailable
+	}
+	if workspaceID <= 0 {
+		return protocol.FileStatResponse{}, protocol.NewError(protocol.ErrorInvalidRequest, "workspace id is required")
+	}
+	return s.agentHub.FileStat(ctx, workspaceID, req)
+}
+
+func (s *CcgoService) Exec(ctx context.Context, workspaceID int64, req protocol.ExecRequest) (protocol.ExecResponse, error) {
+	if s == nil || s.agentHub == nil {
+		return protocol.ExecResponse{}, ErrCcgoWorkspaceUnavailable
+	}
+	if workspaceID <= 0 {
+		return protocol.ExecResponse{}, protocol.NewError(protocol.ErrorInvalidRequest, "workspace id is required")
+	}
+	if strings.TrimSpace(req.Command) == "" {
+		return protocol.ExecResponse{}, protocol.NewError(protocol.ErrorInvalidRequest, "command is required")
+	}
+	return s.agentHub.Exec(ctx, workspaceID, req)
+}
+
+func ParseCcgoWorkspaceID(value string) (int64, error) {
+	id, err := strconv.ParseInt(strings.TrimSpace(value), 10, 64)
+	if err != nil || id <= 0 {
+		return 0, protocol.NewError(protocol.ErrorInvalidRequest, "workspace id is required")
+	}
+	return id, nil
 }
 
 func HashCcgoSecret(value string) string {

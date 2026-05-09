@@ -14,6 +14,8 @@ func RegisterCcgoRoutes(
 	jwtAuth middleware.JWTAuthMiddleware,
 	settingService *service.SettingService,
 ) {
+	v1.GET("/ccgo/agent/connect", h.Ccgo.ConnectAgent)
+
 	authenticated := v1.Group("/ccgo")
 	authenticated.Use(gin.HandlerFunc(jwtAuth))
 	authenticated.Use(middleware.BackendModeUserGuard(settingService))

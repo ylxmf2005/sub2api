@@ -9,6 +9,7 @@ package main
 import (
 	"context"
 	"github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/internal/ccgo/hub"
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/handler"
 	"github.com/Wei-Shaw/sub2api/internal/handler/admin"
@@ -257,7 +258,8 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	availableChannelHandler := handler.NewAvailableChannelHandler(channelService, apiKeyService, settingService)
 	handlerResourceSupplyHandler := handler.NewResourceSupplyHandler(resourceSupplyService)
 	ccgoRepository := repository.NewCcgoRepository(client)
-	ccgoService := service.NewCcgoService(ccgoRepository)
+	connectionManager := hub.ProvideConnectionManager()
+	ccgoService := service.NewCcgoService(ccgoRepository, connectionManager)
 	ccgoHandler := handler.NewCcgoHandler(ccgoService)
 	idempotencyCoordinator := service.ProvideIdempotencyCoordinator(idempotencyRepository, configConfig)
 	idempotencyCleanupService := service.ProvideIdempotencyCleanupService(idempotencyRepository, configConfig)
