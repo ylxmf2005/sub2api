@@ -19,6 +19,11 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/authidentity"
 	"github.com/Wei-Shaw/sub2api/ent/authidentitychannel"
+	"github.com/Wei-Shaw/sub2api/ent/ccgoagentcredential"
+	"github.com/Wei-Shaw/sub2api/ent/ccgocommandaudit"
+	"github.com/Wei-Shaw/sub2api/ent/ccgodevicelogin"
+	"github.com/Wei-Shaw/sub2api/ent/ccgoworkspace"
+	"github.com/Wei-Shaw/sub2api/ent/ccgoworkstationrun"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitor"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitordailyrollup"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitorhistory"
@@ -69,6 +74,11 @@ const (
 	TypeAnnouncementRead              = "AnnouncementRead"
 	TypeAuthIdentity                  = "AuthIdentity"
 	TypeAuthIdentityChannel           = "AuthIdentityChannel"
+	TypeCcgoAgentCredential           = "CcgoAgentCredential"
+	TypeCcgoCommandAudit              = "CcgoCommandAudit"
+	TypeCcgoDeviceLogin               = "CcgoDeviceLogin"
+	TypeCcgoWorkspace                 = "CcgoWorkspace"
+	TypeCcgoWorkstationRun            = "CcgoWorkstationRun"
 	TypeChannelMonitor                = "ChannelMonitor"
 	TypeChannelMonitorDailyRollup     = "ChannelMonitorDailyRollup"
 	TypeChannelMonitorHistory         = "ChannelMonitorHistory"
@@ -9340,6 +9350,5249 @@ func (m *AuthIdentityChannelMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown AuthIdentityChannel edge %s", name)
+}
+
+// CcgoAgentCredentialMutation represents an operation that mutates the CcgoAgentCredential nodes in the graph.
+type CcgoAgentCredentialMutation struct {
+	config
+	op              Op
+	typ             string
+	id              *int64
+	created_at      *time.Time
+	updated_at      *time.Time
+	workspace_id    *int64
+	addworkspace_id *int64
+	user_id         *int64
+	adduser_id      *int64
+	token_hash      *string
+	nonce_hash      *string
+	expires_at      *time.Time
+	used_at         *time.Time
+	revoked_at      *time.Time
+	status          *string
+	clearedFields   map[string]struct{}
+	done            bool
+	oldValue        func(context.Context) (*CcgoAgentCredential, error)
+	predicates      []predicate.CcgoAgentCredential
+}
+
+var _ ent.Mutation = (*CcgoAgentCredentialMutation)(nil)
+
+// ccgoagentcredentialOption allows management of the mutation configuration using functional options.
+type ccgoagentcredentialOption func(*CcgoAgentCredentialMutation)
+
+// newCcgoAgentCredentialMutation creates new mutation for the CcgoAgentCredential entity.
+func newCcgoAgentCredentialMutation(c config, op Op, opts ...ccgoagentcredentialOption) *CcgoAgentCredentialMutation {
+	m := &CcgoAgentCredentialMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeCcgoAgentCredential,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withCcgoAgentCredentialID sets the ID field of the mutation.
+func withCcgoAgentCredentialID(id int64) ccgoagentcredentialOption {
+	return func(m *CcgoAgentCredentialMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *CcgoAgentCredential
+		)
+		m.oldValue = func(ctx context.Context) (*CcgoAgentCredential, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().CcgoAgentCredential.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withCcgoAgentCredential sets the old CcgoAgentCredential of the mutation.
+func withCcgoAgentCredential(node *CcgoAgentCredential) ccgoagentcredentialOption {
+	return func(m *CcgoAgentCredentialMutation) {
+		m.oldValue = func(context.Context) (*CcgoAgentCredential, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m CcgoAgentCredentialMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m CcgoAgentCredentialMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *CcgoAgentCredentialMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *CcgoAgentCredentialMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().CcgoAgentCredential.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *CcgoAgentCredentialMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *CcgoAgentCredentialMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the CcgoAgentCredential entity.
+// If the CcgoAgentCredential object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoAgentCredentialMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *CcgoAgentCredentialMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *CcgoAgentCredentialMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *CcgoAgentCredentialMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the CcgoAgentCredential entity.
+// If the CcgoAgentCredential object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoAgentCredentialMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *CcgoAgentCredentialMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *CcgoAgentCredentialMutation) SetWorkspaceID(i int64) {
+	m.workspace_id = &i
+	m.addworkspace_id = nil
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *CcgoAgentCredentialMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the CcgoAgentCredential entity.
+// If the CcgoAgentCredential object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoAgentCredentialMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// AddWorkspaceID adds i to the "workspace_id" field.
+func (m *CcgoAgentCredentialMutation) AddWorkspaceID(i int64) {
+	if m.addworkspace_id != nil {
+		*m.addworkspace_id += i
+	} else {
+		m.addworkspace_id = &i
+	}
+}
+
+// AddedWorkspaceID returns the value that was added to the "workspace_id" field in this mutation.
+func (m *CcgoAgentCredentialMutation) AddedWorkspaceID() (r int64, exists bool) {
+	v := m.addworkspace_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *CcgoAgentCredentialMutation) ResetWorkspaceID() {
+	m.workspace_id = nil
+	m.addworkspace_id = nil
+}
+
+// SetUserID sets the "user_id" field.
+func (m *CcgoAgentCredentialMutation) SetUserID(i int64) {
+	m.user_id = &i
+	m.adduser_id = nil
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *CcgoAgentCredentialMutation) UserID() (r int64, exists bool) {
+	v := m.user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the CcgoAgentCredential entity.
+// If the CcgoAgentCredential object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoAgentCredentialMutation) OldUserID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// AddUserID adds i to the "user_id" field.
+func (m *CcgoAgentCredentialMutation) AddUserID(i int64) {
+	if m.adduser_id != nil {
+		*m.adduser_id += i
+	} else {
+		m.adduser_id = &i
+	}
+}
+
+// AddedUserID returns the value that was added to the "user_id" field in this mutation.
+func (m *CcgoAgentCredentialMutation) AddedUserID() (r int64, exists bool) {
+	v := m.adduser_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *CcgoAgentCredentialMutation) ResetUserID() {
+	m.user_id = nil
+	m.adduser_id = nil
+}
+
+// SetTokenHash sets the "token_hash" field.
+func (m *CcgoAgentCredentialMutation) SetTokenHash(s string) {
+	m.token_hash = &s
+}
+
+// TokenHash returns the value of the "token_hash" field in the mutation.
+func (m *CcgoAgentCredentialMutation) TokenHash() (r string, exists bool) {
+	v := m.token_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTokenHash returns the old "token_hash" field's value of the CcgoAgentCredential entity.
+// If the CcgoAgentCredential object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoAgentCredentialMutation) OldTokenHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTokenHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTokenHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTokenHash: %w", err)
+	}
+	return oldValue.TokenHash, nil
+}
+
+// ResetTokenHash resets all changes to the "token_hash" field.
+func (m *CcgoAgentCredentialMutation) ResetTokenHash() {
+	m.token_hash = nil
+}
+
+// SetNonceHash sets the "nonce_hash" field.
+func (m *CcgoAgentCredentialMutation) SetNonceHash(s string) {
+	m.nonce_hash = &s
+}
+
+// NonceHash returns the value of the "nonce_hash" field in the mutation.
+func (m *CcgoAgentCredentialMutation) NonceHash() (r string, exists bool) {
+	v := m.nonce_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNonceHash returns the old "nonce_hash" field's value of the CcgoAgentCredential entity.
+// If the CcgoAgentCredential object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoAgentCredentialMutation) OldNonceHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNonceHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNonceHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNonceHash: %w", err)
+	}
+	return oldValue.NonceHash, nil
+}
+
+// ResetNonceHash resets all changes to the "nonce_hash" field.
+func (m *CcgoAgentCredentialMutation) ResetNonceHash() {
+	m.nonce_hash = nil
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (m *CcgoAgentCredentialMutation) SetExpiresAt(t time.Time) {
+	m.expires_at = &t
+}
+
+// ExpiresAt returns the value of the "expires_at" field in the mutation.
+func (m *CcgoAgentCredentialMutation) ExpiresAt() (r time.Time, exists bool) {
+	v := m.expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiresAt returns the old "expires_at" field's value of the CcgoAgentCredential entity.
+// If the CcgoAgentCredential object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoAgentCredentialMutation) OldExpiresAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiresAt: %w", err)
+	}
+	return oldValue.ExpiresAt, nil
+}
+
+// ResetExpiresAt resets all changes to the "expires_at" field.
+func (m *CcgoAgentCredentialMutation) ResetExpiresAt() {
+	m.expires_at = nil
+}
+
+// SetUsedAt sets the "used_at" field.
+func (m *CcgoAgentCredentialMutation) SetUsedAt(t time.Time) {
+	m.used_at = &t
+}
+
+// UsedAt returns the value of the "used_at" field in the mutation.
+func (m *CcgoAgentCredentialMutation) UsedAt() (r time.Time, exists bool) {
+	v := m.used_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUsedAt returns the old "used_at" field's value of the CcgoAgentCredential entity.
+// If the CcgoAgentCredential object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoAgentCredentialMutation) OldUsedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUsedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUsedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUsedAt: %w", err)
+	}
+	return oldValue.UsedAt, nil
+}
+
+// ClearUsedAt clears the value of the "used_at" field.
+func (m *CcgoAgentCredentialMutation) ClearUsedAt() {
+	m.used_at = nil
+	m.clearedFields[ccgoagentcredential.FieldUsedAt] = struct{}{}
+}
+
+// UsedAtCleared returns if the "used_at" field was cleared in this mutation.
+func (m *CcgoAgentCredentialMutation) UsedAtCleared() bool {
+	_, ok := m.clearedFields[ccgoagentcredential.FieldUsedAt]
+	return ok
+}
+
+// ResetUsedAt resets all changes to the "used_at" field.
+func (m *CcgoAgentCredentialMutation) ResetUsedAt() {
+	m.used_at = nil
+	delete(m.clearedFields, ccgoagentcredential.FieldUsedAt)
+}
+
+// SetRevokedAt sets the "revoked_at" field.
+func (m *CcgoAgentCredentialMutation) SetRevokedAt(t time.Time) {
+	m.revoked_at = &t
+}
+
+// RevokedAt returns the value of the "revoked_at" field in the mutation.
+func (m *CcgoAgentCredentialMutation) RevokedAt() (r time.Time, exists bool) {
+	v := m.revoked_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRevokedAt returns the old "revoked_at" field's value of the CcgoAgentCredential entity.
+// If the CcgoAgentCredential object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoAgentCredentialMutation) OldRevokedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRevokedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRevokedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRevokedAt: %w", err)
+	}
+	return oldValue.RevokedAt, nil
+}
+
+// ClearRevokedAt clears the value of the "revoked_at" field.
+func (m *CcgoAgentCredentialMutation) ClearRevokedAt() {
+	m.revoked_at = nil
+	m.clearedFields[ccgoagentcredential.FieldRevokedAt] = struct{}{}
+}
+
+// RevokedAtCleared returns if the "revoked_at" field was cleared in this mutation.
+func (m *CcgoAgentCredentialMutation) RevokedAtCleared() bool {
+	_, ok := m.clearedFields[ccgoagentcredential.FieldRevokedAt]
+	return ok
+}
+
+// ResetRevokedAt resets all changes to the "revoked_at" field.
+func (m *CcgoAgentCredentialMutation) ResetRevokedAt() {
+	m.revoked_at = nil
+	delete(m.clearedFields, ccgoagentcredential.FieldRevokedAt)
+}
+
+// SetStatus sets the "status" field.
+func (m *CcgoAgentCredentialMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *CcgoAgentCredentialMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the CcgoAgentCredential entity.
+// If the CcgoAgentCredential object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoAgentCredentialMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *CcgoAgentCredentialMutation) ResetStatus() {
+	m.status = nil
+}
+
+// Where appends a list predicates to the CcgoAgentCredentialMutation builder.
+func (m *CcgoAgentCredentialMutation) Where(ps ...predicate.CcgoAgentCredential) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the CcgoAgentCredentialMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *CcgoAgentCredentialMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.CcgoAgentCredential, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *CcgoAgentCredentialMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *CcgoAgentCredentialMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (CcgoAgentCredential).
+func (m *CcgoAgentCredentialMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *CcgoAgentCredentialMutation) Fields() []string {
+	fields := make([]string, 0, 10)
+	if m.created_at != nil {
+		fields = append(fields, ccgoagentcredential.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, ccgoagentcredential.FieldUpdatedAt)
+	}
+	if m.workspace_id != nil {
+		fields = append(fields, ccgoagentcredential.FieldWorkspaceID)
+	}
+	if m.user_id != nil {
+		fields = append(fields, ccgoagentcredential.FieldUserID)
+	}
+	if m.token_hash != nil {
+		fields = append(fields, ccgoagentcredential.FieldTokenHash)
+	}
+	if m.nonce_hash != nil {
+		fields = append(fields, ccgoagentcredential.FieldNonceHash)
+	}
+	if m.expires_at != nil {
+		fields = append(fields, ccgoagentcredential.FieldExpiresAt)
+	}
+	if m.used_at != nil {
+		fields = append(fields, ccgoagentcredential.FieldUsedAt)
+	}
+	if m.revoked_at != nil {
+		fields = append(fields, ccgoagentcredential.FieldRevokedAt)
+	}
+	if m.status != nil {
+		fields = append(fields, ccgoagentcredential.FieldStatus)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *CcgoAgentCredentialMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case ccgoagentcredential.FieldCreatedAt:
+		return m.CreatedAt()
+	case ccgoagentcredential.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case ccgoagentcredential.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case ccgoagentcredential.FieldUserID:
+		return m.UserID()
+	case ccgoagentcredential.FieldTokenHash:
+		return m.TokenHash()
+	case ccgoagentcredential.FieldNonceHash:
+		return m.NonceHash()
+	case ccgoagentcredential.FieldExpiresAt:
+		return m.ExpiresAt()
+	case ccgoagentcredential.FieldUsedAt:
+		return m.UsedAt()
+	case ccgoagentcredential.FieldRevokedAt:
+		return m.RevokedAt()
+	case ccgoagentcredential.FieldStatus:
+		return m.Status()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *CcgoAgentCredentialMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case ccgoagentcredential.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case ccgoagentcredential.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case ccgoagentcredential.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case ccgoagentcredential.FieldUserID:
+		return m.OldUserID(ctx)
+	case ccgoagentcredential.FieldTokenHash:
+		return m.OldTokenHash(ctx)
+	case ccgoagentcredential.FieldNonceHash:
+		return m.OldNonceHash(ctx)
+	case ccgoagentcredential.FieldExpiresAt:
+		return m.OldExpiresAt(ctx)
+	case ccgoagentcredential.FieldUsedAt:
+		return m.OldUsedAt(ctx)
+	case ccgoagentcredential.FieldRevokedAt:
+		return m.OldRevokedAt(ctx)
+	case ccgoagentcredential.FieldStatus:
+		return m.OldStatus(ctx)
+	}
+	return nil, fmt.Errorf("unknown CcgoAgentCredential field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CcgoAgentCredentialMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case ccgoagentcredential.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case ccgoagentcredential.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case ccgoagentcredential.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case ccgoagentcredential.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case ccgoagentcredential.FieldTokenHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTokenHash(v)
+		return nil
+	case ccgoagentcredential.FieldNonceHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNonceHash(v)
+		return nil
+	case ccgoagentcredential.FieldExpiresAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiresAt(v)
+		return nil
+	case ccgoagentcredential.FieldUsedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUsedAt(v)
+		return nil
+	case ccgoagentcredential.FieldRevokedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRevokedAt(v)
+		return nil
+	case ccgoagentcredential.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CcgoAgentCredential field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *CcgoAgentCredentialMutation) AddedFields() []string {
+	var fields []string
+	if m.addworkspace_id != nil {
+		fields = append(fields, ccgoagentcredential.FieldWorkspaceID)
+	}
+	if m.adduser_id != nil {
+		fields = append(fields, ccgoagentcredential.FieldUserID)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *CcgoAgentCredentialMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case ccgoagentcredential.FieldWorkspaceID:
+		return m.AddedWorkspaceID()
+	case ccgoagentcredential.FieldUserID:
+		return m.AddedUserID()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CcgoAgentCredentialMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case ccgoagentcredential.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddWorkspaceID(v)
+		return nil
+	case ccgoagentcredential.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUserID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CcgoAgentCredential numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *CcgoAgentCredentialMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(ccgoagentcredential.FieldUsedAt) {
+		fields = append(fields, ccgoagentcredential.FieldUsedAt)
+	}
+	if m.FieldCleared(ccgoagentcredential.FieldRevokedAt) {
+		fields = append(fields, ccgoagentcredential.FieldRevokedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *CcgoAgentCredentialMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *CcgoAgentCredentialMutation) ClearField(name string) error {
+	switch name {
+	case ccgoagentcredential.FieldUsedAt:
+		m.ClearUsedAt()
+		return nil
+	case ccgoagentcredential.FieldRevokedAt:
+		m.ClearRevokedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown CcgoAgentCredential nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *CcgoAgentCredentialMutation) ResetField(name string) error {
+	switch name {
+	case ccgoagentcredential.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case ccgoagentcredential.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case ccgoagentcredential.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case ccgoagentcredential.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case ccgoagentcredential.FieldTokenHash:
+		m.ResetTokenHash()
+		return nil
+	case ccgoagentcredential.FieldNonceHash:
+		m.ResetNonceHash()
+		return nil
+	case ccgoagentcredential.FieldExpiresAt:
+		m.ResetExpiresAt()
+		return nil
+	case ccgoagentcredential.FieldUsedAt:
+		m.ResetUsedAt()
+		return nil
+	case ccgoagentcredential.FieldRevokedAt:
+		m.ResetRevokedAt()
+		return nil
+	case ccgoagentcredential.FieldStatus:
+		m.ResetStatus()
+		return nil
+	}
+	return fmt.Errorf("unknown CcgoAgentCredential field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *CcgoAgentCredentialMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *CcgoAgentCredentialMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *CcgoAgentCredentialMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *CcgoAgentCredentialMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *CcgoAgentCredentialMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *CcgoAgentCredentialMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *CcgoAgentCredentialMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown CcgoAgentCredential unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *CcgoAgentCredentialMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown CcgoAgentCredential edge %s", name)
+}
+
+// CcgoCommandAuditMutation represents an operation that mutates the CcgoCommandAudit nodes in the graph.
+type CcgoCommandAuditMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int64
+	created_at       *time.Time
+	updated_at       *time.Time
+	workspace_id     *int64
+	addworkspace_id  *int64
+	user_id          *int64
+	adduser_id       *int64
+	run_id           *int64
+	addrun_id        *int64
+	request_id       *string
+	command_hash     *string
+	redacted_command *string
+	server_cwd       *string
+	local_cwd        *string
+	exit_code        *int
+	addexit_code     *int
+	status           *string
+	failure_reason   *string
+	started_at       *time.Time
+	finished_at      *time.Time
+	duration_ms      *int64
+	addduration_ms   *int64
+	clearedFields    map[string]struct{}
+	done             bool
+	oldValue         func(context.Context) (*CcgoCommandAudit, error)
+	predicates       []predicate.CcgoCommandAudit
+}
+
+var _ ent.Mutation = (*CcgoCommandAuditMutation)(nil)
+
+// ccgocommandauditOption allows management of the mutation configuration using functional options.
+type ccgocommandauditOption func(*CcgoCommandAuditMutation)
+
+// newCcgoCommandAuditMutation creates new mutation for the CcgoCommandAudit entity.
+func newCcgoCommandAuditMutation(c config, op Op, opts ...ccgocommandauditOption) *CcgoCommandAuditMutation {
+	m := &CcgoCommandAuditMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeCcgoCommandAudit,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withCcgoCommandAuditID sets the ID field of the mutation.
+func withCcgoCommandAuditID(id int64) ccgocommandauditOption {
+	return func(m *CcgoCommandAuditMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *CcgoCommandAudit
+		)
+		m.oldValue = func(ctx context.Context) (*CcgoCommandAudit, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().CcgoCommandAudit.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withCcgoCommandAudit sets the old CcgoCommandAudit of the mutation.
+func withCcgoCommandAudit(node *CcgoCommandAudit) ccgocommandauditOption {
+	return func(m *CcgoCommandAuditMutation) {
+		m.oldValue = func(context.Context) (*CcgoCommandAudit, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m CcgoCommandAuditMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m CcgoCommandAuditMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *CcgoCommandAuditMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *CcgoCommandAuditMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().CcgoCommandAudit.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *CcgoCommandAuditMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *CcgoCommandAuditMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the CcgoCommandAudit entity.
+// If the CcgoCommandAudit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoCommandAuditMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *CcgoCommandAuditMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *CcgoCommandAuditMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *CcgoCommandAuditMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the CcgoCommandAudit entity.
+// If the CcgoCommandAudit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoCommandAuditMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *CcgoCommandAuditMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *CcgoCommandAuditMutation) SetWorkspaceID(i int64) {
+	m.workspace_id = &i
+	m.addworkspace_id = nil
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *CcgoCommandAuditMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the CcgoCommandAudit entity.
+// If the CcgoCommandAudit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoCommandAuditMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// AddWorkspaceID adds i to the "workspace_id" field.
+func (m *CcgoCommandAuditMutation) AddWorkspaceID(i int64) {
+	if m.addworkspace_id != nil {
+		*m.addworkspace_id += i
+	} else {
+		m.addworkspace_id = &i
+	}
+}
+
+// AddedWorkspaceID returns the value that was added to the "workspace_id" field in this mutation.
+func (m *CcgoCommandAuditMutation) AddedWorkspaceID() (r int64, exists bool) {
+	v := m.addworkspace_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *CcgoCommandAuditMutation) ResetWorkspaceID() {
+	m.workspace_id = nil
+	m.addworkspace_id = nil
+}
+
+// SetUserID sets the "user_id" field.
+func (m *CcgoCommandAuditMutation) SetUserID(i int64) {
+	m.user_id = &i
+	m.adduser_id = nil
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *CcgoCommandAuditMutation) UserID() (r int64, exists bool) {
+	v := m.user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the CcgoCommandAudit entity.
+// If the CcgoCommandAudit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoCommandAuditMutation) OldUserID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// AddUserID adds i to the "user_id" field.
+func (m *CcgoCommandAuditMutation) AddUserID(i int64) {
+	if m.adduser_id != nil {
+		*m.adduser_id += i
+	} else {
+		m.adduser_id = &i
+	}
+}
+
+// AddedUserID returns the value that was added to the "user_id" field in this mutation.
+func (m *CcgoCommandAuditMutation) AddedUserID() (r int64, exists bool) {
+	v := m.adduser_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *CcgoCommandAuditMutation) ResetUserID() {
+	m.user_id = nil
+	m.adduser_id = nil
+}
+
+// SetRunID sets the "run_id" field.
+func (m *CcgoCommandAuditMutation) SetRunID(i int64) {
+	m.run_id = &i
+	m.addrun_id = nil
+}
+
+// RunID returns the value of the "run_id" field in the mutation.
+func (m *CcgoCommandAuditMutation) RunID() (r int64, exists bool) {
+	v := m.run_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRunID returns the old "run_id" field's value of the CcgoCommandAudit entity.
+// If the CcgoCommandAudit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoCommandAuditMutation) OldRunID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRunID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRunID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRunID: %w", err)
+	}
+	return oldValue.RunID, nil
+}
+
+// AddRunID adds i to the "run_id" field.
+func (m *CcgoCommandAuditMutation) AddRunID(i int64) {
+	if m.addrun_id != nil {
+		*m.addrun_id += i
+	} else {
+		m.addrun_id = &i
+	}
+}
+
+// AddedRunID returns the value that was added to the "run_id" field in this mutation.
+func (m *CcgoCommandAuditMutation) AddedRunID() (r int64, exists bool) {
+	v := m.addrun_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearRunID clears the value of the "run_id" field.
+func (m *CcgoCommandAuditMutation) ClearRunID() {
+	m.run_id = nil
+	m.addrun_id = nil
+	m.clearedFields[ccgocommandaudit.FieldRunID] = struct{}{}
+}
+
+// RunIDCleared returns if the "run_id" field was cleared in this mutation.
+func (m *CcgoCommandAuditMutation) RunIDCleared() bool {
+	_, ok := m.clearedFields[ccgocommandaudit.FieldRunID]
+	return ok
+}
+
+// ResetRunID resets all changes to the "run_id" field.
+func (m *CcgoCommandAuditMutation) ResetRunID() {
+	m.run_id = nil
+	m.addrun_id = nil
+	delete(m.clearedFields, ccgocommandaudit.FieldRunID)
+}
+
+// SetRequestID sets the "request_id" field.
+func (m *CcgoCommandAuditMutation) SetRequestID(s string) {
+	m.request_id = &s
+}
+
+// RequestID returns the value of the "request_id" field in the mutation.
+func (m *CcgoCommandAuditMutation) RequestID() (r string, exists bool) {
+	v := m.request_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRequestID returns the old "request_id" field's value of the CcgoCommandAudit entity.
+// If the CcgoCommandAudit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoCommandAuditMutation) OldRequestID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRequestID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRequestID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRequestID: %w", err)
+	}
+	return oldValue.RequestID, nil
+}
+
+// ResetRequestID resets all changes to the "request_id" field.
+func (m *CcgoCommandAuditMutation) ResetRequestID() {
+	m.request_id = nil
+}
+
+// SetCommandHash sets the "command_hash" field.
+func (m *CcgoCommandAuditMutation) SetCommandHash(s string) {
+	m.command_hash = &s
+}
+
+// CommandHash returns the value of the "command_hash" field in the mutation.
+func (m *CcgoCommandAuditMutation) CommandHash() (r string, exists bool) {
+	v := m.command_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCommandHash returns the old "command_hash" field's value of the CcgoCommandAudit entity.
+// If the CcgoCommandAudit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoCommandAuditMutation) OldCommandHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCommandHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCommandHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCommandHash: %w", err)
+	}
+	return oldValue.CommandHash, nil
+}
+
+// ResetCommandHash resets all changes to the "command_hash" field.
+func (m *CcgoCommandAuditMutation) ResetCommandHash() {
+	m.command_hash = nil
+}
+
+// SetRedactedCommand sets the "redacted_command" field.
+func (m *CcgoCommandAuditMutation) SetRedactedCommand(s string) {
+	m.redacted_command = &s
+}
+
+// RedactedCommand returns the value of the "redacted_command" field in the mutation.
+func (m *CcgoCommandAuditMutation) RedactedCommand() (r string, exists bool) {
+	v := m.redacted_command
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRedactedCommand returns the old "redacted_command" field's value of the CcgoCommandAudit entity.
+// If the CcgoCommandAudit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoCommandAuditMutation) OldRedactedCommand(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRedactedCommand is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRedactedCommand requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRedactedCommand: %w", err)
+	}
+	return oldValue.RedactedCommand, nil
+}
+
+// ResetRedactedCommand resets all changes to the "redacted_command" field.
+func (m *CcgoCommandAuditMutation) ResetRedactedCommand() {
+	m.redacted_command = nil
+}
+
+// SetServerCwd sets the "server_cwd" field.
+func (m *CcgoCommandAuditMutation) SetServerCwd(s string) {
+	m.server_cwd = &s
+}
+
+// ServerCwd returns the value of the "server_cwd" field in the mutation.
+func (m *CcgoCommandAuditMutation) ServerCwd() (r string, exists bool) {
+	v := m.server_cwd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldServerCwd returns the old "server_cwd" field's value of the CcgoCommandAudit entity.
+// If the CcgoCommandAudit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoCommandAuditMutation) OldServerCwd(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldServerCwd is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldServerCwd requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldServerCwd: %w", err)
+	}
+	return oldValue.ServerCwd, nil
+}
+
+// ResetServerCwd resets all changes to the "server_cwd" field.
+func (m *CcgoCommandAuditMutation) ResetServerCwd() {
+	m.server_cwd = nil
+}
+
+// SetLocalCwd sets the "local_cwd" field.
+func (m *CcgoCommandAuditMutation) SetLocalCwd(s string) {
+	m.local_cwd = &s
+}
+
+// LocalCwd returns the value of the "local_cwd" field in the mutation.
+func (m *CcgoCommandAuditMutation) LocalCwd() (r string, exists bool) {
+	v := m.local_cwd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLocalCwd returns the old "local_cwd" field's value of the CcgoCommandAudit entity.
+// If the CcgoCommandAudit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoCommandAuditMutation) OldLocalCwd(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLocalCwd is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLocalCwd requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLocalCwd: %w", err)
+	}
+	return oldValue.LocalCwd, nil
+}
+
+// ResetLocalCwd resets all changes to the "local_cwd" field.
+func (m *CcgoCommandAuditMutation) ResetLocalCwd() {
+	m.local_cwd = nil
+}
+
+// SetExitCode sets the "exit_code" field.
+func (m *CcgoCommandAuditMutation) SetExitCode(i int) {
+	m.exit_code = &i
+	m.addexit_code = nil
+}
+
+// ExitCode returns the value of the "exit_code" field in the mutation.
+func (m *CcgoCommandAuditMutation) ExitCode() (r int, exists bool) {
+	v := m.exit_code
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExitCode returns the old "exit_code" field's value of the CcgoCommandAudit entity.
+// If the CcgoCommandAudit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoCommandAuditMutation) OldExitCode(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExitCode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExitCode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExitCode: %w", err)
+	}
+	return oldValue.ExitCode, nil
+}
+
+// AddExitCode adds i to the "exit_code" field.
+func (m *CcgoCommandAuditMutation) AddExitCode(i int) {
+	if m.addexit_code != nil {
+		*m.addexit_code += i
+	} else {
+		m.addexit_code = &i
+	}
+}
+
+// AddedExitCode returns the value that was added to the "exit_code" field in this mutation.
+func (m *CcgoCommandAuditMutation) AddedExitCode() (r int, exists bool) {
+	v := m.addexit_code
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearExitCode clears the value of the "exit_code" field.
+func (m *CcgoCommandAuditMutation) ClearExitCode() {
+	m.exit_code = nil
+	m.addexit_code = nil
+	m.clearedFields[ccgocommandaudit.FieldExitCode] = struct{}{}
+}
+
+// ExitCodeCleared returns if the "exit_code" field was cleared in this mutation.
+func (m *CcgoCommandAuditMutation) ExitCodeCleared() bool {
+	_, ok := m.clearedFields[ccgocommandaudit.FieldExitCode]
+	return ok
+}
+
+// ResetExitCode resets all changes to the "exit_code" field.
+func (m *CcgoCommandAuditMutation) ResetExitCode() {
+	m.exit_code = nil
+	m.addexit_code = nil
+	delete(m.clearedFields, ccgocommandaudit.FieldExitCode)
+}
+
+// SetStatus sets the "status" field.
+func (m *CcgoCommandAuditMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *CcgoCommandAuditMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the CcgoCommandAudit entity.
+// If the CcgoCommandAudit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoCommandAuditMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *CcgoCommandAuditMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetFailureReason sets the "failure_reason" field.
+func (m *CcgoCommandAuditMutation) SetFailureReason(s string) {
+	m.failure_reason = &s
+}
+
+// FailureReason returns the value of the "failure_reason" field in the mutation.
+func (m *CcgoCommandAuditMutation) FailureReason() (r string, exists bool) {
+	v := m.failure_reason
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFailureReason returns the old "failure_reason" field's value of the CcgoCommandAudit entity.
+// If the CcgoCommandAudit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoCommandAuditMutation) OldFailureReason(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFailureReason is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFailureReason requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFailureReason: %w", err)
+	}
+	return oldValue.FailureReason, nil
+}
+
+// ResetFailureReason resets all changes to the "failure_reason" field.
+func (m *CcgoCommandAuditMutation) ResetFailureReason() {
+	m.failure_reason = nil
+}
+
+// SetStartedAt sets the "started_at" field.
+func (m *CcgoCommandAuditMutation) SetStartedAt(t time.Time) {
+	m.started_at = &t
+}
+
+// StartedAt returns the value of the "started_at" field in the mutation.
+func (m *CcgoCommandAuditMutation) StartedAt() (r time.Time, exists bool) {
+	v := m.started_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStartedAt returns the old "started_at" field's value of the CcgoCommandAudit entity.
+// If the CcgoCommandAudit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoCommandAuditMutation) OldStartedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStartedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStartedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStartedAt: %w", err)
+	}
+	return oldValue.StartedAt, nil
+}
+
+// ClearStartedAt clears the value of the "started_at" field.
+func (m *CcgoCommandAuditMutation) ClearStartedAt() {
+	m.started_at = nil
+	m.clearedFields[ccgocommandaudit.FieldStartedAt] = struct{}{}
+}
+
+// StartedAtCleared returns if the "started_at" field was cleared in this mutation.
+func (m *CcgoCommandAuditMutation) StartedAtCleared() bool {
+	_, ok := m.clearedFields[ccgocommandaudit.FieldStartedAt]
+	return ok
+}
+
+// ResetStartedAt resets all changes to the "started_at" field.
+func (m *CcgoCommandAuditMutation) ResetStartedAt() {
+	m.started_at = nil
+	delete(m.clearedFields, ccgocommandaudit.FieldStartedAt)
+}
+
+// SetFinishedAt sets the "finished_at" field.
+func (m *CcgoCommandAuditMutation) SetFinishedAt(t time.Time) {
+	m.finished_at = &t
+}
+
+// FinishedAt returns the value of the "finished_at" field in the mutation.
+func (m *CcgoCommandAuditMutation) FinishedAt() (r time.Time, exists bool) {
+	v := m.finished_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFinishedAt returns the old "finished_at" field's value of the CcgoCommandAudit entity.
+// If the CcgoCommandAudit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoCommandAuditMutation) OldFinishedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFinishedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFinishedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFinishedAt: %w", err)
+	}
+	return oldValue.FinishedAt, nil
+}
+
+// ClearFinishedAt clears the value of the "finished_at" field.
+func (m *CcgoCommandAuditMutation) ClearFinishedAt() {
+	m.finished_at = nil
+	m.clearedFields[ccgocommandaudit.FieldFinishedAt] = struct{}{}
+}
+
+// FinishedAtCleared returns if the "finished_at" field was cleared in this mutation.
+func (m *CcgoCommandAuditMutation) FinishedAtCleared() bool {
+	_, ok := m.clearedFields[ccgocommandaudit.FieldFinishedAt]
+	return ok
+}
+
+// ResetFinishedAt resets all changes to the "finished_at" field.
+func (m *CcgoCommandAuditMutation) ResetFinishedAt() {
+	m.finished_at = nil
+	delete(m.clearedFields, ccgocommandaudit.FieldFinishedAt)
+}
+
+// SetDurationMs sets the "duration_ms" field.
+func (m *CcgoCommandAuditMutation) SetDurationMs(i int64) {
+	m.duration_ms = &i
+	m.addduration_ms = nil
+}
+
+// DurationMs returns the value of the "duration_ms" field in the mutation.
+func (m *CcgoCommandAuditMutation) DurationMs() (r int64, exists bool) {
+	v := m.duration_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDurationMs returns the old "duration_ms" field's value of the CcgoCommandAudit entity.
+// If the CcgoCommandAudit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoCommandAuditMutation) OldDurationMs(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDurationMs is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDurationMs requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDurationMs: %w", err)
+	}
+	return oldValue.DurationMs, nil
+}
+
+// AddDurationMs adds i to the "duration_ms" field.
+func (m *CcgoCommandAuditMutation) AddDurationMs(i int64) {
+	if m.addduration_ms != nil {
+		*m.addduration_ms += i
+	} else {
+		m.addduration_ms = &i
+	}
+}
+
+// AddedDurationMs returns the value that was added to the "duration_ms" field in this mutation.
+func (m *CcgoCommandAuditMutation) AddedDurationMs() (r int64, exists bool) {
+	v := m.addduration_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDurationMs resets all changes to the "duration_ms" field.
+func (m *CcgoCommandAuditMutation) ResetDurationMs() {
+	m.duration_ms = nil
+	m.addduration_ms = nil
+}
+
+// Where appends a list predicates to the CcgoCommandAuditMutation builder.
+func (m *CcgoCommandAuditMutation) Where(ps ...predicate.CcgoCommandAudit) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the CcgoCommandAuditMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *CcgoCommandAuditMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.CcgoCommandAudit, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *CcgoCommandAuditMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *CcgoCommandAuditMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (CcgoCommandAudit).
+func (m *CcgoCommandAuditMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *CcgoCommandAuditMutation) Fields() []string {
+	fields := make([]string, 0, 16)
+	if m.created_at != nil {
+		fields = append(fields, ccgocommandaudit.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, ccgocommandaudit.FieldUpdatedAt)
+	}
+	if m.workspace_id != nil {
+		fields = append(fields, ccgocommandaudit.FieldWorkspaceID)
+	}
+	if m.user_id != nil {
+		fields = append(fields, ccgocommandaudit.FieldUserID)
+	}
+	if m.run_id != nil {
+		fields = append(fields, ccgocommandaudit.FieldRunID)
+	}
+	if m.request_id != nil {
+		fields = append(fields, ccgocommandaudit.FieldRequestID)
+	}
+	if m.command_hash != nil {
+		fields = append(fields, ccgocommandaudit.FieldCommandHash)
+	}
+	if m.redacted_command != nil {
+		fields = append(fields, ccgocommandaudit.FieldRedactedCommand)
+	}
+	if m.server_cwd != nil {
+		fields = append(fields, ccgocommandaudit.FieldServerCwd)
+	}
+	if m.local_cwd != nil {
+		fields = append(fields, ccgocommandaudit.FieldLocalCwd)
+	}
+	if m.exit_code != nil {
+		fields = append(fields, ccgocommandaudit.FieldExitCode)
+	}
+	if m.status != nil {
+		fields = append(fields, ccgocommandaudit.FieldStatus)
+	}
+	if m.failure_reason != nil {
+		fields = append(fields, ccgocommandaudit.FieldFailureReason)
+	}
+	if m.started_at != nil {
+		fields = append(fields, ccgocommandaudit.FieldStartedAt)
+	}
+	if m.finished_at != nil {
+		fields = append(fields, ccgocommandaudit.FieldFinishedAt)
+	}
+	if m.duration_ms != nil {
+		fields = append(fields, ccgocommandaudit.FieldDurationMs)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *CcgoCommandAuditMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case ccgocommandaudit.FieldCreatedAt:
+		return m.CreatedAt()
+	case ccgocommandaudit.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case ccgocommandaudit.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case ccgocommandaudit.FieldUserID:
+		return m.UserID()
+	case ccgocommandaudit.FieldRunID:
+		return m.RunID()
+	case ccgocommandaudit.FieldRequestID:
+		return m.RequestID()
+	case ccgocommandaudit.FieldCommandHash:
+		return m.CommandHash()
+	case ccgocommandaudit.FieldRedactedCommand:
+		return m.RedactedCommand()
+	case ccgocommandaudit.FieldServerCwd:
+		return m.ServerCwd()
+	case ccgocommandaudit.FieldLocalCwd:
+		return m.LocalCwd()
+	case ccgocommandaudit.FieldExitCode:
+		return m.ExitCode()
+	case ccgocommandaudit.FieldStatus:
+		return m.Status()
+	case ccgocommandaudit.FieldFailureReason:
+		return m.FailureReason()
+	case ccgocommandaudit.FieldStartedAt:
+		return m.StartedAt()
+	case ccgocommandaudit.FieldFinishedAt:
+		return m.FinishedAt()
+	case ccgocommandaudit.FieldDurationMs:
+		return m.DurationMs()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *CcgoCommandAuditMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case ccgocommandaudit.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case ccgocommandaudit.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case ccgocommandaudit.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case ccgocommandaudit.FieldUserID:
+		return m.OldUserID(ctx)
+	case ccgocommandaudit.FieldRunID:
+		return m.OldRunID(ctx)
+	case ccgocommandaudit.FieldRequestID:
+		return m.OldRequestID(ctx)
+	case ccgocommandaudit.FieldCommandHash:
+		return m.OldCommandHash(ctx)
+	case ccgocommandaudit.FieldRedactedCommand:
+		return m.OldRedactedCommand(ctx)
+	case ccgocommandaudit.FieldServerCwd:
+		return m.OldServerCwd(ctx)
+	case ccgocommandaudit.FieldLocalCwd:
+		return m.OldLocalCwd(ctx)
+	case ccgocommandaudit.FieldExitCode:
+		return m.OldExitCode(ctx)
+	case ccgocommandaudit.FieldStatus:
+		return m.OldStatus(ctx)
+	case ccgocommandaudit.FieldFailureReason:
+		return m.OldFailureReason(ctx)
+	case ccgocommandaudit.FieldStartedAt:
+		return m.OldStartedAt(ctx)
+	case ccgocommandaudit.FieldFinishedAt:
+		return m.OldFinishedAt(ctx)
+	case ccgocommandaudit.FieldDurationMs:
+		return m.OldDurationMs(ctx)
+	}
+	return nil, fmt.Errorf("unknown CcgoCommandAudit field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CcgoCommandAuditMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case ccgocommandaudit.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case ccgocommandaudit.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case ccgocommandaudit.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case ccgocommandaudit.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case ccgocommandaudit.FieldRunID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRunID(v)
+		return nil
+	case ccgocommandaudit.FieldRequestID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRequestID(v)
+		return nil
+	case ccgocommandaudit.FieldCommandHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCommandHash(v)
+		return nil
+	case ccgocommandaudit.FieldRedactedCommand:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRedactedCommand(v)
+		return nil
+	case ccgocommandaudit.FieldServerCwd:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetServerCwd(v)
+		return nil
+	case ccgocommandaudit.FieldLocalCwd:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLocalCwd(v)
+		return nil
+	case ccgocommandaudit.FieldExitCode:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExitCode(v)
+		return nil
+	case ccgocommandaudit.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case ccgocommandaudit.FieldFailureReason:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFailureReason(v)
+		return nil
+	case ccgocommandaudit.FieldStartedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStartedAt(v)
+		return nil
+	case ccgocommandaudit.FieldFinishedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFinishedAt(v)
+		return nil
+	case ccgocommandaudit.FieldDurationMs:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDurationMs(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CcgoCommandAudit field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *CcgoCommandAuditMutation) AddedFields() []string {
+	var fields []string
+	if m.addworkspace_id != nil {
+		fields = append(fields, ccgocommandaudit.FieldWorkspaceID)
+	}
+	if m.adduser_id != nil {
+		fields = append(fields, ccgocommandaudit.FieldUserID)
+	}
+	if m.addrun_id != nil {
+		fields = append(fields, ccgocommandaudit.FieldRunID)
+	}
+	if m.addexit_code != nil {
+		fields = append(fields, ccgocommandaudit.FieldExitCode)
+	}
+	if m.addduration_ms != nil {
+		fields = append(fields, ccgocommandaudit.FieldDurationMs)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *CcgoCommandAuditMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case ccgocommandaudit.FieldWorkspaceID:
+		return m.AddedWorkspaceID()
+	case ccgocommandaudit.FieldUserID:
+		return m.AddedUserID()
+	case ccgocommandaudit.FieldRunID:
+		return m.AddedRunID()
+	case ccgocommandaudit.FieldExitCode:
+		return m.AddedExitCode()
+	case ccgocommandaudit.FieldDurationMs:
+		return m.AddedDurationMs()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CcgoCommandAuditMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case ccgocommandaudit.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddWorkspaceID(v)
+		return nil
+	case ccgocommandaudit.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUserID(v)
+		return nil
+	case ccgocommandaudit.FieldRunID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRunID(v)
+		return nil
+	case ccgocommandaudit.FieldExitCode:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddExitCode(v)
+		return nil
+	case ccgocommandaudit.FieldDurationMs:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDurationMs(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CcgoCommandAudit numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *CcgoCommandAuditMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(ccgocommandaudit.FieldRunID) {
+		fields = append(fields, ccgocommandaudit.FieldRunID)
+	}
+	if m.FieldCleared(ccgocommandaudit.FieldExitCode) {
+		fields = append(fields, ccgocommandaudit.FieldExitCode)
+	}
+	if m.FieldCleared(ccgocommandaudit.FieldStartedAt) {
+		fields = append(fields, ccgocommandaudit.FieldStartedAt)
+	}
+	if m.FieldCleared(ccgocommandaudit.FieldFinishedAt) {
+		fields = append(fields, ccgocommandaudit.FieldFinishedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *CcgoCommandAuditMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *CcgoCommandAuditMutation) ClearField(name string) error {
+	switch name {
+	case ccgocommandaudit.FieldRunID:
+		m.ClearRunID()
+		return nil
+	case ccgocommandaudit.FieldExitCode:
+		m.ClearExitCode()
+		return nil
+	case ccgocommandaudit.FieldStartedAt:
+		m.ClearStartedAt()
+		return nil
+	case ccgocommandaudit.FieldFinishedAt:
+		m.ClearFinishedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown CcgoCommandAudit nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *CcgoCommandAuditMutation) ResetField(name string) error {
+	switch name {
+	case ccgocommandaudit.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case ccgocommandaudit.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case ccgocommandaudit.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case ccgocommandaudit.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case ccgocommandaudit.FieldRunID:
+		m.ResetRunID()
+		return nil
+	case ccgocommandaudit.FieldRequestID:
+		m.ResetRequestID()
+		return nil
+	case ccgocommandaudit.FieldCommandHash:
+		m.ResetCommandHash()
+		return nil
+	case ccgocommandaudit.FieldRedactedCommand:
+		m.ResetRedactedCommand()
+		return nil
+	case ccgocommandaudit.FieldServerCwd:
+		m.ResetServerCwd()
+		return nil
+	case ccgocommandaudit.FieldLocalCwd:
+		m.ResetLocalCwd()
+		return nil
+	case ccgocommandaudit.FieldExitCode:
+		m.ResetExitCode()
+		return nil
+	case ccgocommandaudit.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case ccgocommandaudit.FieldFailureReason:
+		m.ResetFailureReason()
+		return nil
+	case ccgocommandaudit.FieldStartedAt:
+		m.ResetStartedAt()
+		return nil
+	case ccgocommandaudit.FieldFinishedAt:
+		m.ResetFinishedAt()
+		return nil
+	case ccgocommandaudit.FieldDurationMs:
+		m.ResetDurationMs()
+		return nil
+	}
+	return fmt.Errorf("unknown CcgoCommandAudit field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *CcgoCommandAuditMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *CcgoCommandAuditMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *CcgoCommandAuditMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *CcgoCommandAuditMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *CcgoCommandAuditMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *CcgoCommandAuditMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *CcgoCommandAuditMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown CcgoCommandAudit unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *CcgoCommandAuditMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown CcgoCommandAudit edge %s", name)
+}
+
+// CcgoDeviceLoginMutation represents an operation that mutates the CcgoDeviceLogin nodes in the graph.
+type CcgoDeviceLoginMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int64
+	created_at       *time.Time
+	updated_at       *time.Time
+	device_code_hash *string
+	user_code_hash   *string
+	user_id          *int64
+	adduser_id       *int64
+	device_id        *string
+	status           *string
+	expires_at       *time.Time
+	approved_at      *time.Time
+	consumed_at      *time.Time
+	clearedFields    map[string]struct{}
+	done             bool
+	oldValue         func(context.Context) (*CcgoDeviceLogin, error)
+	predicates       []predicate.CcgoDeviceLogin
+}
+
+var _ ent.Mutation = (*CcgoDeviceLoginMutation)(nil)
+
+// ccgodeviceloginOption allows management of the mutation configuration using functional options.
+type ccgodeviceloginOption func(*CcgoDeviceLoginMutation)
+
+// newCcgoDeviceLoginMutation creates new mutation for the CcgoDeviceLogin entity.
+func newCcgoDeviceLoginMutation(c config, op Op, opts ...ccgodeviceloginOption) *CcgoDeviceLoginMutation {
+	m := &CcgoDeviceLoginMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeCcgoDeviceLogin,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withCcgoDeviceLoginID sets the ID field of the mutation.
+func withCcgoDeviceLoginID(id int64) ccgodeviceloginOption {
+	return func(m *CcgoDeviceLoginMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *CcgoDeviceLogin
+		)
+		m.oldValue = func(ctx context.Context) (*CcgoDeviceLogin, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().CcgoDeviceLogin.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withCcgoDeviceLogin sets the old CcgoDeviceLogin of the mutation.
+func withCcgoDeviceLogin(node *CcgoDeviceLogin) ccgodeviceloginOption {
+	return func(m *CcgoDeviceLoginMutation) {
+		m.oldValue = func(context.Context) (*CcgoDeviceLogin, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m CcgoDeviceLoginMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m CcgoDeviceLoginMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *CcgoDeviceLoginMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *CcgoDeviceLoginMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().CcgoDeviceLogin.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *CcgoDeviceLoginMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *CcgoDeviceLoginMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the CcgoDeviceLogin entity.
+// If the CcgoDeviceLogin object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoDeviceLoginMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *CcgoDeviceLoginMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *CcgoDeviceLoginMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *CcgoDeviceLoginMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the CcgoDeviceLogin entity.
+// If the CcgoDeviceLogin object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoDeviceLoginMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *CcgoDeviceLoginMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetDeviceCodeHash sets the "device_code_hash" field.
+func (m *CcgoDeviceLoginMutation) SetDeviceCodeHash(s string) {
+	m.device_code_hash = &s
+}
+
+// DeviceCodeHash returns the value of the "device_code_hash" field in the mutation.
+func (m *CcgoDeviceLoginMutation) DeviceCodeHash() (r string, exists bool) {
+	v := m.device_code_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeviceCodeHash returns the old "device_code_hash" field's value of the CcgoDeviceLogin entity.
+// If the CcgoDeviceLogin object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoDeviceLoginMutation) OldDeviceCodeHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeviceCodeHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeviceCodeHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeviceCodeHash: %w", err)
+	}
+	return oldValue.DeviceCodeHash, nil
+}
+
+// ResetDeviceCodeHash resets all changes to the "device_code_hash" field.
+func (m *CcgoDeviceLoginMutation) ResetDeviceCodeHash() {
+	m.device_code_hash = nil
+}
+
+// SetUserCodeHash sets the "user_code_hash" field.
+func (m *CcgoDeviceLoginMutation) SetUserCodeHash(s string) {
+	m.user_code_hash = &s
+}
+
+// UserCodeHash returns the value of the "user_code_hash" field in the mutation.
+func (m *CcgoDeviceLoginMutation) UserCodeHash() (r string, exists bool) {
+	v := m.user_code_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserCodeHash returns the old "user_code_hash" field's value of the CcgoDeviceLogin entity.
+// If the CcgoDeviceLogin object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoDeviceLoginMutation) OldUserCodeHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserCodeHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserCodeHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserCodeHash: %w", err)
+	}
+	return oldValue.UserCodeHash, nil
+}
+
+// ResetUserCodeHash resets all changes to the "user_code_hash" field.
+func (m *CcgoDeviceLoginMutation) ResetUserCodeHash() {
+	m.user_code_hash = nil
+}
+
+// SetUserID sets the "user_id" field.
+func (m *CcgoDeviceLoginMutation) SetUserID(i int64) {
+	m.user_id = &i
+	m.adduser_id = nil
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *CcgoDeviceLoginMutation) UserID() (r int64, exists bool) {
+	v := m.user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the CcgoDeviceLogin entity.
+// If the CcgoDeviceLogin object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoDeviceLoginMutation) OldUserID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// AddUserID adds i to the "user_id" field.
+func (m *CcgoDeviceLoginMutation) AddUserID(i int64) {
+	if m.adduser_id != nil {
+		*m.adduser_id += i
+	} else {
+		m.adduser_id = &i
+	}
+}
+
+// AddedUserID returns the value that was added to the "user_id" field in this mutation.
+func (m *CcgoDeviceLoginMutation) AddedUserID() (r int64, exists bool) {
+	v := m.adduser_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearUserID clears the value of the "user_id" field.
+func (m *CcgoDeviceLoginMutation) ClearUserID() {
+	m.user_id = nil
+	m.adduser_id = nil
+	m.clearedFields[ccgodevicelogin.FieldUserID] = struct{}{}
+}
+
+// UserIDCleared returns if the "user_id" field was cleared in this mutation.
+func (m *CcgoDeviceLoginMutation) UserIDCleared() bool {
+	_, ok := m.clearedFields[ccgodevicelogin.FieldUserID]
+	return ok
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *CcgoDeviceLoginMutation) ResetUserID() {
+	m.user_id = nil
+	m.adduser_id = nil
+	delete(m.clearedFields, ccgodevicelogin.FieldUserID)
+}
+
+// SetDeviceID sets the "device_id" field.
+func (m *CcgoDeviceLoginMutation) SetDeviceID(s string) {
+	m.device_id = &s
+}
+
+// DeviceID returns the value of the "device_id" field in the mutation.
+func (m *CcgoDeviceLoginMutation) DeviceID() (r string, exists bool) {
+	v := m.device_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeviceID returns the old "device_id" field's value of the CcgoDeviceLogin entity.
+// If the CcgoDeviceLogin object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoDeviceLoginMutation) OldDeviceID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeviceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeviceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeviceID: %w", err)
+	}
+	return oldValue.DeviceID, nil
+}
+
+// ResetDeviceID resets all changes to the "device_id" field.
+func (m *CcgoDeviceLoginMutation) ResetDeviceID() {
+	m.device_id = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *CcgoDeviceLoginMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *CcgoDeviceLoginMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the CcgoDeviceLogin entity.
+// If the CcgoDeviceLogin object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoDeviceLoginMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *CcgoDeviceLoginMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (m *CcgoDeviceLoginMutation) SetExpiresAt(t time.Time) {
+	m.expires_at = &t
+}
+
+// ExpiresAt returns the value of the "expires_at" field in the mutation.
+func (m *CcgoDeviceLoginMutation) ExpiresAt() (r time.Time, exists bool) {
+	v := m.expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiresAt returns the old "expires_at" field's value of the CcgoDeviceLogin entity.
+// If the CcgoDeviceLogin object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoDeviceLoginMutation) OldExpiresAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiresAt: %w", err)
+	}
+	return oldValue.ExpiresAt, nil
+}
+
+// ResetExpiresAt resets all changes to the "expires_at" field.
+func (m *CcgoDeviceLoginMutation) ResetExpiresAt() {
+	m.expires_at = nil
+}
+
+// SetApprovedAt sets the "approved_at" field.
+func (m *CcgoDeviceLoginMutation) SetApprovedAt(t time.Time) {
+	m.approved_at = &t
+}
+
+// ApprovedAt returns the value of the "approved_at" field in the mutation.
+func (m *CcgoDeviceLoginMutation) ApprovedAt() (r time.Time, exists bool) {
+	v := m.approved_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldApprovedAt returns the old "approved_at" field's value of the CcgoDeviceLogin entity.
+// If the CcgoDeviceLogin object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoDeviceLoginMutation) OldApprovedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldApprovedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldApprovedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldApprovedAt: %w", err)
+	}
+	return oldValue.ApprovedAt, nil
+}
+
+// ClearApprovedAt clears the value of the "approved_at" field.
+func (m *CcgoDeviceLoginMutation) ClearApprovedAt() {
+	m.approved_at = nil
+	m.clearedFields[ccgodevicelogin.FieldApprovedAt] = struct{}{}
+}
+
+// ApprovedAtCleared returns if the "approved_at" field was cleared in this mutation.
+func (m *CcgoDeviceLoginMutation) ApprovedAtCleared() bool {
+	_, ok := m.clearedFields[ccgodevicelogin.FieldApprovedAt]
+	return ok
+}
+
+// ResetApprovedAt resets all changes to the "approved_at" field.
+func (m *CcgoDeviceLoginMutation) ResetApprovedAt() {
+	m.approved_at = nil
+	delete(m.clearedFields, ccgodevicelogin.FieldApprovedAt)
+}
+
+// SetConsumedAt sets the "consumed_at" field.
+func (m *CcgoDeviceLoginMutation) SetConsumedAt(t time.Time) {
+	m.consumed_at = &t
+}
+
+// ConsumedAt returns the value of the "consumed_at" field in the mutation.
+func (m *CcgoDeviceLoginMutation) ConsumedAt() (r time.Time, exists bool) {
+	v := m.consumed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConsumedAt returns the old "consumed_at" field's value of the CcgoDeviceLogin entity.
+// If the CcgoDeviceLogin object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoDeviceLoginMutation) OldConsumedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConsumedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConsumedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConsumedAt: %w", err)
+	}
+	return oldValue.ConsumedAt, nil
+}
+
+// ClearConsumedAt clears the value of the "consumed_at" field.
+func (m *CcgoDeviceLoginMutation) ClearConsumedAt() {
+	m.consumed_at = nil
+	m.clearedFields[ccgodevicelogin.FieldConsumedAt] = struct{}{}
+}
+
+// ConsumedAtCleared returns if the "consumed_at" field was cleared in this mutation.
+func (m *CcgoDeviceLoginMutation) ConsumedAtCleared() bool {
+	_, ok := m.clearedFields[ccgodevicelogin.FieldConsumedAt]
+	return ok
+}
+
+// ResetConsumedAt resets all changes to the "consumed_at" field.
+func (m *CcgoDeviceLoginMutation) ResetConsumedAt() {
+	m.consumed_at = nil
+	delete(m.clearedFields, ccgodevicelogin.FieldConsumedAt)
+}
+
+// Where appends a list predicates to the CcgoDeviceLoginMutation builder.
+func (m *CcgoDeviceLoginMutation) Where(ps ...predicate.CcgoDeviceLogin) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the CcgoDeviceLoginMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *CcgoDeviceLoginMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.CcgoDeviceLogin, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *CcgoDeviceLoginMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *CcgoDeviceLoginMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (CcgoDeviceLogin).
+func (m *CcgoDeviceLoginMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *CcgoDeviceLoginMutation) Fields() []string {
+	fields := make([]string, 0, 10)
+	if m.created_at != nil {
+		fields = append(fields, ccgodevicelogin.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, ccgodevicelogin.FieldUpdatedAt)
+	}
+	if m.device_code_hash != nil {
+		fields = append(fields, ccgodevicelogin.FieldDeviceCodeHash)
+	}
+	if m.user_code_hash != nil {
+		fields = append(fields, ccgodevicelogin.FieldUserCodeHash)
+	}
+	if m.user_id != nil {
+		fields = append(fields, ccgodevicelogin.FieldUserID)
+	}
+	if m.device_id != nil {
+		fields = append(fields, ccgodevicelogin.FieldDeviceID)
+	}
+	if m.status != nil {
+		fields = append(fields, ccgodevicelogin.FieldStatus)
+	}
+	if m.expires_at != nil {
+		fields = append(fields, ccgodevicelogin.FieldExpiresAt)
+	}
+	if m.approved_at != nil {
+		fields = append(fields, ccgodevicelogin.FieldApprovedAt)
+	}
+	if m.consumed_at != nil {
+		fields = append(fields, ccgodevicelogin.FieldConsumedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *CcgoDeviceLoginMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case ccgodevicelogin.FieldCreatedAt:
+		return m.CreatedAt()
+	case ccgodevicelogin.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case ccgodevicelogin.FieldDeviceCodeHash:
+		return m.DeviceCodeHash()
+	case ccgodevicelogin.FieldUserCodeHash:
+		return m.UserCodeHash()
+	case ccgodevicelogin.FieldUserID:
+		return m.UserID()
+	case ccgodevicelogin.FieldDeviceID:
+		return m.DeviceID()
+	case ccgodevicelogin.FieldStatus:
+		return m.Status()
+	case ccgodevicelogin.FieldExpiresAt:
+		return m.ExpiresAt()
+	case ccgodevicelogin.FieldApprovedAt:
+		return m.ApprovedAt()
+	case ccgodevicelogin.FieldConsumedAt:
+		return m.ConsumedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *CcgoDeviceLoginMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case ccgodevicelogin.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case ccgodevicelogin.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case ccgodevicelogin.FieldDeviceCodeHash:
+		return m.OldDeviceCodeHash(ctx)
+	case ccgodevicelogin.FieldUserCodeHash:
+		return m.OldUserCodeHash(ctx)
+	case ccgodevicelogin.FieldUserID:
+		return m.OldUserID(ctx)
+	case ccgodevicelogin.FieldDeviceID:
+		return m.OldDeviceID(ctx)
+	case ccgodevicelogin.FieldStatus:
+		return m.OldStatus(ctx)
+	case ccgodevicelogin.FieldExpiresAt:
+		return m.OldExpiresAt(ctx)
+	case ccgodevicelogin.FieldApprovedAt:
+		return m.OldApprovedAt(ctx)
+	case ccgodevicelogin.FieldConsumedAt:
+		return m.OldConsumedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown CcgoDeviceLogin field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CcgoDeviceLoginMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case ccgodevicelogin.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case ccgodevicelogin.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case ccgodevicelogin.FieldDeviceCodeHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeviceCodeHash(v)
+		return nil
+	case ccgodevicelogin.FieldUserCodeHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserCodeHash(v)
+		return nil
+	case ccgodevicelogin.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case ccgodevicelogin.FieldDeviceID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeviceID(v)
+		return nil
+	case ccgodevicelogin.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case ccgodevicelogin.FieldExpiresAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiresAt(v)
+		return nil
+	case ccgodevicelogin.FieldApprovedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetApprovedAt(v)
+		return nil
+	case ccgodevicelogin.FieldConsumedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConsumedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CcgoDeviceLogin field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *CcgoDeviceLoginMutation) AddedFields() []string {
+	var fields []string
+	if m.adduser_id != nil {
+		fields = append(fields, ccgodevicelogin.FieldUserID)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *CcgoDeviceLoginMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case ccgodevicelogin.FieldUserID:
+		return m.AddedUserID()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CcgoDeviceLoginMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case ccgodevicelogin.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUserID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CcgoDeviceLogin numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *CcgoDeviceLoginMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(ccgodevicelogin.FieldUserID) {
+		fields = append(fields, ccgodevicelogin.FieldUserID)
+	}
+	if m.FieldCleared(ccgodevicelogin.FieldApprovedAt) {
+		fields = append(fields, ccgodevicelogin.FieldApprovedAt)
+	}
+	if m.FieldCleared(ccgodevicelogin.FieldConsumedAt) {
+		fields = append(fields, ccgodevicelogin.FieldConsumedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *CcgoDeviceLoginMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *CcgoDeviceLoginMutation) ClearField(name string) error {
+	switch name {
+	case ccgodevicelogin.FieldUserID:
+		m.ClearUserID()
+		return nil
+	case ccgodevicelogin.FieldApprovedAt:
+		m.ClearApprovedAt()
+		return nil
+	case ccgodevicelogin.FieldConsumedAt:
+		m.ClearConsumedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown CcgoDeviceLogin nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *CcgoDeviceLoginMutation) ResetField(name string) error {
+	switch name {
+	case ccgodevicelogin.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case ccgodevicelogin.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case ccgodevicelogin.FieldDeviceCodeHash:
+		m.ResetDeviceCodeHash()
+		return nil
+	case ccgodevicelogin.FieldUserCodeHash:
+		m.ResetUserCodeHash()
+		return nil
+	case ccgodevicelogin.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case ccgodevicelogin.FieldDeviceID:
+		m.ResetDeviceID()
+		return nil
+	case ccgodevicelogin.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case ccgodevicelogin.FieldExpiresAt:
+		m.ResetExpiresAt()
+		return nil
+	case ccgodevicelogin.FieldApprovedAt:
+		m.ResetApprovedAt()
+		return nil
+	case ccgodevicelogin.FieldConsumedAt:
+		m.ResetConsumedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown CcgoDeviceLogin field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *CcgoDeviceLoginMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *CcgoDeviceLoginMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *CcgoDeviceLoginMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *CcgoDeviceLoginMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *CcgoDeviceLoginMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *CcgoDeviceLoginMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *CcgoDeviceLoginMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown CcgoDeviceLogin unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *CcgoDeviceLoginMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown CcgoDeviceLogin edge %s", name)
+}
+
+// CcgoWorkspaceMutation represents an operation that mutates the CcgoWorkspace nodes in the graph.
+type CcgoWorkspaceMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *int64
+	created_at          *time.Time
+	updated_at          *time.Time
+	user_id             *int64
+	adduser_id          *int64
+	workspace_slug      *string
+	server_root         *string
+	local_root_hash     *string
+	local_root_display  *string
+	local_root_redacted *string
+	os                  *string
+	path_style          *string
+	device_id           *string
+	status              *string
+	last_seen_at        *time.Time
+	clearedFields       map[string]struct{}
+	done                bool
+	oldValue            func(context.Context) (*CcgoWorkspace, error)
+	predicates          []predicate.CcgoWorkspace
+}
+
+var _ ent.Mutation = (*CcgoWorkspaceMutation)(nil)
+
+// ccgoworkspaceOption allows management of the mutation configuration using functional options.
+type ccgoworkspaceOption func(*CcgoWorkspaceMutation)
+
+// newCcgoWorkspaceMutation creates new mutation for the CcgoWorkspace entity.
+func newCcgoWorkspaceMutation(c config, op Op, opts ...ccgoworkspaceOption) *CcgoWorkspaceMutation {
+	m := &CcgoWorkspaceMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeCcgoWorkspace,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withCcgoWorkspaceID sets the ID field of the mutation.
+func withCcgoWorkspaceID(id int64) ccgoworkspaceOption {
+	return func(m *CcgoWorkspaceMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *CcgoWorkspace
+		)
+		m.oldValue = func(ctx context.Context) (*CcgoWorkspace, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().CcgoWorkspace.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withCcgoWorkspace sets the old CcgoWorkspace of the mutation.
+func withCcgoWorkspace(node *CcgoWorkspace) ccgoworkspaceOption {
+	return func(m *CcgoWorkspaceMutation) {
+		m.oldValue = func(context.Context) (*CcgoWorkspace, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m CcgoWorkspaceMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m CcgoWorkspaceMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *CcgoWorkspaceMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *CcgoWorkspaceMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().CcgoWorkspace.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *CcgoWorkspaceMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *CcgoWorkspaceMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the CcgoWorkspace entity.
+// If the CcgoWorkspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoWorkspaceMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *CcgoWorkspaceMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *CcgoWorkspaceMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *CcgoWorkspaceMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the CcgoWorkspace entity.
+// If the CcgoWorkspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoWorkspaceMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *CcgoWorkspaceMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetUserID sets the "user_id" field.
+func (m *CcgoWorkspaceMutation) SetUserID(i int64) {
+	m.user_id = &i
+	m.adduser_id = nil
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *CcgoWorkspaceMutation) UserID() (r int64, exists bool) {
+	v := m.user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the CcgoWorkspace entity.
+// If the CcgoWorkspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoWorkspaceMutation) OldUserID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// AddUserID adds i to the "user_id" field.
+func (m *CcgoWorkspaceMutation) AddUserID(i int64) {
+	if m.adduser_id != nil {
+		*m.adduser_id += i
+	} else {
+		m.adduser_id = &i
+	}
+}
+
+// AddedUserID returns the value that was added to the "user_id" field in this mutation.
+func (m *CcgoWorkspaceMutation) AddedUserID() (r int64, exists bool) {
+	v := m.adduser_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *CcgoWorkspaceMutation) ResetUserID() {
+	m.user_id = nil
+	m.adduser_id = nil
+}
+
+// SetWorkspaceSlug sets the "workspace_slug" field.
+func (m *CcgoWorkspaceMutation) SetWorkspaceSlug(s string) {
+	m.workspace_slug = &s
+}
+
+// WorkspaceSlug returns the value of the "workspace_slug" field in the mutation.
+func (m *CcgoWorkspaceMutation) WorkspaceSlug() (r string, exists bool) {
+	v := m.workspace_slug
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceSlug returns the old "workspace_slug" field's value of the CcgoWorkspace entity.
+// If the CcgoWorkspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoWorkspaceMutation) OldWorkspaceSlug(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceSlug is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceSlug requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceSlug: %w", err)
+	}
+	return oldValue.WorkspaceSlug, nil
+}
+
+// ResetWorkspaceSlug resets all changes to the "workspace_slug" field.
+func (m *CcgoWorkspaceMutation) ResetWorkspaceSlug() {
+	m.workspace_slug = nil
+}
+
+// SetServerRoot sets the "server_root" field.
+func (m *CcgoWorkspaceMutation) SetServerRoot(s string) {
+	m.server_root = &s
+}
+
+// ServerRoot returns the value of the "server_root" field in the mutation.
+func (m *CcgoWorkspaceMutation) ServerRoot() (r string, exists bool) {
+	v := m.server_root
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldServerRoot returns the old "server_root" field's value of the CcgoWorkspace entity.
+// If the CcgoWorkspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoWorkspaceMutation) OldServerRoot(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldServerRoot is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldServerRoot requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldServerRoot: %w", err)
+	}
+	return oldValue.ServerRoot, nil
+}
+
+// ResetServerRoot resets all changes to the "server_root" field.
+func (m *CcgoWorkspaceMutation) ResetServerRoot() {
+	m.server_root = nil
+}
+
+// SetLocalRootHash sets the "local_root_hash" field.
+func (m *CcgoWorkspaceMutation) SetLocalRootHash(s string) {
+	m.local_root_hash = &s
+}
+
+// LocalRootHash returns the value of the "local_root_hash" field in the mutation.
+func (m *CcgoWorkspaceMutation) LocalRootHash() (r string, exists bool) {
+	v := m.local_root_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLocalRootHash returns the old "local_root_hash" field's value of the CcgoWorkspace entity.
+// If the CcgoWorkspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoWorkspaceMutation) OldLocalRootHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLocalRootHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLocalRootHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLocalRootHash: %w", err)
+	}
+	return oldValue.LocalRootHash, nil
+}
+
+// ResetLocalRootHash resets all changes to the "local_root_hash" field.
+func (m *CcgoWorkspaceMutation) ResetLocalRootHash() {
+	m.local_root_hash = nil
+}
+
+// SetLocalRootDisplay sets the "local_root_display" field.
+func (m *CcgoWorkspaceMutation) SetLocalRootDisplay(s string) {
+	m.local_root_display = &s
+}
+
+// LocalRootDisplay returns the value of the "local_root_display" field in the mutation.
+func (m *CcgoWorkspaceMutation) LocalRootDisplay() (r string, exists bool) {
+	v := m.local_root_display
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLocalRootDisplay returns the old "local_root_display" field's value of the CcgoWorkspace entity.
+// If the CcgoWorkspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoWorkspaceMutation) OldLocalRootDisplay(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLocalRootDisplay is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLocalRootDisplay requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLocalRootDisplay: %w", err)
+	}
+	return oldValue.LocalRootDisplay, nil
+}
+
+// ResetLocalRootDisplay resets all changes to the "local_root_display" field.
+func (m *CcgoWorkspaceMutation) ResetLocalRootDisplay() {
+	m.local_root_display = nil
+}
+
+// SetLocalRootRedacted sets the "local_root_redacted" field.
+func (m *CcgoWorkspaceMutation) SetLocalRootRedacted(s string) {
+	m.local_root_redacted = &s
+}
+
+// LocalRootRedacted returns the value of the "local_root_redacted" field in the mutation.
+func (m *CcgoWorkspaceMutation) LocalRootRedacted() (r string, exists bool) {
+	v := m.local_root_redacted
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLocalRootRedacted returns the old "local_root_redacted" field's value of the CcgoWorkspace entity.
+// If the CcgoWorkspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoWorkspaceMutation) OldLocalRootRedacted(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLocalRootRedacted is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLocalRootRedacted requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLocalRootRedacted: %w", err)
+	}
+	return oldValue.LocalRootRedacted, nil
+}
+
+// ResetLocalRootRedacted resets all changes to the "local_root_redacted" field.
+func (m *CcgoWorkspaceMutation) ResetLocalRootRedacted() {
+	m.local_root_redacted = nil
+}
+
+// SetOs sets the "os" field.
+func (m *CcgoWorkspaceMutation) SetOs(s string) {
+	m.os = &s
+}
+
+// Os returns the value of the "os" field in the mutation.
+func (m *CcgoWorkspaceMutation) Os() (r string, exists bool) {
+	v := m.os
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOs returns the old "os" field's value of the CcgoWorkspace entity.
+// If the CcgoWorkspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoWorkspaceMutation) OldOs(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOs is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOs requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOs: %w", err)
+	}
+	return oldValue.Os, nil
+}
+
+// ResetOs resets all changes to the "os" field.
+func (m *CcgoWorkspaceMutation) ResetOs() {
+	m.os = nil
+}
+
+// SetPathStyle sets the "path_style" field.
+func (m *CcgoWorkspaceMutation) SetPathStyle(s string) {
+	m.path_style = &s
+}
+
+// PathStyle returns the value of the "path_style" field in the mutation.
+func (m *CcgoWorkspaceMutation) PathStyle() (r string, exists bool) {
+	v := m.path_style
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPathStyle returns the old "path_style" field's value of the CcgoWorkspace entity.
+// If the CcgoWorkspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoWorkspaceMutation) OldPathStyle(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPathStyle is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPathStyle requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPathStyle: %w", err)
+	}
+	return oldValue.PathStyle, nil
+}
+
+// ResetPathStyle resets all changes to the "path_style" field.
+func (m *CcgoWorkspaceMutation) ResetPathStyle() {
+	m.path_style = nil
+}
+
+// SetDeviceID sets the "device_id" field.
+func (m *CcgoWorkspaceMutation) SetDeviceID(s string) {
+	m.device_id = &s
+}
+
+// DeviceID returns the value of the "device_id" field in the mutation.
+func (m *CcgoWorkspaceMutation) DeviceID() (r string, exists bool) {
+	v := m.device_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeviceID returns the old "device_id" field's value of the CcgoWorkspace entity.
+// If the CcgoWorkspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoWorkspaceMutation) OldDeviceID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeviceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeviceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeviceID: %w", err)
+	}
+	return oldValue.DeviceID, nil
+}
+
+// ResetDeviceID resets all changes to the "device_id" field.
+func (m *CcgoWorkspaceMutation) ResetDeviceID() {
+	m.device_id = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *CcgoWorkspaceMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *CcgoWorkspaceMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the CcgoWorkspace entity.
+// If the CcgoWorkspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoWorkspaceMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *CcgoWorkspaceMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetLastSeenAt sets the "last_seen_at" field.
+func (m *CcgoWorkspaceMutation) SetLastSeenAt(t time.Time) {
+	m.last_seen_at = &t
+}
+
+// LastSeenAt returns the value of the "last_seen_at" field in the mutation.
+func (m *CcgoWorkspaceMutation) LastSeenAt() (r time.Time, exists bool) {
+	v := m.last_seen_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastSeenAt returns the old "last_seen_at" field's value of the CcgoWorkspace entity.
+// If the CcgoWorkspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoWorkspaceMutation) OldLastSeenAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastSeenAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastSeenAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastSeenAt: %w", err)
+	}
+	return oldValue.LastSeenAt, nil
+}
+
+// ClearLastSeenAt clears the value of the "last_seen_at" field.
+func (m *CcgoWorkspaceMutation) ClearLastSeenAt() {
+	m.last_seen_at = nil
+	m.clearedFields[ccgoworkspace.FieldLastSeenAt] = struct{}{}
+}
+
+// LastSeenAtCleared returns if the "last_seen_at" field was cleared in this mutation.
+func (m *CcgoWorkspaceMutation) LastSeenAtCleared() bool {
+	_, ok := m.clearedFields[ccgoworkspace.FieldLastSeenAt]
+	return ok
+}
+
+// ResetLastSeenAt resets all changes to the "last_seen_at" field.
+func (m *CcgoWorkspaceMutation) ResetLastSeenAt() {
+	m.last_seen_at = nil
+	delete(m.clearedFields, ccgoworkspace.FieldLastSeenAt)
+}
+
+// Where appends a list predicates to the CcgoWorkspaceMutation builder.
+func (m *CcgoWorkspaceMutation) Where(ps ...predicate.CcgoWorkspace) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the CcgoWorkspaceMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *CcgoWorkspaceMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.CcgoWorkspace, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *CcgoWorkspaceMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *CcgoWorkspaceMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (CcgoWorkspace).
+func (m *CcgoWorkspaceMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *CcgoWorkspaceMutation) Fields() []string {
+	fields := make([]string, 0, 13)
+	if m.created_at != nil {
+		fields = append(fields, ccgoworkspace.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, ccgoworkspace.FieldUpdatedAt)
+	}
+	if m.user_id != nil {
+		fields = append(fields, ccgoworkspace.FieldUserID)
+	}
+	if m.workspace_slug != nil {
+		fields = append(fields, ccgoworkspace.FieldWorkspaceSlug)
+	}
+	if m.server_root != nil {
+		fields = append(fields, ccgoworkspace.FieldServerRoot)
+	}
+	if m.local_root_hash != nil {
+		fields = append(fields, ccgoworkspace.FieldLocalRootHash)
+	}
+	if m.local_root_display != nil {
+		fields = append(fields, ccgoworkspace.FieldLocalRootDisplay)
+	}
+	if m.local_root_redacted != nil {
+		fields = append(fields, ccgoworkspace.FieldLocalRootRedacted)
+	}
+	if m.os != nil {
+		fields = append(fields, ccgoworkspace.FieldOs)
+	}
+	if m.path_style != nil {
+		fields = append(fields, ccgoworkspace.FieldPathStyle)
+	}
+	if m.device_id != nil {
+		fields = append(fields, ccgoworkspace.FieldDeviceID)
+	}
+	if m.status != nil {
+		fields = append(fields, ccgoworkspace.FieldStatus)
+	}
+	if m.last_seen_at != nil {
+		fields = append(fields, ccgoworkspace.FieldLastSeenAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *CcgoWorkspaceMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case ccgoworkspace.FieldCreatedAt:
+		return m.CreatedAt()
+	case ccgoworkspace.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case ccgoworkspace.FieldUserID:
+		return m.UserID()
+	case ccgoworkspace.FieldWorkspaceSlug:
+		return m.WorkspaceSlug()
+	case ccgoworkspace.FieldServerRoot:
+		return m.ServerRoot()
+	case ccgoworkspace.FieldLocalRootHash:
+		return m.LocalRootHash()
+	case ccgoworkspace.FieldLocalRootDisplay:
+		return m.LocalRootDisplay()
+	case ccgoworkspace.FieldLocalRootRedacted:
+		return m.LocalRootRedacted()
+	case ccgoworkspace.FieldOs:
+		return m.Os()
+	case ccgoworkspace.FieldPathStyle:
+		return m.PathStyle()
+	case ccgoworkspace.FieldDeviceID:
+		return m.DeviceID()
+	case ccgoworkspace.FieldStatus:
+		return m.Status()
+	case ccgoworkspace.FieldLastSeenAt:
+		return m.LastSeenAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *CcgoWorkspaceMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case ccgoworkspace.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case ccgoworkspace.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case ccgoworkspace.FieldUserID:
+		return m.OldUserID(ctx)
+	case ccgoworkspace.FieldWorkspaceSlug:
+		return m.OldWorkspaceSlug(ctx)
+	case ccgoworkspace.FieldServerRoot:
+		return m.OldServerRoot(ctx)
+	case ccgoworkspace.FieldLocalRootHash:
+		return m.OldLocalRootHash(ctx)
+	case ccgoworkspace.FieldLocalRootDisplay:
+		return m.OldLocalRootDisplay(ctx)
+	case ccgoworkspace.FieldLocalRootRedacted:
+		return m.OldLocalRootRedacted(ctx)
+	case ccgoworkspace.FieldOs:
+		return m.OldOs(ctx)
+	case ccgoworkspace.FieldPathStyle:
+		return m.OldPathStyle(ctx)
+	case ccgoworkspace.FieldDeviceID:
+		return m.OldDeviceID(ctx)
+	case ccgoworkspace.FieldStatus:
+		return m.OldStatus(ctx)
+	case ccgoworkspace.FieldLastSeenAt:
+		return m.OldLastSeenAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown CcgoWorkspace field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CcgoWorkspaceMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case ccgoworkspace.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case ccgoworkspace.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case ccgoworkspace.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case ccgoworkspace.FieldWorkspaceSlug:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceSlug(v)
+		return nil
+	case ccgoworkspace.FieldServerRoot:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetServerRoot(v)
+		return nil
+	case ccgoworkspace.FieldLocalRootHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLocalRootHash(v)
+		return nil
+	case ccgoworkspace.FieldLocalRootDisplay:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLocalRootDisplay(v)
+		return nil
+	case ccgoworkspace.FieldLocalRootRedacted:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLocalRootRedacted(v)
+		return nil
+	case ccgoworkspace.FieldOs:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOs(v)
+		return nil
+	case ccgoworkspace.FieldPathStyle:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPathStyle(v)
+		return nil
+	case ccgoworkspace.FieldDeviceID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeviceID(v)
+		return nil
+	case ccgoworkspace.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case ccgoworkspace.FieldLastSeenAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastSeenAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CcgoWorkspace field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *CcgoWorkspaceMutation) AddedFields() []string {
+	var fields []string
+	if m.adduser_id != nil {
+		fields = append(fields, ccgoworkspace.FieldUserID)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *CcgoWorkspaceMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case ccgoworkspace.FieldUserID:
+		return m.AddedUserID()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CcgoWorkspaceMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case ccgoworkspace.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUserID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CcgoWorkspace numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *CcgoWorkspaceMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(ccgoworkspace.FieldLastSeenAt) {
+		fields = append(fields, ccgoworkspace.FieldLastSeenAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *CcgoWorkspaceMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *CcgoWorkspaceMutation) ClearField(name string) error {
+	switch name {
+	case ccgoworkspace.FieldLastSeenAt:
+		m.ClearLastSeenAt()
+		return nil
+	}
+	return fmt.Errorf("unknown CcgoWorkspace nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *CcgoWorkspaceMutation) ResetField(name string) error {
+	switch name {
+	case ccgoworkspace.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case ccgoworkspace.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case ccgoworkspace.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case ccgoworkspace.FieldWorkspaceSlug:
+		m.ResetWorkspaceSlug()
+		return nil
+	case ccgoworkspace.FieldServerRoot:
+		m.ResetServerRoot()
+		return nil
+	case ccgoworkspace.FieldLocalRootHash:
+		m.ResetLocalRootHash()
+		return nil
+	case ccgoworkspace.FieldLocalRootDisplay:
+		m.ResetLocalRootDisplay()
+		return nil
+	case ccgoworkspace.FieldLocalRootRedacted:
+		m.ResetLocalRootRedacted()
+		return nil
+	case ccgoworkspace.FieldOs:
+		m.ResetOs()
+		return nil
+	case ccgoworkspace.FieldPathStyle:
+		m.ResetPathStyle()
+		return nil
+	case ccgoworkspace.FieldDeviceID:
+		m.ResetDeviceID()
+		return nil
+	case ccgoworkspace.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case ccgoworkspace.FieldLastSeenAt:
+		m.ResetLastSeenAt()
+		return nil
+	}
+	return fmt.Errorf("unknown CcgoWorkspace field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *CcgoWorkspaceMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *CcgoWorkspaceMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *CcgoWorkspaceMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *CcgoWorkspaceMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *CcgoWorkspaceMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *CcgoWorkspaceMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *CcgoWorkspaceMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown CcgoWorkspace unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *CcgoWorkspaceMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown CcgoWorkspace edge %s", name)
+}
+
+// CcgoWorkstationRunMutation represents an operation that mutates the CcgoWorkstationRun nodes in the graph.
+type CcgoWorkstationRunMutation struct {
+	config
+	op                Op
+	typ               string
+	id                *int64
+	created_at        *time.Time
+	updated_at        *time.Time
+	workspace_id      *int64
+	addworkspace_id   *int64
+	user_id           *int64
+	adduser_id        *int64
+	run_id            *string
+	status            *string
+	server_pid        *string
+	started_at        *time.Time
+	stopped_at        *time.Time
+	stop_reason       *string
+	last_heartbeat_at *time.Time
+	clearedFields     map[string]struct{}
+	done              bool
+	oldValue          func(context.Context) (*CcgoWorkstationRun, error)
+	predicates        []predicate.CcgoWorkstationRun
+}
+
+var _ ent.Mutation = (*CcgoWorkstationRunMutation)(nil)
+
+// ccgoworkstationrunOption allows management of the mutation configuration using functional options.
+type ccgoworkstationrunOption func(*CcgoWorkstationRunMutation)
+
+// newCcgoWorkstationRunMutation creates new mutation for the CcgoWorkstationRun entity.
+func newCcgoWorkstationRunMutation(c config, op Op, opts ...ccgoworkstationrunOption) *CcgoWorkstationRunMutation {
+	m := &CcgoWorkstationRunMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeCcgoWorkstationRun,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withCcgoWorkstationRunID sets the ID field of the mutation.
+func withCcgoWorkstationRunID(id int64) ccgoworkstationrunOption {
+	return func(m *CcgoWorkstationRunMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *CcgoWorkstationRun
+		)
+		m.oldValue = func(ctx context.Context) (*CcgoWorkstationRun, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().CcgoWorkstationRun.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withCcgoWorkstationRun sets the old CcgoWorkstationRun of the mutation.
+func withCcgoWorkstationRun(node *CcgoWorkstationRun) ccgoworkstationrunOption {
+	return func(m *CcgoWorkstationRunMutation) {
+		m.oldValue = func(context.Context) (*CcgoWorkstationRun, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m CcgoWorkstationRunMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m CcgoWorkstationRunMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *CcgoWorkstationRunMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *CcgoWorkstationRunMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().CcgoWorkstationRun.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *CcgoWorkstationRunMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *CcgoWorkstationRunMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the CcgoWorkstationRun entity.
+// If the CcgoWorkstationRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoWorkstationRunMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *CcgoWorkstationRunMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *CcgoWorkstationRunMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *CcgoWorkstationRunMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the CcgoWorkstationRun entity.
+// If the CcgoWorkstationRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoWorkstationRunMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *CcgoWorkstationRunMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *CcgoWorkstationRunMutation) SetWorkspaceID(i int64) {
+	m.workspace_id = &i
+	m.addworkspace_id = nil
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *CcgoWorkstationRunMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the CcgoWorkstationRun entity.
+// If the CcgoWorkstationRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoWorkstationRunMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// AddWorkspaceID adds i to the "workspace_id" field.
+func (m *CcgoWorkstationRunMutation) AddWorkspaceID(i int64) {
+	if m.addworkspace_id != nil {
+		*m.addworkspace_id += i
+	} else {
+		m.addworkspace_id = &i
+	}
+}
+
+// AddedWorkspaceID returns the value that was added to the "workspace_id" field in this mutation.
+func (m *CcgoWorkstationRunMutation) AddedWorkspaceID() (r int64, exists bool) {
+	v := m.addworkspace_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *CcgoWorkstationRunMutation) ResetWorkspaceID() {
+	m.workspace_id = nil
+	m.addworkspace_id = nil
+}
+
+// SetUserID sets the "user_id" field.
+func (m *CcgoWorkstationRunMutation) SetUserID(i int64) {
+	m.user_id = &i
+	m.adduser_id = nil
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *CcgoWorkstationRunMutation) UserID() (r int64, exists bool) {
+	v := m.user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the CcgoWorkstationRun entity.
+// If the CcgoWorkstationRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoWorkstationRunMutation) OldUserID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// AddUserID adds i to the "user_id" field.
+func (m *CcgoWorkstationRunMutation) AddUserID(i int64) {
+	if m.adduser_id != nil {
+		*m.adduser_id += i
+	} else {
+		m.adduser_id = &i
+	}
+}
+
+// AddedUserID returns the value that was added to the "user_id" field in this mutation.
+func (m *CcgoWorkstationRunMutation) AddedUserID() (r int64, exists bool) {
+	v := m.adduser_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *CcgoWorkstationRunMutation) ResetUserID() {
+	m.user_id = nil
+	m.adduser_id = nil
+}
+
+// SetRunID sets the "run_id" field.
+func (m *CcgoWorkstationRunMutation) SetRunID(s string) {
+	m.run_id = &s
+}
+
+// RunID returns the value of the "run_id" field in the mutation.
+func (m *CcgoWorkstationRunMutation) RunID() (r string, exists bool) {
+	v := m.run_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRunID returns the old "run_id" field's value of the CcgoWorkstationRun entity.
+// If the CcgoWorkstationRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoWorkstationRunMutation) OldRunID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRunID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRunID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRunID: %w", err)
+	}
+	return oldValue.RunID, nil
+}
+
+// ResetRunID resets all changes to the "run_id" field.
+func (m *CcgoWorkstationRunMutation) ResetRunID() {
+	m.run_id = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *CcgoWorkstationRunMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *CcgoWorkstationRunMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the CcgoWorkstationRun entity.
+// If the CcgoWorkstationRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoWorkstationRunMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *CcgoWorkstationRunMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetServerPid sets the "server_pid" field.
+func (m *CcgoWorkstationRunMutation) SetServerPid(s string) {
+	m.server_pid = &s
+}
+
+// ServerPid returns the value of the "server_pid" field in the mutation.
+func (m *CcgoWorkstationRunMutation) ServerPid() (r string, exists bool) {
+	v := m.server_pid
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldServerPid returns the old "server_pid" field's value of the CcgoWorkstationRun entity.
+// If the CcgoWorkstationRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoWorkstationRunMutation) OldServerPid(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldServerPid is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldServerPid requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldServerPid: %w", err)
+	}
+	return oldValue.ServerPid, nil
+}
+
+// ResetServerPid resets all changes to the "server_pid" field.
+func (m *CcgoWorkstationRunMutation) ResetServerPid() {
+	m.server_pid = nil
+}
+
+// SetStartedAt sets the "started_at" field.
+func (m *CcgoWorkstationRunMutation) SetStartedAt(t time.Time) {
+	m.started_at = &t
+}
+
+// StartedAt returns the value of the "started_at" field in the mutation.
+func (m *CcgoWorkstationRunMutation) StartedAt() (r time.Time, exists bool) {
+	v := m.started_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStartedAt returns the old "started_at" field's value of the CcgoWorkstationRun entity.
+// If the CcgoWorkstationRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoWorkstationRunMutation) OldStartedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStartedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStartedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStartedAt: %w", err)
+	}
+	return oldValue.StartedAt, nil
+}
+
+// ClearStartedAt clears the value of the "started_at" field.
+func (m *CcgoWorkstationRunMutation) ClearStartedAt() {
+	m.started_at = nil
+	m.clearedFields[ccgoworkstationrun.FieldStartedAt] = struct{}{}
+}
+
+// StartedAtCleared returns if the "started_at" field was cleared in this mutation.
+func (m *CcgoWorkstationRunMutation) StartedAtCleared() bool {
+	_, ok := m.clearedFields[ccgoworkstationrun.FieldStartedAt]
+	return ok
+}
+
+// ResetStartedAt resets all changes to the "started_at" field.
+func (m *CcgoWorkstationRunMutation) ResetStartedAt() {
+	m.started_at = nil
+	delete(m.clearedFields, ccgoworkstationrun.FieldStartedAt)
+}
+
+// SetStoppedAt sets the "stopped_at" field.
+func (m *CcgoWorkstationRunMutation) SetStoppedAt(t time.Time) {
+	m.stopped_at = &t
+}
+
+// StoppedAt returns the value of the "stopped_at" field in the mutation.
+func (m *CcgoWorkstationRunMutation) StoppedAt() (r time.Time, exists bool) {
+	v := m.stopped_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStoppedAt returns the old "stopped_at" field's value of the CcgoWorkstationRun entity.
+// If the CcgoWorkstationRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoWorkstationRunMutation) OldStoppedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStoppedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStoppedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStoppedAt: %w", err)
+	}
+	return oldValue.StoppedAt, nil
+}
+
+// ClearStoppedAt clears the value of the "stopped_at" field.
+func (m *CcgoWorkstationRunMutation) ClearStoppedAt() {
+	m.stopped_at = nil
+	m.clearedFields[ccgoworkstationrun.FieldStoppedAt] = struct{}{}
+}
+
+// StoppedAtCleared returns if the "stopped_at" field was cleared in this mutation.
+func (m *CcgoWorkstationRunMutation) StoppedAtCleared() bool {
+	_, ok := m.clearedFields[ccgoworkstationrun.FieldStoppedAt]
+	return ok
+}
+
+// ResetStoppedAt resets all changes to the "stopped_at" field.
+func (m *CcgoWorkstationRunMutation) ResetStoppedAt() {
+	m.stopped_at = nil
+	delete(m.clearedFields, ccgoworkstationrun.FieldStoppedAt)
+}
+
+// SetStopReason sets the "stop_reason" field.
+func (m *CcgoWorkstationRunMutation) SetStopReason(s string) {
+	m.stop_reason = &s
+}
+
+// StopReason returns the value of the "stop_reason" field in the mutation.
+func (m *CcgoWorkstationRunMutation) StopReason() (r string, exists bool) {
+	v := m.stop_reason
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStopReason returns the old "stop_reason" field's value of the CcgoWorkstationRun entity.
+// If the CcgoWorkstationRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoWorkstationRunMutation) OldStopReason(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStopReason is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStopReason requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStopReason: %w", err)
+	}
+	return oldValue.StopReason, nil
+}
+
+// ResetStopReason resets all changes to the "stop_reason" field.
+func (m *CcgoWorkstationRunMutation) ResetStopReason() {
+	m.stop_reason = nil
+}
+
+// SetLastHeartbeatAt sets the "last_heartbeat_at" field.
+func (m *CcgoWorkstationRunMutation) SetLastHeartbeatAt(t time.Time) {
+	m.last_heartbeat_at = &t
+}
+
+// LastHeartbeatAt returns the value of the "last_heartbeat_at" field in the mutation.
+func (m *CcgoWorkstationRunMutation) LastHeartbeatAt() (r time.Time, exists bool) {
+	v := m.last_heartbeat_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastHeartbeatAt returns the old "last_heartbeat_at" field's value of the CcgoWorkstationRun entity.
+// If the CcgoWorkstationRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CcgoWorkstationRunMutation) OldLastHeartbeatAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastHeartbeatAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastHeartbeatAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastHeartbeatAt: %w", err)
+	}
+	return oldValue.LastHeartbeatAt, nil
+}
+
+// ClearLastHeartbeatAt clears the value of the "last_heartbeat_at" field.
+func (m *CcgoWorkstationRunMutation) ClearLastHeartbeatAt() {
+	m.last_heartbeat_at = nil
+	m.clearedFields[ccgoworkstationrun.FieldLastHeartbeatAt] = struct{}{}
+}
+
+// LastHeartbeatAtCleared returns if the "last_heartbeat_at" field was cleared in this mutation.
+func (m *CcgoWorkstationRunMutation) LastHeartbeatAtCleared() bool {
+	_, ok := m.clearedFields[ccgoworkstationrun.FieldLastHeartbeatAt]
+	return ok
+}
+
+// ResetLastHeartbeatAt resets all changes to the "last_heartbeat_at" field.
+func (m *CcgoWorkstationRunMutation) ResetLastHeartbeatAt() {
+	m.last_heartbeat_at = nil
+	delete(m.clearedFields, ccgoworkstationrun.FieldLastHeartbeatAt)
+}
+
+// Where appends a list predicates to the CcgoWorkstationRunMutation builder.
+func (m *CcgoWorkstationRunMutation) Where(ps ...predicate.CcgoWorkstationRun) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the CcgoWorkstationRunMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *CcgoWorkstationRunMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.CcgoWorkstationRun, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *CcgoWorkstationRunMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *CcgoWorkstationRunMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (CcgoWorkstationRun).
+func (m *CcgoWorkstationRunMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *CcgoWorkstationRunMutation) Fields() []string {
+	fields := make([]string, 0, 11)
+	if m.created_at != nil {
+		fields = append(fields, ccgoworkstationrun.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, ccgoworkstationrun.FieldUpdatedAt)
+	}
+	if m.workspace_id != nil {
+		fields = append(fields, ccgoworkstationrun.FieldWorkspaceID)
+	}
+	if m.user_id != nil {
+		fields = append(fields, ccgoworkstationrun.FieldUserID)
+	}
+	if m.run_id != nil {
+		fields = append(fields, ccgoworkstationrun.FieldRunID)
+	}
+	if m.status != nil {
+		fields = append(fields, ccgoworkstationrun.FieldStatus)
+	}
+	if m.server_pid != nil {
+		fields = append(fields, ccgoworkstationrun.FieldServerPid)
+	}
+	if m.started_at != nil {
+		fields = append(fields, ccgoworkstationrun.FieldStartedAt)
+	}
+	if m.stopped_at != nil {
+		fields = append(fields, ccgoworkstationrun.FieldStoppedAt)
+	}
+	if m.stop_reason != nil {
+		fields = append(fields, ccgoworkstationrun.FieldStopReason)
+	}
+	if m.last_heartbeat_at != nil {
+		fields = append(fields, ccgoworkstationrun.FieldLastHeartbeatAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *CcgoWorkstationRunMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case ccgoworkstationrun.FieldCreatedAt:
+		return m.CreatedAt()
+	case ccgoworkstationrun.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case ccgoworkstationrun.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case ccgoworkstationrun.FieldUserID:
+		return m.UserID()
+	case ccgoworkstationrun.FieldRunID:
+		return m.RunID()
+	case ccgoworkstationrun.FieldStatus:
+		return m.Status()
+	case ccgoworkstationrun.FieldServerPid:
+		return m.ServerPid()
+	case ccgoworkstationrun.FieldStartedAt:
+		return m.StartedAt()
+	case ccgoworkstationrun.FieldStoppedAt:
+		return m.StoppedAt()
+	case ccgoworkstationrun.FieldStopReason:
+		return m.StopReason()
+	case ccgoworkstationrun.FieldLastHeartbeatAt:
+		return m.LastHeartbeatAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *CcgoWorkstationRunMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case ccgoworkstationrun.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case ccgoworkstationrun.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case ccgoworkstationrun.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case ccgoworkstationrun.FieldUserID:
+		return m.OldUserID(ctx)
+	case ccgoworkstationrun.FieldRunID:
+		return m.OldRunID(ctx)
+	case ccgoworkstationrun.FieldStatus:
+		return m.OldStatus(ctx)
+	case ccgoworkstationrun.FieldServerPid:
+		return m.OldServerPid(ctx)
+	case ccgoworkstationrun.FieldStartedAt:
+		return m.OldStartedAt(ctx)
+	case ccgoworkstationrun.FieldStoppedAt:
+		return m.OldStoppedAt(ctx)
+	case ccgoworkstationrun.FieldStopReason:
+		return m.OldStopReason(ctx)
+	case ccgoworkstationrun.FieldLastHeartbeatAt:
+		return m.OldLastHeartbeatAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown CcgoWorkstationRun field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CcgoWorkstationRunMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case ccgoworkstationrun.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case ccgoworkstationrun.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case ccgoworkstationrun.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case ccgoworkstationrun.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case ccgoworkstationrun.FieldRunID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRunID(v)
+		return nil
+	case ccgoworkstationrun.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case ccgoworkstationrun.FieldServerPid:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetServerPid(v)
+		return nil
+	case ccgoworkstationrun.FieldStartedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStartedAt(v)
+		return nil
+	case ccgoworkstationrun.FieldStoppedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStoppedAt(v)
+		return nil
+	case ccgoworkstationrun.FieldStopReason:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStopReason(v)
+		return nil
+	case ccgoworkstationrun.FieldLastHeartbeatAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastHeartbeatAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CcgoWorkstationRun field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *CcgoWorkstationRunMutation) AddedFields() []string {
+	var fields []string
+	if m.addworkspace_id != nil {
+		fields = append(fields, ccgoworkstationrun.FieldWorkspaceID)
+	}
+	if m.adduser_id != nil {
+		fields = append(fields, ccgoworkstationrun.FieldUserID)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *CcgoWorkstationRunMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case ccgoworkstationrun.FieldWorkspaceID:
+		return m.AddedWorkspaceID()
+	case ccgoworkstationrun.FieldUserID:
+		return m.AddedUserID()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CcgoWorkstationRunMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case ccgoworkstationrun.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddWorkspaceID(v)
+		return nil
+	case ccgoworkstationrun.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUserID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CcgoWorkstationRun numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *CcgoWorkstationRunMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(ccgoworkstationrun.FieldStartedAt) {
+		fields = append(fields, ccgoworkstationrun.FieldStartedAt)
+	}
+	if m.FieldCleared(ccgoworkstationrun.FieldStoppedAt) {
+		fields = append(fields, ccgoworkstationrun.FieldStoppedAt)
+	}
+	if m.FieldCleared(ccgoworkstationrun.FieldLastHeartbeatAt) {
+		fields = append(fields, ccgoworkstationrun.FieldLastHeartbeatAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *CcgoWorkstationRunMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *CcgoWorkstationRunMutation) ClearField(name string) error {
+	switch name {
+	case ccgoworkstationrun.FieldStartedAt:
+		m.ClearStartedAt()
+		return nil
+	case ccgoworkstationrun.FieldStoppedAt:
+		m.ClearStoppedAt()
+		return nil
+	case ccgoworkstationrun.FieldLastHeartbeatAt:
+		m.ClearLastHeartbeatAt()
+		return nil
+	}
+	return fmt.Errorf("unknown CcgoWorkstationRun nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *CcgoWorkstationRunMutation) ResetField(name string) error {
+	switch name {
+	case ccgoworkstationrun.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case ccgoworkstationrun.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case ccgoworkstationrun.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case ccgoworkstationrun.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case ccgoworkstationrun.FieldRunID:
+		m.ResetRunID()
+		return nil
+	case ccgoworkstationrun.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case ccgoworkstationrun.FieldServerPid:
+		m.ResetServerPid()
+		return nil
+	case ccgoworkstationrun.FieldStartedAt:
+		m.ResetStartedAt()
+		return nil
+	case ccgoworkstationrun.FieldStoppedAt:
+		m.ResetStoppedAt()
+		return nil
+	case ccgoworkstationrun.FieldStopReason:
+		m.ResetStopReason()
+		return nil
+	case ccgoworkstationrun.FieldLastHeartbeatAt:
+		m.ResetLastHeartbeatAt()
+		return nil
+	}
+	return fmt.Errorf("unknown CcgoWorkstationRun field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *CcgoWorkstationRunMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *CcgoWorkstationRunMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *CcgoWorkstationRunMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *CcgoWorkstationRunMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *CcgoWorkstationRunMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *CcgoWorkstationRunMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *CcgoWorkstationRunMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown CcgoWorkstationRun unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *CcgoWorkstationRunMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown CcgoWorkstationRun edge %s", name)
 }
 
 // ChannelMonitorMutation represents an operation that mutates the ChannelMonitor nodes in the graph.

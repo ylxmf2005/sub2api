@@ -96,6 +96,21 @@ func TestMigrationsRunner_IsIdempotent_AndSchemaIsUpToDate(t *testing.T) {
 	requireColumn(t, tx, "settlement_pool_cycle_participants", "joined_at", "timestamp with time zone", 0, false)
 	requireIndex(t, tx, "settlement_pool_candidates", "idx_settlement_pool_candidates_user")
 	requireIndex(t, tx, "settlement_pool_cycle_participants", "idx_settlement_pool_cycle_participants_user")
+
+	// ccgo reverse workstation control-plane tables.
+	requireColumn(t, tx, "ccgo_workspaces", "user_id", "bigint", 0, false)
+	requireColumn(t, tx, "ccgo_workspaces", "local_root_hash", "character varying", 64, false)
+	requireColumn(t, tx, "ccgo_workspaces", "server_root", "character varying", 512, false)
+	requireColumn(t, tx, "ccgo_workspaces", "device_id", "character varying", 128, false)
+	requireIndex(t, tx, "ccgo_workspaces", "ccgo_workspaces_user_id_local_root_hash_key")
+	requireColumn(t, tx, "ccgo_agent_credentials", "token_hash", "character varying", 64, false)
+	requireColumn(t, tx, "ccgo_agent_credentials", "nonce_hash", "character varying", 64, false)
+	requireIndex(t, tx, "ccgo_agent_credentials", "ccgo_agent_credentials_token_hash_key")
+	requireColumn(t, tx, "ccgo_workstation_runs", "run_id", "character varying", 64, false)
+	requireColumn(t, tx, "ccgo_command_audits", "command_hash", "character varying", 64, false)
+	requireColumn(t, tx, "ccgo_command_audits", "redacted_command", "text", 0, false)
+	requireColumn(t, tx, "ccgo_device_logins", "device_code_hash", "character varying", 64, false)
+	requireIndex(t, tx, "ccgo_device_logins", "ccgo_device_logins_device_code_hash_key")
 }
 
 func TestMigrationsRunner_AuthIdentityAndPaymentSchemaStayAligned(t *testing.T) {

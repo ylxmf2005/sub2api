@@ -27,6 +27,21 @@ type AuthIdentity func(*sql.Selector)
 // AuthIdentityChannel is the predicate function for authidentitychannel builders.
 type AuthIdentityChannel func(*sql.Selector)
 
+// CcgoAgentCredential is the predicate function for ccgoagentcredential builders.
+type CcgoAgentCredential func(*sql.Selector)
+
+// CcgoCommandAudit is the predicate function for ccgocommandaudit builders.
+type CcgoCommandAudit func(*sql.Selector)
+
+// CcgoDeviceLogin is the predicate function for ccgodevicelogin builders.
+type CcgoDeviceLogin func(*sql.Selector)
+
+// CcgoWorkspace is the predicate function for ccgoworkspace builders.
+type CcgoWorkspace func(*sql.Selector)
+
+// CcgoWorkstationRun is the predicate function for ccgoworkstationrun builders.
+type CcgoWorkstationRun func(*sql.Selector)
+
 // ChannelMonitor is the predicate function for channelmonitor builders.
 type ChannelMonitor func(*sql.Selector)
 

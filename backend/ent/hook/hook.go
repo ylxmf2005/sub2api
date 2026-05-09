@@ -93,6 +93,66 @@ func (f AuthIdentityChannelFunc) Mutate(ctx context.Context, m ent.Mutation) (en
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AuthIdentityChannelMutation", m)
 }
 
+// The CcgoAgentCredentialFunc type is an adapter to allow the use of ordinary
+// function as CcgoAgentCredential mutator.
+type CcgoAgentCredentialFunc func(context.Context, *ent.CcgoAgentCredentialMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CcgoAgentCredentialFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.CcgoAgentCredentialMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CcgoAgentCredentialMutation", m)
+}
+
+// The CcgoCommandAuditFunc type is an adapter to allow the use of ordinary
+// function as CcgoCommandAudit mutator.
+type CcgoCommandAuditFunc func(context.Context, *ent.CcgoCommandAuditMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CcgoCommandAuditFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.CcgoCommandAuditMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CcgoCommandAuditMutation", m)
+}
+
+// The CcgoDeviceLoginFunc type is an adapter to allow the use of ordinary
+// function as CcgoDeviceLogin mutator.
+type CcgoDeviceLoginFunc func(context.Context, *ent.CcgoDeviceLoginMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CcgoDeviceLoginFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.CcgoDeviceLoginMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CcgoDeviceLoginMutation", m)
+}
+
+// The CcgoWorkspaceFunc type is an adapter to allow the use of ordinary
+// function as CcgoWorkspace mutator.
+type CcgoWorkspaceFunc func(context.Context, *ent.CcgoWorkspaceMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CcgoWorkspaceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.CcgoWorkspaceMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CcgoWorkspaceMutation", m)
+}
+
+// The CcgoWorkstationRunFunc type is an adapter to allow the use of ordinary
+// function as CcgoWorkstationRun mutator.
+type CcgoWorkstationRunFunc func(context.Context, *ent.CcgoWorkstationRunMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CcgoWorkstationRunFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.CcgoWorkstationRunMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CcgoWorkstationRunMutation", m)
+}
+
 // The ChannelMonitorFunc type is an adapter to allow the use of ordinary
 // function as ChannelMonitor mutator.
 type ChannelMonitorFunc func(context.Context, *ent.ChannelMonitorMutation) (ent.Value, error)

@@ -28,6 +28,16 @@ type Tx struct {
 	AuthIdentity *AuthIdentityClient
 	// AuthIdentityChannel is the client for interacting with the AuthIdentityChannel builders.
 	AuthIdentityChannel *AuthIdentityChannelClient
+	// CcgoAgentCredential is the client for interacting with the CcgoAgentCredential builders.
+	CcgoAgentCredential *CcgoAgentCredentialClient
+	// CcgoCommandAudit is the client for interacting with the CcgoCommandAudit builders.
+	CcgoCommandAudit *CcgoCommandAuditClient
+	// CcgoDeviceLogin is the client for interacting with the CcgoDeviceLogin builders.
+	CcgoDeviceLogin *CcgoDeviceLoginClient
+	// CcgoWorkspace is the client for interacting with the CcgoWorkspace builders.
+	CcgoWorkspace *CcgoWorkspaceClient
+	// CcgoWorkstationRun is the client for interacting with the CcgoWorkstationRun builders.
+	CcgoWorkstationRun *CcgoWorkstationRunClient
 	// ChannelMonitor is the client for interacting with the ChannelMonitor builders.
 	ChannelMonitor *ChannelMonitorClient
 	// ChannelMonitorDailyRollup is the client for interacting with the ChannelMonitorDailyRollup builders.
@@ -226,6 +236,11 @@ func (tx *Tx) init() {
 	tx.AnnouncementRead = NewAnnouncementReadClient(tx.config)
 	tx.AuthIdentity = NewAuthIdentityClient(tx.config)
 	tx.AuthIdentityChannel = NewAuthIdentityChannelClient(tx.config)
+	tx.CcgoAgentCredential = NewCcgoAgentCredentialClient(tx.config)
+	tx.CcgoCommandAudit = NewCcgoCommandAuditClient(tx.config)
+	tx.CcgoDeviceLogin = NewCcgoDeviceLoginClient(tx.config)
+	tx.CcgoWorkspace = NewCcgoWorkspaceClient(tx.config)
+	tx.CcgoWorkstationRun = NewCcgoWorkstationRunClient(tx.config)
 	tx.ChannelMonitor = NewChannelMonitorClient(tx.config)
 	tx.ChannelMonitorDailyRollup = NewChannelMonitorDailyRollupClient(tx.config)
 	tx.ChannelMonitorHistory = NewChannelMonitorHistoryClient(tx.config)

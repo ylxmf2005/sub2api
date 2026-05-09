@@ -443,6 +443,196 @@ var (
 			},
 		},
 	}
+	// CcgoAgentCredentialsColumns holds the columns for the "ccgo_agent_credentials" table.
+	CcgoAgentCredentialsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "workspace_id", Type: field.TypeInt64},
+		{Name: "user_id", Type: field.TypeInt64},
+		{Name: "token_hash", Type: field.TypeString, Unique: true, Size: 64},
+		{Name: "nonce_hash", Type: field.TypeString, Size: 64, Default: ""},
+		{Name: "expires_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "used_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "revoked_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "status", Type: field.TypeString, Size: 32, Default: "active"},
+	}
+	// CcgoAgentCredentialsTable holds the schema information for the "ccgo_agent_credentials" table.
+	CcgoAgentCredentialsTable = &schema.Table{
+		Name:       "ccgo_agent_credentials",
+		Columns:    CcgoAgentCredentialsColumns,
+		PrimaryKey: []*schema.Column{CcgoAgentCredentialsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "ccgoagentcredential_workspace_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{CcgoAgentCredentialsColumns[3], CcgoAgentCredentialsColumns[10]},
+			},
+			{
+				Name:    "ccgoagentcredential_user_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{CcgoAgentCredentialsColumns[4], CcgoAgentCredentialsColumns[10]},
+			},
+			{
+				Name:    "ccgoagentcredential_expires_at",
+				Unique:  false,
+				Columns: []*schema.Column{CcgoAgentCredentialsColumns[7]},
+			},
+		},
+	}
+	// CcgoCommandAuditsColumns holds the columns for the "ccgo_command_audits" table.
+	CcgoCommandAuditsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "workspace_id", Type: field.TypeInt64},
+		{Name: "user_id", Type: field.TypeInt64},
+		{Name: "run_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "request_id", Type: field.TypeString, Unique: true, Size: 64},
+		{Name: "command_hash", Type: field.TypeString, Size: 64},
+		{Name: "redacted_command", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "server_cwd", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "local_cwd", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "exit_code", Type: field.TypeInt, Nullable: true},
+		{Name: "status", Type: field.TypeString, Size: 32, Default: "requested"},
+		{Name: "failure_reason", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "started_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "finished_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "duration_ms", Type: field.TypeInt64, Default: 0},
+	}
+	// CcgoCommandAuditsTable holds the schema information for the "ccgo_command_audits" table.
+	CcgoCommandAuditsTable = &schema.Table{
+		Name:       "ccgo_command_audits",
+		Columns:    CcgoCommandAuditsColumns,
+		PrimaryKey: []*schema.Column{CcgoCommandAuditsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "ccgocommandaudit_workspace_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{CcgoCommandAuditsColumns[3], CcgoCommandAuditsColumns[1]},
+			},
+			{
+				Name:    "ccgocommandaudit_user_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{CcgoCommandAuditsColumns[4], CcgoCommandAuditsColumns[1]},
+			},
+			{
+				Name:    "ccgocommandaudit_status_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{CcgoCommandAuditsColumns[12], CcgoCommandAuditsColumns[1]},
+			},
+		},
+	}
+	// CcgoDeviceLoginsColumns holds the columns for the "ccgo_device_logins" table.
+	CcgoDeviceLoginsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "device_code_hash", Type: field.TypeString, Unique: true, Size: 64},
+		{Name: "user_code_hash", Type: field.TypeString, Unique: true, Size: 64},
+		{Name: "user_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "device_id", Type: field.TypeString, Size: 128, Default: ""},
+		{Name: "status", Type: field.TypeString, Size: 32, Default: "pending"},
+		{Name: "expires_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "approved_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "consumed_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// CcgoDeviceLoginsTable holds the schema information for the "ccgo_device_logins" table.
+	CcgoDeviceLoginsTable = &schema.Table{
+		Name:       "ccgo_device_logins",
+		Columns:    CcgoDeviceLoginsColumns,
+		PrimaryKey: []*schema.Column{CcgoDeviceLoginsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "ccgodevicelogin_status_expires_at",
+				Unique:  false,
+				Columns: []*schema.Column{CcgoDeviceLoginsColumns[7], CcgoDeviceLoginsColumns[8]},
+			},
+			{
+				Name:    "ccgodevicelogin_user_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{CcgoDeviceLoginsColumns[5], CcgoDeviceLoginsColumns[7]},
+			},
+		},
+	}
+	// CcgoWorkspacesColumns holds the columns for the "ccgo_workspaces" table.
+	CcgoWorkspacesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "user_id", Type: field.TypeInt64},
+		{Name: "workspace_slug", Type: field.TypeString, Unique: true, Size: 64},
+		{Name: "server_root", Type: field.TypeString, Unique: true, Size: 512},
+		{Name: "local_root_hash", Type: field.TypeString, Size: 64},
+		{Name: "local_root_display", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "local_root_redacted", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "os", Type: field.TypeString, Size: 32},
+		{Name: "path_style", Type: field.TypeString, Size: 32},
+		{Name: "device_id", Type: field.TypeString, Size: 128, Default: ""},
+		{Name: "status", Type: field.TypeString, Size: 32, Default: "active"},
+		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// CcgoWorkspacesTable holds the schema information for the "ccgo_workspaces" table.
+	CcgoWorkspacesTable = &schema.Table{
+		Name:       "ccgo_workspaces",
+		Columns:    CcgoWorkspacesColumns,
+		PrimaryKey: []*schema.Column{CcgoWorkspacesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "ccgoworkspace_user_id_local_root_hash",
+				Unique:  true,
+				Columns: []*schema.Column{CcgoWorkspacesColumns[3], CcgoWorkspacesColumns[6]},
+			},
+			{
+				Name:    "ccgoworkspace_user_id_device_id",
+				Unique:  false,
+				Columns: []*schema.Column{CcgoWorkspacesColumns[3], CcgoWorkspacesColumns[11]},
+			},
+			{
+				Name:    "ccgoworkspace_status",
+				Unique:  false,
+				Columns: []*schema.Column{CcgoWorkspacesColumns[12]},
+			},
+		},
+	}
+	// CcgoWorkstationRunsColumns holds the columns for the "ccgo_workstation_runs" table.
+	CcgoWorkstationRunsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "workspace_id", Type: field.TypeInt64},
+		{Name: "user_id", Type: field.TypeInt64},
+		{Name: "run_id", Type: field.TypeString, Unique: true, Size: 64},
+		{Name: "status", Type: field.TypeString, Size: 32, Default: "starting"},
+		{Name: "server_pid", Type: field.TypeString, Size: 64, Default: ""},
+		{Name: "started_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "stopped_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "stop_reason", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "last_heartbeat_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// CcgoWorkstationRunsTable holds the schema information for the "ccgo_workstation_runs" table.
+	CcgoWorkstationRunsTable = &schema.Table{
+		Name:       "ccgo_workstation_runs",
+		Columns:    CcgoWorkstationRunsColumns,
+		PrimaryKey: []*schema.Column{CcgoWorkstationRunsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "ccgoworkstationrun_workspace_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{CcgoWorkstationRunsColumns[3], CcgoWorkstationRunsColumns[6]},
+			},
+			{
+				Name:    "ccgoworkstationrun_user_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{CcgoWorkstationRunsColumns[4], CcgoWorkstationRunsColumns[6]},
+			},
+			{
+				Name:    "ccgoworkstationrun_last_heartbeat_at",
+				Unique:  false,
+				Columns: []*schema.Column{CcgoWorkstationRunsColumns[11]},
+			},
+		},
+	}
 	// ChannelMonitorsColumns holds the columns for the "channel_monitors" table.
 	ChannelMonitorsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1880,6 +2070,11 @@ var (
 		AnnouncementReadsTable,
 		AuthIdentitiesTable,
 		AuthIdentityChannelsTable,
+		CcgoAgentCredentialsTable,
+		CcgoCommandAuditsTable,
+		CcgoDeviceLoginsTable,
+		CcgoWorkspacesTable,
+		CcgoWorkstationRunsTable,
 		ChannelMonitorsTable,
 		ChannelMonitorDailyRollupsTable,
 		ChannelMonitorHistoriesTable,
@@ -1943,6 +2138,21 @@ func init() {
 	AuthIdentityChannelsTable.ForeignKeys[0].RefTable = AuthIdentitiesTable
 	AuthIdentityChannelsTable.Annotation = &entsql.Annotation{
 		Table: "auth_identity_channels",
+	}
+	CcgoAgentCredentialsTable.Annotation = &entsql.Annotation{
+		Table: "ccgo_agent_credentials",
+	}
+	CcgoCommandAuditsTable.Annotation = &entsql.Annotation{
+		Table: "ccgo_command_audits",
+	}
+	CcgoDeviceLoginsTable.Annotation = &entsql.Annotation{
+		Table: "ccgo_device_logins",
+	}
+	CcgoWorkspacesTable.Annotation = &entsql.Annotation{
+		Table: "ccgo_workspaces",
+	}
+	CcgoWorkstationRunsTable.Annotation = &entsql.Annotation{
+		Table: "ccgo_workstation_runs",
 	}
 	ChannelMonitorsTable.ForeignKeys[0].RefTable = ChannelMonitorRequestTemplatesTable
 	ChannelMonitorsTable.Annotation = &entsql.Annotation{

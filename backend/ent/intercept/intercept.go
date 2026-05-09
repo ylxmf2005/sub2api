@@ -15,6 +15,11 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/authidentity"
 	"github.com/Wei-Shaw/sub2api/ent/authidentitychannel"
+	"github.com/Wei-Shaw/sub2api/ent/ccgoagentcredential"
+	"github.com/Wei-Shaw/sub2api/ent/ccgocommandaudit"
+	"github.com/Wei-Shaw/sub2api/ent/ccgodevicelogin"
+	"github.com/Wei-Shaw/sub2api/ent/ccgoworkspace"
+	"github.com/Wei-Shaw/sub2api/ent/ccgoworkstationrun"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitor"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitordailyrollup"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitorhistory"
@@ -291,6 +296,141 @@ func (f TraverseAuthIdentityChannel) Traverse(ctx context.Context, q ent.Query) 
 		return f(ctx, q)
 	}
 	return fmt.Errorf("unexpected query type %T. expect *ent.AuthIdentityChannelQuery", q)
+}
+
+// The CcgoAgentCredentialFunc type is an adapter to allow the use of ordinary function as a Querier.
+type CcgoAgentCredentialFunc func(context.Context, *ent.CcgoAgentCredentialQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f CcgoAgentCredentialFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.CcgoAgentCredentialQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.CcgoAgentCredentialQuery", q)
+}
+
+// The TraverseCcgoAgentCredential type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseCcgoAgentCredential func(context.Context, *ent.CcgoAgentCredentialQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseCcgoAgentCredential) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseCcgoAgentCredential) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.CcgoAgentCredentialQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.CcgoAgentCredentialQuery", q)
+}
+
+// The CcgoCommandAuditFunc type is an adapter to allow the use of ordinary function as a Querier.
+type CcgoCommandAuditFunc func(context.Context, *ent.CcgoCommandAuditQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f CcgoCommandAuditFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.CcgoCommandAuditQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.CcgoCommandAuditQuery", q)
+}
+
+// The TraverseCcgoCommandAudit type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseCcgoCommandAudit func(context.Context, *ent.CcgoCommandAuditQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseCcgoCommandAudit) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseCcgoCommandAudit) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.CcgoCommandAuditQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.CcgoCommandAuditQuery", q)
+}
+
+// The CcgoDeviceLoginFunc type is an adapter to allow the use of ordinary function as a Querier.
+type CcgoDeviceLoginFunc func(context.Context, *ent.CcgoDeviceLoginQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f CcgoDeviceLoginFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.CcgoDeviceLoginQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.CcgoDeviceLoginQuery", q)
+}
+
+// The TraverseCcgoDeviceLogin type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseCcgoDeviceLogin func(context.Context, *ent.CcgoDeviceLoginQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseCcgoDeviceLogin) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseCcgoDeviceLogin) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.CcgoDeviceLoginQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.CcgoDeviceLoginQuery", q)
+}
+
+// The CcgoWorkspaceFunc type is an adapter to allow the use of ordinary function as a Querier.
+type CcgoWorkspaceFunc func(context.Context, *ent.CcgoWorkspaceQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f CcgoWorkspaceFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.CcgoWorkspaceQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.CcgoWorkspaceQuery", q)
+}
+
+// The TraverseCcgoWorkspace type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseCcgoWorkspace func(context.Context, *ent.CcgoWorkspaceQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseCcgoWorkspace) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseCcgoWorkspace) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.CcgoWorkspaceQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.CcgoWorkspaceQuery", q)
+}
+
+// The CcgoWorkstationRunFunc type is an adapter to allow the use of ordinary function as a Querier.
+type CcgoWorkstationRunFunc func(context.Context, *ent.CcgoWorkstationRunQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f CcgoWorkstationRunFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.CcgoWorkstationRunQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.CcgoWorkstationRunQuery", q)
+}
+
+// The TraverseCcgoWorkstationRun type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseCcgoWorkstationRun func(context.Context, *ent.CcgoWorkstationRunQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseCcgoWorkstationRun) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseCcgoWorkstationRun) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.CcgoWorkstationRunQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.CcgoWorkstationRunQuery", q)
 }
 
 // The ChannelMonitorFunc type is an adapter to allow the use of ordinary function as a Querier.
@@ -1120,6 +1260,16 @@ func NewQuery(q ent.Query) (Query, error) {
 		return &query[*ent.AuthIdentityQuery, predicate.AuthIdentity, authidentity.OrderOption]{typ: ent.TypeAuthIdentity, tq: q}, nil
 	case *ent.AuthIdentityChannelQuery:
 		return &query[*ent.AuthIdentityChannelQuery, predicate.AuthIdentityChannel, authidentitychannel.OrderOption]{typ: ent.TypeAuthIdentityChannel, tq: q}, nil
+	case *ent.CcgoAgentCredentialQuery:
+		return &query[*ent.CcgoAgentCredentialQuery, predicate.CcgoAgentCredential, ccgoagentcredential.OrderOption]{typ: ent.TypeCcgoAgentCredential, tq: q}, nil
+	case *ent.CcgoCommandAuditQuery:
+		return &query[*ent.CcgoCommandAuditQuery, predicate.CcgoCommandAudit, ccgocommandaudit.OrderOption]{typ: ent.TypeCcgoCommandAudit, tq: q}, nil
+	case *ent.CcgoDeviceLoginQuery:
+		return &query[*ent.CcgoDeviceLoginQuery, predicate.CcgoDeviceLogin, ccgodevicelogin.OrderOption]{typ: ent.TypeCcgoDeviceLogin, tq: q}, nil
+	case *ent.CcgoWorkspaceQuery:
+		return &query[*ent.CcgoWorkspaceQuery, predicate.CcgoWorkspace, ccgoworkspace.OrderOption]{typ: ent.TypeCcgoWorkspace, tq: q}, nil
+	case *ent.CcgoWorkstationRunQuery:
+		return &query[*ent.CcgoWorkstationRunQuery, predicate.CcgoWorkstationRun, ccgoworkstationrun.OrderOption]{typ: ent.TypeCcgoWorkstationRun, tq: q}, nil
 	case *ent.ChannelMonitorQuery:
 		return &query[*ent.ChannelMonitorQuery, predicate.ChannelMonitor, channelmonitor.OrderOption]{typ: ent.TypeChannelMonitor, tq: q}, nil
 	case *ent.ChannelMonitorDailyRollupQuery:

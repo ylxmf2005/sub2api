@@ -19,6 +19,11 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/authidentity"
 	"github.com/Wei-Shaw/sub2api/ent/authidentitychannel"
+	"github.com/Wei-Shaw/sub2api/ent/ccgoagentcredential"
+	"github.com/Wei-Shaw/sub2api/ent/ccgocommandaudit"
+	"github.com/Wei-Shaw/sub2api/ent/ccgodevicelogin"
+	"github.com/Wei-Shaw/sub2api/ent/ccgoworkspace"
+	"github.com/Wei-Shaw/sub2api/ent/ccgoworkstationrun"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitor"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitordailyrollup"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitorhistory"
@@ -116,6 +121,11 @@ func checkColumn(t, c string) error {
 			announcementread.Table:              announcementread.ValidColumn,
 			authidentity.Table:                  authidentity.ValidColumn,
 			authidentitychannel.Table:           authidentitychannel.ValidColumn,
+			ccgoagentcredential.Table:           ccgoagentcredential.ValidColumn,
+			ccgocommandaudit.Table:              ccgocommandaudit.ValidColumn,
+			ccgodevicelogin.Table:               ccgodevicelogin.ValidColumn,
+			ccgoworkspace.Table:                 ccgoworkspace.ValidColumn,
+			ccgoworkstationrun.Table:            ccgoworkstationrun.ValidColumn,
 			channelmonitor.Table:                channelmonitor.ValidColumn,
 			channelmonitordailyrollup.Table:     channelmonitordailyrollup.ValidColumn,
 			channelmonitorhistory.Table:         channelmonitorhistory.ValidColumn,

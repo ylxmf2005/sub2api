@@ -12,6 +12,11 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/authidentity"
 	"github.com/Wei-Shaw/sub2api/ent/authidentitychannel"
+	"github.com/Wei-Shaw/sub2api/ent/ccgoagentcredential"
+	"github.com/Wei-Shaw/sub2api/ent/ccgocommandaudit"
+	"github.com/Wei-Shaw/sub2api/ent/ccgodevicelogin"
+	"github.com/Wei-Shaw/sub2api/ent/ccgoworkspace"
+	"github.com/Wei-Shaw/sub2api/ent/ccgoworkstationrun"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitor"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitordailyrollup"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitorhistory"
@@ -472,6 +477,421 @@ func init() {
 	authidentitychannelDescMetadata := authidentitychannelFields[6].Descriptor()
 	// authidentitychannel.DefaultMetadata holds the default value on creation for the metadata field.
 	authidentitychannel.DefaultMetadata = authidentitychannelDescMetadata.Default.(func() map[string]interface{})
+	ccgoagentcredentialMixin := schema.CcgoAgentCredential{}.Mixin()
+	ccgoagentcredentialMixinFields0 := ccgoagentcredentialMixin[0].Fields()
+	_ = ccgoagentcredentialMixinFields0
+	ccgoagentcredentialFields := schema.CcgoAgentCredential{}.Fields()
+	_ = ccgoagentcredentialFields
+	// ccgoagentcredentialDescCreatedAt is the schema descriptor for created_at field.
+	ccgoagentcredentialDescCreatedAt := ccgoagentcredentialMixinFields0[0].Descriptor()
+	// ccgoagentcredential.DefaultCreatedAt holds the default value on creation for the created_at field.
+	ccgoagentcredential.DefaultCreatedAt = ccgoagentcredentialDescCreatedAt.Default.(func() time.Time)
+	// ccgoagentcredentialDescUpdatedAt is the schema descriptor for updated_at field.
+	ccgoagentcredentialDescUpdatedAt := ccgoagentcredentialMixinFields0[1].Descriptor()
+	// ccgoagentcredential.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	ccgoagentcredential.DefaultUpdatedAt = ccgoagentcredentialDescUpdatedAt.Default.(func() time.Time)
+	// ccgoagentcredential.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	ccgoagentcredential.UpdateDefaultUpdatedAt = ccgoagentcredentialDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// ccgoagentcredentialDescTokenHash is the schema descriptor for token_hash field.
+	ccgoagentcredentialDescTokenHash := ccgoagentcredentialFields[2].Descriptor()
+	// ccgoagentcredential.TokenHashValidator is a validator for the "token_hash" field. It is called by the builders before save.
+	ccgoagentcredential.TokenHashValidator = func() func(string) error {
+		validators := ccgoagentcredentialDescTokenHash.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(token_hash string) error {
+			for _, fn := range fns {
+				if err := fn(token_hash); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// ccgoagentcredentialDescNonceHash is the schema descriptor for nonce_hash field.
+	ccgoagentcredentialDescNonceHash := ccgoagentcredentialFields[3].Descriptor()
+	// ccgoagentcredential.DefaultNonceHash holds the default value on creation for the nonce_hash field.
+	ccgoagentcredential.DefaultNonceHash = ccgoagentcredentialDescNonceHash.Default.(string)
+	// ccgoagentcredential.NonceHashValidator is a validator for the "nonce_hash" field. It is called by the builders before save.
+	ccgoagentcredential.NonceHashValidator = ccgoagentcredentialDescNonceHash.Validators[0].(func(string) error)
+	// ccgoagentcredentialDescStatus is the schema descriptor for status field.
+	ccgoagentcredentialDescStatus := ccgoagentcredentialFields[7].Descriptor()
+	// ccgoagentcredential.DefaultStatus holds the default value on creation for the status field.
+	ccgoagentcredential.DefaultStatus = ccgoagentcredentialDescStatus.Default.(string)
+	// ccgoagentcredential.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	ccgoagentcredential.StatusValidator = func() func(string) error {
+		validators := ccgoagentcredentialDescStatus.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(status string) error {
+			for _, fn := range fns {
+				if err := fn(status); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	ccgocommandauditMixin := schema.CcgoCommandAudit{}.Mixin()
+	ccgocommandauditMixinFields0 := ccgocommandauditMixin[0].Fields()
+	_ = ccgocommandauditMixinFields0
+	ccgocommandauditFields := schema.CcgoCommandAudit{}.Fields()
+	_ = ccgocommandauditFields
+	// ccgocommandauditDescCreatedAt is the schema descriptor for created_at field.
+	ccgocommandauditDescCreatedAt := ccgocommandauditMixinFields0[0].Descriptor()
+	// ccgocommandaudit.DefaultCreatedAt holds the default value on creation for the created_at field.
+	ccgocommandaudit.DefaultCreatedAt = ccgocommandauditDescCreatedAt.Default.(func() time.Time)
+	// ccgocommandauditDescUpdatedAt is the schema descriptor for updated_at field.
+	ccgocommandauditDescUpdatedAt := ccgocommandauditMixinFields0[1].Descriptor()
+	// ccgocommandaudit.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	ccgocommandaudit.DefaultUpdatedAt = ccgocommandauditDescUpdatedAt.Default.(func() time.Time)
+	// ccgocommandaudit.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	ccgocommandaudit.UpdateDefaultUpdatedAt = ccgocommandauditDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// ccgocommandauditDescRequestID is the schema descriptor for request_id field.
+	ccgocommandauditDescRequestID := ccgocommandauditFields[3].Descriptor()
+	// ccgocommandaudit.RequestIDValidator is a validator for the "request_id" field. It is called by the builders before save.
+	ccgocommandaudit.RequestIDValidator = func() func(string) error {
+		validators := ccgocommandauditDescRequestID.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(request_id string) error {
+			for _, fn := range fns {
+				if err := fn(request_id); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// ccgocommandauditDescCommandHash is the schema descriptor for command_hash field.
+	ccgocommandauditDescCommandHash := ccgocommandauditFields[4].Descriptor()
+	// ccgocommandaudit.CommandHashValidator is a validator for the "command_hash" field. It is called by the builders before save.
+	ccgocommandaudit.CommandHashValidator = func() func(string) error {
+		validators := ccgocommandauditDescCommandHash.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(command_hash string) error {
+			for _, fn := range fns {
+				if err := fn(command_hash); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// ccgocommandauditDescRedactedCommand is the schema descriptor for redacted_command field.
+	ccgocommandauditDescRedactedCommand := ccgocommandauditFields[5].Descriptor()
+	// ccgocommandaudit.DefaultRedactedCommand holds the default value on creation for the redacted_command field.
+	ccgocommandaudit.DefaultRedactedCommand = ccgocommandauditDescRedactedCommand.Default.(string)
+	// ccgocommandauditDescServerCwd is the schema descriptor for server_cwd field.
+	ccgocommandauditDescServerCwd := ccgocommandauditFields[6].Descriptor()
+	// ccgocommandaudit.ServerCwdValidator is a validator for the "server_cwd" field. It is called by the builders before save.
+	ccgocommandaudit.ServerCwdValidator = ccgocommandauditDescServerCwd.Validators[0].(func(string) error)
+	// ccgocommandauditDescLocalCwd is the schema descriptor for local_cwd field.
+	ccgocommandauditDescLocalCwd := ccgocommandauditFields[7].Descriptor()
+	// ccgocommandaudit.LocalCwdValidator is a validator for the "local_cwd" field. It is called by the builders before save.
+	ccgocommandaudit.LocalCwdValidator = ccgocommandauditDescLocalCwd.Validators[0].(func(string) error)
+	// ccgocommandauditDescStatus is the schema descriptor for status field.
+	ccgocommandauditDescStatus := ccgocommandauditFields[9].Descriptor()
+	// ccgocommandaudit.DefaultStatus holds the default value on creation for the status field.
+	ccgocommandaudit.DefaultStatus = ccgocommandauditDescStatus.Default.(string)
+	// ccgocommandaudit.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	ccgocommandaudit.StatusValidator = ccgocommandauditDescStatus.Validators[0].(func(string) error)
+	// ccgocommandauditDescFailureReason is the schema descriptor for failure_reason field.
+	ccgocommandauditDescFailureReason := ccgocommandauditFields[10].Descriptor()
+	// ccgocommandaudit.DefaultFailureReason holds the default value on creation for the failure_reason field.
+	ccgocommandaudit.DefaultFailureReason = ccgocommandauditDescFailureReason.Default.(string)
+	// ccgocommandauditDescDurationMs is the schema descriptor for duration_ms field.
+	ccgocommandauditDescDurationMs := ccgocommandauditFields[13].Descriptor()
+	// ccgocommandaudit.DefaultDurationMs holds the default value on creation for the duration_ms field.
+	ccgocommandaudit.DefaultDurationMs = ccgocommandauditDescDurationMs.Default.(int64)
+	ccgodeviceloginMixin := schema.CcgoDeviceLogin{}.Mixin()
+	ccgodeviceloginMixinFields0 := ccgodeviceloginMixin[0].Fields()
+	_ = ccgodeviceloginMixinFields0
+	ccgodeviceloginFields := schema.CcgoDeviceLogin{}.Fields()
+	_ = ccgodeviceloginFields
+	// ccgodeviceloginDescCreatedAt is the schema descriptor for created_at field.
+	ccgodeviceloginDescCreatedAt := ccgodeviceloginMixinFields0[0].Descriptor()
+	// ccgodevicelogin.DefaultCreatedAt holds the default value on creation for the created_at field.
+	ccgodevicelogin.DefaultCreatedAt = ccgodeviceloginDescCreatedAt.Default.(func() time.Time)
+	// ccgodeviceloginDescUpdatedAt is the schema descriptor for updated_at field.
+	ccgodeviceloginDescUpdatedAt := ccgodeviceloginMixinFields0[1].Descriptor()
+	// ccgodevicelogin.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	ccgodevicelogin.DefaultUpdatedAt = ccgodeviceloginDescUpdatedAt.Default.(func() time.Time)
+	// ccgodevicelogin.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	ccgodevicelogin.UpdateDefaultUpdatedAt = ccgodeviceloginDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// ccgodeviceloginDescDeviceCodeHash is the schema descriptor for device_code_hash field.
+	ccgodeviceloginDescDeviceCodeHash := ccgodeviceloginFields[0].Descriptor()
+	// ccgodevicelogin.DeviceCodeHashValidator is a validator for the "device_code_hash" field. It is called by the builders before save.
+	ccgodevicelogin.DeviceCodeHashValidator = func() func(string) error {
+		validators := ccgodeviceloginDescDeviceCodeHash.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(device_code_hash string) error {
+			for _, fn := range fns {
+				if err := fn(device_code_hash); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// ccgodeviceloginDescUserCodeHash is the schema descriptor for user_code_hash field.
+	ccgodeviceloginDescUserCodeHash := ccgodeviceloginFields[1].Descriptor()
+	// ccgodevicelogin.UserCodeHashValidator is a validator for the "user_code_hash" field. It is called by the builders before save.
+	ccgodevicelogin.UserCodeHashValidator = func() func(string) error {
+		validators := ccgodeviceloginDescUserCodeHash.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(user_code_hash string) error {
+			for _, fn := range fns {
+				if err := fn(user_code_hash); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// ccgodeviceloginDescDeviceID is the schema descriptor for device_id field.
+	ccgodeviceloginDescDeviceID := ccgodeviceloginFields[3].Descriptor()
+	// ccgodevicelogin.DefaultDeviceID holds the default value on creation for the device_id field.
+	ccgodevicelogin.DefaultDeviceID = ccgodeviceloginDescDeviceID.Default.(string)
+	// ccgodevicelogin.DeviceIDValidator is a validator for the "device_id" field. It is called by the builders before save.
+	ccgodevicelogin.DeviceIDValidator = ccgodeviceloginDescDeviceID.Validators[0].(func(string) error)
+	// ccgodeviceloginDescStatus is the schema descriptor for status field.
+	ccgodeviceloginDescStatus := ccgodeviceloginFields[4].Descriptor()
+	// ccgodevicelogin.DefaultStatus holds the default value on creation for the status field.
+	ccgodevicelogin.DefaultStatus = ccgodeviceloginDescStatus.Default.(string)
+	// ccgodevicelogin.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	ccgodevicelogin.StatusValidator = func() func(string) error {
+		validators := ccgodeviceloginDescStatus.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(status string) error {
+			for _, fn := range fns {
+				if err := fn(status); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	ccgoworkspaceMixin := schema.CcgoWorkspace{}.Mixin()
+	ccgoworkspaceMixinFields0 := ccgoworkspaceMixin[0].Fields()
+	_ = ccgoworkspaceMixinFields0
+	ccgoworkspaceFields := schema.CcgoWorkspace{}.Fields()
+	_ = ccgoworkspaceFields
+	// ccgoworkspaceDescCreatedAt is the schema descriptor for created_at field.
+	ccgoworkspaceDescCreatedAt := ccgoworkspaceMixinFields0[0].Descriptor()
+	// ccgoworkspace.DefaultCreatedAt holds the default value on creation for the created_at field.
+	ccgoworkspace.DefaultCreatedAt = ccgoworkspaceDescCreatedAt.Default.(func() time.Time)
+	// ccgoworkspaceDescUpdatedAt is the schema descriptor for updated_at field.
+	ccgoworkspaceDescUpdatedAt := ccgoworkspaceMixinFields0[1].Descriptor()
+	// ccgoworkspace.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	ccgoworkspace.DefaultUpdatedAt = ccgoworkspaceDescUpdatedAt.Default.(func() time.Time)
+	// ccgoworkspace.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	ccgoworkspace.UpdateDefaultUpdatedAt = ccgoworkspaceDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// ccgoworkspaceDescWorkspaceSlug is the schema descriptor for workspace_slug field.
+	ccgoworkspaceDescWorkspaceSlug := ccgoworkspaceFields[1].Descriptor()
+	// ccgoworkspace.WorkspaceSlugValidator is a validator for the "workspace_slug" field. It is called by the builders before save.
+	ccgoworkspace.WorkspaceSlugValidator = func() func(string) error {
+		validators := ccgoworkspaceDescWorkspaceSlug.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(workspace_slug string) error {
+			for _, fn := range fns {
+				if err := fn(workspace_slug); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// ccgoworkspaceDescServerRoot is the schema descriptor for server_root field.
+	ccgoworkspaceDescServerRoot := ccgoworkspaceFields[2].Descriptor()
+	// ccgoworkspace.ServerRootValidator is a validator for the "server_root" field. It is called by the builders before save.
+	ccgoworkspace.ServerRootValidator = func() func(string) error {
+		validators := ccgoworkspaceDescServerRoot.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(server_root string) error {
+			for _, fn := range fns {
+				if err := fn(server_root); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// ccgoworkspaceDescLocalRootHash is the schema descriptor for local_root_hash field.
+	ccgoworkspaceDescLocalRootHash := ccgoworkspaceFields[3].Descriptor()
+	// ccgoworkspace.LocalRootHashValidator is a validator for the "local_root_hash" field. It is called by the builders before save.
+	ccgoworkspace.LocalRootHashValidator = func() func(string) error {
+		validators := ccgoworkspaceDescLocalRootHash.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(local_root_hash string) error {
+			for _, fn := range fns {
+				if err := fn(local_root_hash); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// ccgoworkspaceDescLocalRootDisplay is the schema descriptor for local_root_display field.
+	ccgoworkspaceDescLocalRootDisplay := ccgoworkspaceFields[4].Descriptor()
+	// ccgoworkspace.LocalRootDisplayValidator is a validator for the "local_root_display" field. It is called by the builders before save.
+	ccgoworkspace.LocalRootDisplayValidator = ccgoworkspaceDescLocalRootDisplay.Validators[0].(func(string) error)
+	// ccgoworkspaceDescLocalRootRedacted is the schema descriptor for local_root_redacted field.
+	ccgoworkspaceDescLocalRootRedacted := ccgoworkspaceFields[5].Descriptor()
+	// ccgoworkspace.DefaultLocalRootRedacted holds the default value on creation for the local_root_redacted field.
+	ccgoworkspace.DefaultLocalRootRedacted = ccgoworkspaceDescLocalRootRedacted.Default.(string)
+	// ccgoworkspaceDescOs is the schema descriptor for os field.
+	ccgoworkspaceDescOs := ccgoworkspaceFields[6].Descriptor()
+	// ccgoworkspace.OsValidator is a validator for the "os" field. It is called by the builders before save.
+	ccgoworkspace.OsValidator = func() func(string) error {
+		validators := ccgoworkspaceDescOs.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(os string) error {
+			for _, fn := range fns {
+				if err := fn(os); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// ccgoworkspaceDescPathStyle is the schema descriptor for path_style field.
+	ccgoworkspaceDescPathStyle := ccgoworkspaceFields[7].Descriptor()
+	// ccgoworkspace.PathStyleValidator is a validator for the "path_style" field. It is called by the builders before save.
+	ccgoworkspace.PathStyleValidator = func() func(string) error {
+		validators := ccgoworkspaceDescPathStyle.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(path_style string) error {
+			for _, fn := range fns {
+				if err := fn(path_style); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// ccgoworkspaceDescDeviceID is the schema descriptor for device_id field.
+	ccgoworkspaceDescDeviceID := ccgoworkspaceFields[8].Descriptor()
+	// ccgoworkspace.DefaultDeviceID holds the default value on creation for the device_id field.
+	ccgoworkspace.DefaultDeviceID = ccgoworkspaceDescDeviceID.Default.(string)
+	// ccgoworkspace.DeviceIDValidator is a validator for the "device_id" field. It is called by the builders before save.
+	ccgoworkspace.DeviceIDValidator = ccgoworkspaceDescDeviceID.Validators[0].(func(string) error)
+	// ccgoworkspaceDescStatus is the schema descriptor for status field.
+	ccgoworkspaceDescStatus := ccgoworkspaceFields[9].Descriptor()
+	// ccgoworkspace.DefaultStatus holds the default value on creation for the status field.
+	ccgoworkspace.DefaultStatus = ccgoworkspaceDescStatus.Default.(string)
+	// ccgoworkspace.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	ccgoworkspace.StatusValidator = func() func(string) error {
+		validators := ccgoworkspaceDescStatus.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(status string) error {
+			for _, fn := range fns {
+				if err := fn(status); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	ccgoworkstationrunMixin := schema.CcgoWorkstationRun{}.Mixin()
+	ccgoworkstationrunMixinFields0 := ccgoworkstationrunMixin[0].Fields()
+	_ = ccgoworkstationrunMixinFields0
+	ccgoworkstationrunFields := schema.CcgoWorkstationRun{}.Fields()
+	_ = ccgoworkstationrunFields
+	// ccgoworkstationrunDescCreatedAt is the schema descriptor for created_at field.
+	ccgoworkstationrunDescCreatedAt := ccgoworkstationrunMixinFields0[0].Descriptor()
+	// ccgoworkstationrun.DefaultCreatedAt holds the default value on creation for the created_at field.
+	ccgoworkstationrun.DefaultCreatedAt = ccgoworkstationrunDescCreatedAt.Default.(func() time.Time)
+	// ccgoworkstationrunDescUpdatedAt is the schema descriptor for updated_at field.
+	ccgoworkstationrunDescUpdatedAt := ccgoworkstationrunMixinFields0[1].Descriptor()
+	// ccgoworkstationrun.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	ccgoworkstationrun.DefaultUpdatedAt = ccgoworkstationrunDescUpdatedAt.Default.(func() time.Time)
+	// ccgoworkstationrun.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	ccgoworkstationrun.UpdateDefaultUpdatedAt = ccgoworkstationrunDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// ccgoworkstationrunDescRunID is the schema descriptor for run_id field.
+	ccgoworkstationrunDescRunID := ccgoworkstationrunFields[2].Descriptor()
+	// ccgoworkstationrun.RunIDValidator is a validator for the "run_id" field. It is called by the builders before save.
+	ccgoworkstationrun.RunIDValidator = func() func(string) error {
+		validators := ccgoworkstationrunDescRunID.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(run_id string) error {
+			for _, fn := range fns {
+				if err := fn(run_id); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// ccgoworkstationrunDescStatus is the schema descriptor for status field.
+	ccgoworkstationrunDescStatus := ccgoworkstationrunFields[3].Descriptor()
+	// ccgoworkstationrun.DefaultStatus holds the default value on creation for the status field.
+	ccgoworkstationrun.DefaultStatus = ccgoworkstationrunDescStatus.Default.(string)
+	// ccgoworkstationrun.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	ccgoworkstationrun.StatusValidator = func() func(string) error {
+		validators := ccgoworkstationrunDescStatus.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(status string) error {
+			for _, fn := range fns {
+				if err := fn(status); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// ccgoworkstationrunDescServerPid is the schema descriptor for server_pid field.
+	ccgoworkstationrunDescServerPid := ccgoworkstationrunFields[4].Descriptor()
+	// ccgoworkstationrun.DefaultServerPid holds the default value on creation for the server_pid field.
+	ccgoworkstationrun.DefaultServerPid = ccgoworkstationrunDescServerPid.Default.(string)
+	// ccgoworkstationrun.ServerPidValidator is a validator for the "server_pid" field. It is called by the builders before save.
+	ccgoworkstationrun.ServerPidValidator = ccgoworkstationrunDescServerPid.Validators[0].(func(string) error)
+	// ccgoworkstationrunDescStopReason is the schema descriptor for stop_reason field.
+	ccgoworkstationrunDescStopReason := ccgoworkstationrunFields[7].Descriptor()
+	// ccgoworkstationrun.DefaultStopReason holds the default value on creation for the stop_reason field.
+	ccgoworkstationrun.DefaultStopReason = ccgoworkstationrunDescStopReason.Default.(string)
 	channelmonitorMixin := schema.ChannelMonitor{}.Mixin()
 	channelmonitorMixinFields0 := channelmonitorMixin[0].Fields()
 	_ = channelmonitorMixinFields0

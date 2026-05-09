@@ -22,6 +22,11 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/authidentity"
 	"github.com/Wei-Shaw/sub2api/ent/authidentitychannel"
+	"github.com/Wei-Shaw/sub2api/ent/ccgoagentcredential"
+	"github.com/Wei-Shaw/sub2api/ent/ccgocommandaudit"
+	"github.com/Wei-Shaw/sub2api/ent/ccgodevicelogin"
+	"github.com/Wei-Shaw/sub2api/ent/ccgoworkspace"
+	"github.com/Wei-Shaw/sub2api/ent/ccgoworkstationrun"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitor"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitordailyrollup"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitorhistory"
@@ -75,6 +80,16 @@ type Client struct {
 	AuthIdentity *AuthIdentityClient
 	// AuthIdentityChannel is the client for interacting with the AuthIdentityChannel builders.
 	AuthIdentityChannel *AuthIdentityChannelClient
+	// CcgoAgentCredential is the client for interacting with the CcgoAgentCredential builders.
+	CcgoAgentCredential *CcgoAgentCredentialClient
+	// CcgoCommandAudit is the client for interacting with the CcgoCommandAudit builders.
+	CcgoCommandAudit *CcgoCommandAuditClient
+	// CcgoDeviceLogin is the client for interacting with the CcgoDeviceLogin builders.
+	CcgoDeviceLogin *CcgoDeviceLoginClient
+	// CcgoWorkspace is the client for interacting with the CcgoWorkspace builders.
+	CcgoWorkspace *CcgoWorkspaceClient
+	// CcgoWorkstationRun is the client for interacting with the CcgoWorkstationRun builders.
+	CcgoWorkstationRun *CcgoWorkstationRunClient
 	// ChannelMonitor is the client for interacting with the ChannelMonitor builders.
 	ChannelMonitor *ChannelMonitorClient
 	// ChannelMonitorDailyRollup is the client for interacting with the ChannelMonitorDailyRollup builders.
@@ -153,6 +168,11 @@ func (c *Client) init() {
 	c.AnnouncementRead = NewAnnouncementReadClient(c.config)
 	c.AuthIdentity = NewAuthIdentityClient(c.config)
 	c.AuthIdentityChannel = NewAuthIdentityChannelClient(c.config)
+	c.CcgoAgentCredential = NewCcgoAgentCredentialClient(c.config)
+	c.CcgoCommandAudit = NewCcgoCommandAuditClient(c.config)
+	c.CcgoDeviceLogin = NewCcgoDeviceLoginClient(c.config)
+	c.CcgoWorkspace = NewCcgoWorkspaceClient(c.config)
+	c.CcgoWorkstationRun = NewCcgoWorkstationRunClient(c.config)
 	c.ChannelMonitor = NewChannelMonitorClient(c.config)
 	c.ChannelMonitorDailyRollup = NewChannelMonitorDailyRollupClient(c.config)
 	c.ChannelMonitorHistory = NewChannelMonitorHistoryClient(c.config)
@@ -282,6 +302,11 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		AnnouncementRead:              NewAnnouncementReadClient(cfg),
 		AuthIdentity:                  NewAuthIdentityClient(cfg),
 		AuthIdentityChannel:           NewAuthIdentityChannelClient(cfg),
+		CcgoAgentCredential:           NewCcgoAgentCredentialClient(cfg),
+		CcgoCommandAudit:              NewCcgoCommandAuditClient(cfg),
+		CcgoDeviceLogin:               NewCcgoDeviceLoginClient(cfg),
+		CcgoWorkspace:                 NewCcgoWorkspaceClient(cfg),
+		CcgoWorkstationRun:            NewCcgoWorkstationRunClient(cfg),
 		ChannelMonitor:                NewChannelMonitorClient(cfg),
 		ChannelMonitorDailyRollup:     NewChannelMonitorDailyRollupClient(cfg),
 		ChannelMonitorHistory:         NewChannelMonitorHistoryClient(cfg),
@@ -338,6 +363,11 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		AnnouncementRead:              NewAnnouncementReadClient(cfg),
 		AuthIdentity:                  NewAuthIdentityClient(cfg),
 		AuthIdentityChannel:           NewAuthIdentityChannelClient(cfg),
+		CcgoAgentCredential:           NewCcgoAgentCredentialClient(cfg),
+		CcgoCommandAudit:              NewCcgoCommandAuditClient(cfg),
+		CcgoDeviceLogin:               NewCcgoDeviceLoginClient(cfg),
+		CcgoWorkspace:                 NewCcgoWorkspaceClient(cfg),
+		CcgoWorkstationRun:            NewCcgoWorkstationRunClient(cfg),
 		ChannelMonitor:                NewChannelMonitorClient(cfg),
 		ChannelMonitorDailyRollup:     NewChannelMonitorDailyRollupClient(cfg),
 		ChannelMonitorHistory:         NewChannelMonitorHistoryClient(cfg),
@@ -398,8 +428,9 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementRead,
-		c.AuthIdentity, c.AuthIdentityChannel, c.ChannelMonitor,
-		c.ChannelMonitorDailyRollup, c.ChannelMonitorHistory,
+		c.AuthIdentity, c.AuthIdentityChannel, c.CcgoAgentCredential,
+		c.CcgoCommandAudit, c.CcgoDeviceLogin, c.CcgoWorkspace, c.CcgoWorkstationRun,
+		c.ChannelMonitor, c.ChannelMonitorDailyRollup, c.ChannelMonitorHistory,
 		c.ChannelMonitorRequestTemplate, c.ErrorPassthroughRule, c.Group,
 		c.IdempotencyRecord, c.IdentityAdoptionDecision, c.PaymentAuditLog,
 		c.PaymentOrder, c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode,
@@ -418,8 +449,9 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementRead,
-		c.AuthIdentity, c.AuthIdentityChannel, c.ChannelMonitor,
-		c.ChannelMonitorDailyRollup, c.ChannelMonitorHistory,
+		c.AuthIdentity, c.AuthIdentityChannel, c.CcgoAgentCredential,
+		c.CcgoCommandAudit, c.CcgoDeviceLogin, c.CcgoWorkspace, c.CcgoWorkstationRun,
+		c.ChannelMonitor, c.ChannelMonitorDailyRollup, c.ChannelMonitorHistory,
 		c.ChannelMonitorRequestTemplate, c.ErrorPassthroughRule, c.Group,
 		c.IdempotencyRecord, c.IdentityAdoptionDecision, c.PaymentAuditLog,
 		c.PaymentOrder, c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode,
@@ -450,6 +482,16 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.AuthIdentity.mutate(ctx, m)
 	case *AuthIdentityChannelMutation:
 		return c.AuthIdentityChannel.mutate(ctx, m)
+	case *CcgoAgentCredentialMutation:
+		return c.CcgoAgentCredential.mutate(ctx, m)
+	case *CcgoCommandAuditMutation:
+		return c.CcgoCommandAudit.mutate(ctx, m)
+	case *CcgoDeviceLoginMutation:
+		return c.CcgoDeviceLogin.mutate(ctx, m)
+	case *CcgoWorkspaceMutation:
+		return c.CcgoWorkspace.mutate(ctx, m)
+	case *CcgoWorkstationRunMutation:
+		return c.CcgoWorkstationRun.mutate(ctx, m)
 	case *ChannelMonitorMutation:
 		return c.ChannelMonitor.mutate(ctx, m)
 	case *ChannelMonitorDailyRollupMutation:
@@ -1654,6 +1696,671 @@ func (c *AuthIdentityChannelClient) mutate(ctx context.Context, m *AuthIdentityC
 		return (&AuthIdentityChannelDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown AuthIdentityChannel mutation op: %q", m.Op())
+	}
+}
+
+// CcgoAgentCredentialClient is a client for the CcgoAgentCredential schema.
+type CcgoAgentCredentialClient struct {
+	config
+}
+
+// NewCcgoAgentCredentialClient returns a client for the CcgoAgentCredential from the given config.
+func NewCcgoAgentCredentialClient(c config) *CcgoAgentCredentialClient {
+	return &CcgoAgentCredentialClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `ccgoagentcredential.Hooks(f(g(h())))`.
+func (c *CcgoAgentCredentialClient) Use(hooks ...Hook) {
+	c.hooks.CcgoAgentCredential = append(c.hooks.CcgoAgentCredential, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `ccgoagentcredential.Intercept(f(g(h())))`.
+func (c *CcgoAgentCredentialClient) Intercept(interceptors ...Interceptor) {
+	c.inters.CcgoAgentCredential = append(c.inters.CcgoAgentCredential, interceptors...)
+}
+
+// Create returns a builder for creating a CcgoAgentCredential entity.
+func (c *CcgoAgentCredentialClient) Create() *CcgoAgentCredentialCreate {
+	mutation := newCcgoAgentCredentialMutation(c.config, OpCreate)
+	return &CcgoAgentCredentialCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of CcgoAgentCredential entities.
+func (c *CcgoAgentCredentialClient) CreateBulk(builders ...*CcgoAgentCredentialCreate) *CcgoAgentCredentialCreateBulk {
+	return &CcgoAgentCredentialCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *CcgoAgentCredentialClient) MapCreateBulk(slice any, setFunc func(*CcgoAgentCredentialCreate, int)) *CcgoAgentCredentialCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &CcgoAgentCredentialCreateBulk{err: fmt.Errorf("calling to CcgoAgentCredentialClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*CcgoAgentCredentialCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &CcgoAgentCredentialCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for CcgoAgentCredential.
+func (c *CcgoAgentCredentialClient) Update() *CcgoAgentCredentialUpdate {
+	mutation := newCcgoAgentCredentialMutation(c.config, OpUpdate)
+	return &CcgoAgentCredentialUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CcgoAgentCredentialClient) UpdateOne(_m *CcgoAgentCredential) *CcgoAgentCredentialUpdateOne {
+	mutation := newCcgoAgentCredentialMutation(c.config, OpUpdateOne, withCcgoAgentCredential(_m))
+	return &CcgoAgentCredentialUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CcgoAgentCredentialClient) UpdateOneID(id int64) *CcgoAgentCredentialUpdateOne {
+	mutation := newCcgoAgentCredentialMutation(c.config, OpUpdateOne, withCcgoAgentCredentialID(id))
+	return &CcgoAgentCredentialUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for CcgoAgentCredential.
+func (c *CcgoAgentCredentialClient) Delete() *CcgoAgentCredentialDelete {
+	mutation := newCcgoAgentCredentialMutation(c.config, OpDelete)
+	return &CcgoAgentCredentialDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *CcgoAgentCredentialClient) DeleteOne(_m *CcgoAgentCredential) *CcgoAgentCredentialDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *CcgoAgentCredentialClient) DeleteOneID(id int64) *CcgoAgentCredentialDeleteOne {
+	builder := c.Delete().Where(ccgoagentcredential.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CcgoAgentCredentialDeleteOne{builder}
+}
+
+// Query returns a query builder for CcgoAgentCredential.
+func (c *CcgoAgentCredentialClient) Query() *CcgoAgentCredentialQuery {
+	return &CcgoAgentCredentialQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeCcgoAgentCredential},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a CcgoAgentCredential entity by its id.
+func (c *CcgoAgentCredentialClient) Get(ctx context.Context, id int64) (*CcgoAgentCredential, error) {
+	return c.Query().Where(ccgoagentcredential.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CcgoAgentCredentialClient) GetX(ctx context.Context, id int64) *CcgoAgentCredential {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *CcgoAgentCredentialClient) Hooks() []Hook {
+	return c.hooks.CcgoAgentCredential
+}
+
+// Interceptors returns the client interceptors.
+func (c *CcgoAgentCredentialClient) Interceptors() []Interceptor {
+	return c.inters.CcgoAgentCredential
+}
+
+func (c *CcgoAgentCredentialClient) mutate(ctx context.Context, m *CcgoAgentCredentialMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&CcgoAgentCredentialCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&CcgoAgentCredentialUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&CcgoAgentCredentialUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&CcgoAgentCredentialDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown CcgoAgentCredential mutation op: %q", m.Op())
+	}
+}
+
+// CcgoCommandAuditClient is a client for the CcgoCommandAudit schema.
+type CcgoCommandAuditClient struct {
+	config
+}
+
+// NewCcgoCommandAuditClient returns a client for the CcgoCommandAudit from the given config.
+func NewCcgoCommandAuditClient(c config) *CcgoCommandAuditClient {
+	return &CcgoCommandAuditClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `ccgocommandaudit.Hooks(f(g(h())))`.
+func (c *CcgoCommandAuditClient) Use(hooks ...Hook) {
+	c.hooks.CcgoCommandAudit = append(c.hooks.CcgoCommandAudit, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `ccgocommandaudit.Intercept(f(g(h())))`.
+func (c *CcgoCommandAuditClient) Intercept(interceptors ...Interceptor) {
+	c.inters.CcgoCommandAudit = append(c.inters.CcgoCommandAudit, interceptors...)
+}
+
+// Create returns a builder for creating a CcgoCommandAudit entity.
+func (c *CcgoCommandAuditClient) Create() *CcgoCommandAuditCreate {
+	mutation := newCcgoCommandAuditMutation(c.config, OpCreate)
+	return &CcgoCommandAuditCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of CcgoCommandAudit entities.
+func (c *CcgoCommandAuditClient) CreateBulk(builders ...*CcgoCommandAuditCreate) *CcgoCommandAuditCreateBulk {
+	return &CcgoCommandAuditCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *CcgoCommandAuditClient) MapCreateBulk(slice any, setFunc func(*CcgoCommandAuditCreate, int)) *CcgoCommandAuditCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &CcgoCommandAuditCreateBulk{err: fmt.Errorf("calling to CcgoCommandAuditClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*CcgoCommandAuditCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &CcgoCommandAuditCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for CcgoCommandAudit.
+func (c *CcgoCommandAuditClient) Update() *CcgoCommandAuditUpdate {
+	mutation := newCcgoCommandAuditMutation(c.config, OpUpdate)
+	return &CcgoCommandAuditUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CcgoCommandAuditClient) UpdateOne(_m *CcgoCommandAudit) *CcgoCommandAuditUpdateOne {
+	mutation := newCcgoCommandAuditMutation(c.config, OpUpdateOne, withCcgoCommandAudit(_m))
+	return &CcgoCommandAuditUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CcgoCommandAuditClient) UpdateOneID(id int64) *CcgoCommandAuditUpdateOne {
+	mutation := newCcgoCommandAuditMutation(c.config, OpUpdateOne, withCcgoCommandAuditID(id))
+	return &CcgoCommandAuditUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for CcgoCommandAudit.
+func (c *CcgoCommandAuditClient) Delete() *CcgoCommandAuditDelete {
+	mutation := newCcgoCommandAuditMutation(c.config, OpDelete)
+	return &CcgoCommandAuditDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *CcgoCommandAuditClient) DeleteOne(_m *CcgoCommandAudit) *CcgoCommandAuditDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *CcgoCommandAuditClient) DeleteOneID(id int64) *CcgoCommandAuditDeleteOne {
+	builder := c.Delete().Where(ccgocommandaudit.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CcgoCommandAuditDeleteOne{builder}
+}
+
+// Query returns a query builder for CcgoCommandAudit.
+func (c *CcgoCommandAuditClient) Query() *CcgoCommandAuditQuery {
+	return &CcgoCommandAuditQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeCcgoCommandAudit},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a CcgoCommandAudit entity by its id.
+func (c *CcgoCommandAuditClient) Get(ctx context.Context, id int64) (*CcgoCommandAudit, error) {
+	return c.Query().Where(ccgocommandaudit.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CcgoCommandAuditClient) GetX(ctx context.Context, id int64) *CcgoCommandAudit {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *CcgoCommandAuditClient) Hooks() []Hook {
+	return c.hooks.CcgoCommandAudit
+}
+
+// Interceptors returns the client interceptors.
+func (c *CcgoCommandAuditClient) Interceptors() []Interceptor {
+	return c.inters.CcgoCommandAudit
+}
+
+func (c *CcgoCommandAuditClient) mutate(ctx context.Context, m *CcgoCommandAuditMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&CcgoCommandAuditCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&CcgoCommandAuditUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&CcgoCommandAuditUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&CcgoCommandAuditDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown CcgoCommandAudit mutation op: %q", m.Op())
+	}
+}
+
+// CcgoDeviceLoginClient is a client for the CcgoDeviceLogin schema.
+type CcgoDeviceLoginClient struct {
+	config
+}
+
+// NewCcgoDeviceLoginClient returns a client for the CcgoDeviceLogin from the given config.
+func NewCcgoDeviceLoginClient(c config) *CcgoDeviceLoginClient {
+	return &CcgoDeviceLoginClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `ccgodevicelogin.Hooks(f(g(h())))`.
+func (c *CcgoDeviceLoginClient) Use(hooks ...Hook) {
+	c.hooks.CcgoDeviceLogin = append(c.hooks.CcgoDeviceLogin, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `ccgodevicelogin.Intercept(f(g(h())))`.
+func (c *CcgoDeviceLoginClient) Intercept(interceptors ...Interceptor) {
+	c.inters.CcgoDeviceLogin = append(c.inters.CcgoDeviceLogin, interceptors...)
+}
+
+// Create returns a builder for creating a CcgoDeviceLogin entity.
+func (c *CcgoDeviceLoginClient) Create() *CcgoDeviceLoginCreate {
+	mutation := newCcgoDeviceLoginMutation(c.config, OpCreate)
+	return &CcgoDeviceLoginCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of CcgoDeviceLogin entities.
+func (c *CcgoDeviceLoginClient) CreateBulk(builders ...*CcgoDeviceLoginCreate) *CcgoDeviceLoginCreateBulk {
+	return &CcgoDeviceLoginCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *CcgoDeviceLoginClient) MapCreateBulk(slice any, setFunc func(*CcgoDeviceLoginCreate, int)) *CcgoDeviceLoginCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &CcgoDeviceLoginCreateBulk{err: fmt.Errorf("calling to CcgoDeviceLoginClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*CcgoDeviceLoginCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &CcgoDeviceLoginCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for CcgoDeviceLogin.
+func (c *CcgoDeviceLoginClient) Update() *CcgoDeviceLoginUpdate {
+	mutation := newCcgoDeviceLoginMutation(c.config, OpUpdate)
+	return &CcgoDeviceLoginUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CcgoDeviceLoginClient) UpdateOne(_m *CcgoDeviceLogin) *CcgoDeviceLoginUpdateOne {
+	mutation := newCcgoDeviceLoginMutation(c.config, OpUpdateOne, withCcgoDeviceLogin(_m))
+	return &CcgoDeviceLoginUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CcgoDeviceLoginClient) UpdateOneID(id int64) *CcgoDeviceLoginUpdateOne {
+	mutation := newCcgoDeviceLoginMutation(c.config, OpUpdateOne, withCcgoDeviceLoginID(id))
+	return &CcgoDeviceLoginUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for CcgoDeviceLogin.
+func (c *CcgoDeviceLoginClient) Delete() *CcgoDeviceLoginDelete {
+	mutation := newCcgoDeviceLoginMutation(c.config, OpDelete)
+	return &CcgoDeviceLoginDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *CcgoDeviceLoginClient) DeleteOne(_m *CcgoDeviceLogin) *CcgoDeviceLoginDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *CcgoDeviceLoginClient) DeleteOneID(id int64) *CcgoDeviceLoginDeleteOne {
+	builder := c.Delete().Where(ccgodevicelogin.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CcgoDeviceLoginDeleteOne{builder}
+}
+
+// Query returns a query builder for CcgoDeviceLogin.
+func (c *CcgoDeviceLoginClient) Query() *CcgoDeviceLoginQuery {
+	return &CcgoDeviceLoginQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeCcgoDeviceLogin},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a CcgoDeviceLogin entity by its id.
+func (c *CcgoDeviceLoginClient) Get(ctx context.Context, id int64) (*CcgoDeviceLogin, error) {
+	return c.Query().Where(ccgodevicelogin.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CcgoDeviceLoginClient) GetX(ctx context.Context, id int64) *CcgoDeviceLogin {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *CcgoDeviceLoginClient) Hooks() []Hook {
+	return c.hooks.CcgoDeviceLogin
+}
+
+// Interceptors returns the client interceptors.
+func (c *CcgoDeviceLoginClient) Interceptors() []Interceptor {
+	return c.inters.CcgoDeviceLogin
+}
+
+func (c *CcgoDeviceLoginClient) mutate(ctx context.Context, m *CcgoDeviceLoginMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&CcgoDeviceLoginCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&CcgoDeviceLoginUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&CcgoDeviceLoginUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&CcgoDeviceLoginDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown CcgoDeviceLogin mutation op: %q", m.Op())
+	}
+}
+
+// CcgoWorkspaceClient is a client for the CcgoWorkspace schema.
+type CcgoWorkspaceClient struct {
+	config
+}
+
+// NewCcgoWorkspaceClient returns a client for the CcgoWorkspace from the given config.
+func NewCcgoWorkspaceClient(c config) *CcgoWorkspaceClient {
+	return &CcgoWorkspaceClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `ccgoworkspace.Hooks(f(g(h())))`.
+func (c *CcgoWorkspaceClient) Use(hooks ...Hook) {
+	c.hooks.CcgoWorkspace = append(c.hooks.CcgoWorkspace, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `ccgoworkspace.Intercept(f(g(h())))`.
+func (c *CcgoWorkspaceClient) Intercept(interceptors ...Interceptor) {
+	c.inters.CcgoWorkspace = append(c.inters.CcgoWorkspace, interceptors...)
+}
+
+// Create returns a builder for creating a CcgoWorkspace entity.
+func (c *CcgoWorkspaceClient) Create() *CcgoWorkspaceCreate {
+	mutation := newCcgoWorkspaceMutation(c.config, OpCreate)
+	return &CcgoWorkspaceCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of CcgoWorkspace entities.
+func (c *CcgoWorkspaceClient) CreateBulk(builders ...*CcgoWorkspaceCreate) *CcgoWorkspaceCreateBulk {
+	return &CcgoWorkspaceCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *CcgoWorkspaceClient) MapCreateBulk(slice any, setFunc func(*CcgoWorkspaceCreate, int)) *CcgoWorkspaceCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &CcgoWorkspaceCreateBulk{err: fmt.Errorf("calling to CcgoWorkspaceClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*CcgoWorkspaceCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &CcgoWorkspaceCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for CcgoWorkspace.
+func (c *CcgoWorkspaceClient) Update() *CcgoWorkspaceUpdate {
+	mutation := newCcgoWorkspaceMutation(c.config, OpUpdate)
+	return &CcgoWorkspaceUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CcgoWorkspaceClient) UpdateOne(_m *CcgoWorkspace) *CcgoWorkspaceUpdateOne {
+	mutation := newCcgoWorkspaceMutation(c.config, OpUpdateOne, withCcgoWorkspace(_m))
+	return &CcgoWorkspaceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CcgoWorkspaceClient) UpdateOneID(id int64) *CcgoWorkspaceUpdateOne {
+	mutation := newCcgoWorkspaceMutation(c.config, OpUpdateOne, withCcgoWorkspaceID(id))
+	return &CcgoWorkspaceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for CcgoWorkspace.
+func (c *CcgoWorkspaceClient) Delete() *CcgoWorkspaceDelete {
+	mutation := newCcgoWorkspaceMutation(c.config, OpDelete)
+	return &CcgoWorkspaceDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *CcgoWorkspaceClient) DeleteOne(_m *CcgoWorkspace) *CcgoWorkspaceDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *CcgoWorkspaceClient) DeleteOneID(id int64) *CcgoWorkspaceDeleteOne {
+	builder := c.Delete().Where(ccgoworkspace.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CcgoWorkspaceDeleteOne{builder}
+}
+
+// Query returns a query builder for CcgoWorkspace.
+func (c *CcgoWorkspaceClient) Query() *CcgoWorkspaceQuery {
+	return &CcgoWorkspaceQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeCcgoWorkspace},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a CcgoWorkspace entity by its id.
+func (c *CcgoWorkspaceClient) Get(ctx context.Context, id int64) (*CcgoWorkspace, error) {
+	return c.Query().Where(ccgoworkspace.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CcgoWorkspaceClient) GetX(ctx context.Context, id int64) *CcgoWorkspace {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *CcgoWorkspaceClient) Hooks() []Hook {
+	return c.hooks.CcgoWorkspace
+}
+
+// Interceptors returns the client interceptors.
+func (c *CcgoWorkspaceClient) Interceptors() []Interceptor {
+	return c.inters.CcgoWorkspace
+}
+
+func (c *CcgoWorkspaceClient) mutate(ctx context.Context, m *CcgoWorkspaceMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&CcgoWorkspaceCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&CcgoWorkspaceUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&CcgoWorkspaceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&CcgoWorkspaceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown CcgoWorkspace mutation op: %q", m.Op())
+	}
+}
+
+// CcgoWorkstationRunClient is a client for the CcgoWorkstationRun schema.
+type CcgoWorkstationRunClient struct {
+	config
+}
+
+// NewCcgoWorkstationRunClient returns a client for the CcgoWorkstationRun from the given config.
+func NewCcgoWorkstationRunClient(c config) *CcgoWorkstationRunClient {
+	return &CcgoWorkstationRunClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `ccgoworkstationrun.Hooks(f(g(h())))`.
+func (c *CcgoWorkstationRunClient) Use(hooks ...Hook) {
+	c.hooks.CcgoWorkstationRun = append(c.hooks.CcgoWorkstationRun, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `ccgoworkstationrun.Intercept(f(g(h())))`.
+func (c *CcgoWorkstationRunClient) Intercept(interceptors ...Interceptor) {
+	c.inters.CcgoWorkstationRun = append(c.inters.CcgoWorkstationRun, interceptors...)
+}
+
+// Create returns a builder for creating a CcgoWorkstationRun entity.
+func (c *CcgoWorkstationRunClient) Create() *CcgoWorkstationRunCreate {
+	mutation := newCcgoWorkstationRunMutation(c.config, OpCreate)
+	return &CcgoWorkstationRunCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of CcgoWorkstationRun entities.
+func (c *CcgoWorkstationRunClient) CreateBulk(builders ...*CcgoWorkstationRunCreate) *CcgoWorkstationRunCreateBulk {
+	return &CcgoWorkstationRunCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *CcgoWorkstationRunClient) MapCreateBulk(slice any, setFunc func(*CcgoWorkstationRunCreate, int)) *CcgoWorkstationRunCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &CcgoWorkstationRunCreateBulk{err: fmt.Errorf("calling to CcgoWorkstationRunClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*CcgoWorkstationRunCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &CcgoWorkstationRunCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for CcgoWorkstationRun.
+func (c *CcgoWorkstationRunClient) Update() *CcgoWorkstationRunUpdate {
+	mutation := newCcgoWorkstationRunMutation(c.config, OpUpdate)
+	return &CcgoWorkstationRunUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CcgoWorkstationRunClient) UpdateOne(_m *CcgoWorkstationRun) *CcgoWorkstationRunUpdateOne {
+	mutation := newCcgoWorkstationRunMutation(c.config, OpUpdateOne, withCcgoWorkstationRun(_m))
+	return &CcgoWorkstationRunUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CcgoWorkstationRunClient) UpdateOneID(id int64) *CcgoWorkstationRunUpdateOne {
+	mutation := newCcgoWorkstationRunMutation(c.config, OpUpdateOne, withCcgoWorkstationRunID(id))
+	return &CcgoWorkstationRunUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for CcgoWorkstationRun.
+func (c *CcgoWorkstationRunClient) Delete() *CcgoWorkstationRunDelete {
+	mutation := newCcgoWorkstationRunMutation(c.config, OpDelete)
+	return &CcgoWorkstationRunDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *CcgoWorkstationRunClient) DeleteOne(_m *CcgoWorkstationRun) *CcgoWorkstationRunDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *CcgoWorkstationRunClient) DeleteOneID(id int64) *CcgoWorkstationRunDeleteOne {
+	builder := c.Delete().Where(ccgoworkstationrun.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CcgoWorkstationRunDeleteOne{builder}
+}
+
+// Query returns a query builder for CcgoWorkstationRun.
+func (c *CcgoWorkstationRunClient) Query() *CcgoWorkstationRunQuery {
+	return &CcgoWorkstationRunQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeCcgoWorkstationRun},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a CcgoWorkstationRun entity by its id.
+func (c *CcgoWorkstationRunClient) Get(ctx context.Context, id int64) (*CcgoWorkstationRun, error) {
+	return c.Query().Where(ccgoworkstationrun.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CcgoWorkstationRunClient) GetX(ctx context.Context, id int64) *CcgoWorkstationRun {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *CcgoWorkstationRunClient) Hooks() []Hook {
+	return c.hooks.CcgoWorkstationRun
+}
+
+// Interceptors returns the client interceptors.
+func (c *CcgoWorkstationRunClient) Interceptors() []Interceptor {
+	return c.inters.CcgoWorkstationRun
+}
+
+func (c *CcgoWorkstationRunClient) mutate(ctx context.Context, m *CcgoWorkstationRunMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&CcgoWorkstationRunCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&CcgoWorkstationRunUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&CcgoWorkstationRunUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&CcgoWorkstationRunDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown CcgoWorkstationRun mutation op: %q", m.Op())
 	}
 }
 
@@ -6476,7 +7183,8 @@ func (c *UserSubscriptionClient) mutate(ctx context.Context, m *UserSubscription
 type (
 	hooks struct {
 		APIKey, Account, AccountGroup, Announcement, AnnouncementRead, AuthIdentity,
-		AuthIdentityChannel, ChannelMonitor, ChannelMonitorDailyRollup,
+		AuthIdentityChannel, CcgoAgentCredential, CcgoCommandAudit, CcgoDeviceLogin,
+		CcgoWorkspace, CcgoWorkstationRun, ChannelMonitor, ChannelMonitorDailyRollup,
 		ChannelMonitorHistory, ChannelMonitorRequestTemplate, ErrorPassthroughRule,
 		Group, IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog,
 		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
@@ -6487,7 +7195,8 @@ type (
 	}
 	inters struct {
 		APIKey, Account, AccountGroup, Announcement, AnnouncementRead, AuthIdentity,
-		AuthIdentityChannel, ChannelMonitor, ChannelMonitorDailyRollup,
+		AuthIdentityChannel, CcgoAgentCredential, CcgoCommandAudit, CcgoDeviceLogin,
+		CcgoWorkspace, CcgoWorkstationRun, ChannelMonitor, ChannelMonitorDailyRollup,
 		ChannelMonitorHistory, ChannelMonitorRequestTemplate, ErrorPassthroughRule,
 		Group, IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog,
 		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
