@@ -75,6 +75,22 @@ type SettlementPoolParticipantEstimate struct {
 	TotalDue      float64 `json:"total_due"`
 }
 
+type SettlementPoolAccountUsage struct {
+	AccountID           int64   `json:"account_id"`
+	Name                string  `json:"name"`
+	Platform            string  `json:"platform"`
+	Type                string  `json:"type"`
+	Status              string  `json:"status"`
+	Schedulable         bool    `json:"schedulable"`
+	Requests            int64   `json:"requests"`
+	InputTokens         int64   `json:"input_tokens"`
+	OutputTokens        int64   `json:"output_tokens"`
+	CacheCreationTokens int64   `json:"cache_creation_tokens"`
+	CacheReadTokens     int64   `json:"cache_read_tokens"`
+	TotalTokens         int64   `json:"total_tokens"`
+	TotalUsage          float64 `json:"total_usage"`
+}
+
 type SettlementPoolGroup struct {
 	ID               int64   `json:"id"`
 	Name             string  `json:"name"`
@@ -105,6 +121,7 @@ type SettlementPoolEstimate struct {
 	EffectiveDynamicRate float64                             `json:"effective_dynamic_rate"`
 	OwnerCoveredLoss     float64                             `json:"owner_covered_loss"`
 	Participants         []SettlementPoolParticipantEstimate `json:"participants"`
+	AccountUsage         []SettlementPoolAccountUsage        `json:"account_usage"`
 }
 
 type SettlementPoolSummary struct {
@@ -149,6 +166,7 @@ type SettlementPoolRepository interface {
 	IsCurrentParticipant(ctx context.Context, userID, groupID int64) (bool, error)
 	ListCurrentParticipantGroupIDs(ctx context.Context, userID int64) ([]int64, error)
 	SumUsageByUsers(ctx context.Context, groupID int64, userIDs []int64, startedAt time.Time, endedAt *time.Time) (map[int64]float64, error)
+	ListEnabledAccountUsage(ctx context.Context, groupID int64, startedAt time.Time, endedAt *time.Time) ([]SettlementPoolAccountUsage, error)
 }
 
 type SettlementPoolService struct {
@@ -502,7 +520,13 @@ func (s *SettlementPoolService) CalculateEstimate(ctx context.Context, cycle *Se
 	if err != nil {
 		return nil, fmt.Errorf("sum settlement usage: %w", err)
 	}
-	return CalculateSettlementPoolEstimate(cycle, participants, rawByUser, tiers), nil
+	accountUsage, err := s.repo.ListEnabledAccountUsage(ctx, cycle.GroupID, cycle.StartedAt, cycle.EndedAt)
+	if err != nil {
+		return nil, fmt.Errorf("list settlement account usage: %w", err)
+	}
+	estimate := CalculateSettlementPoolEstimate(cycle, participants, rawByUser, tiers)
+	estimate.AccountUsage = nonNilSettlementAccountUsage(accountUsage)
+	return estimate, nil
 }
 
 func CalculateSettlementPoolEstimate(cycle *SettlementPoolCycle, participants []SettlementPoolParticipant, rawByUser map[int64]float64, tiers []SettlementPoolTier) *SettlementPoolEstimate {
@@ -688,6 +712,16 @@ func nonNilSettlementParticipants(participants []SettlementPoolParticipant) []Se
 		return []SettlementPoolParticipant{}
 	}
 	return participants
+}
+
+func nonNilSettlementAccountUsage(rows []SettlementPoolAccountUsage) []SettlementPoolAccountUsage {
+	if rows == nil {
+		return []SettlementPoolAccountUsage{}
+	}
+	for i := range rows {
+		rows[i].TotalUsage = roundMoney(rows[i].TotalUsage)
+	}
+	return rows
 }
 
 func normalizeSettlementPoolConfigInput(input SettlementPoolConfigInput) (SettlementPoolConfigInput, error) {
