@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"io"
 	"time"
 
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
@@ -145,6 +146,10 @@ type CcgoStartWorkstationResult struct {
 
 type CcgoRunStarter interface {
 	StartCcgoRun(ctx context.Context, workspace *CcgoWorkspace) (*CcgoWorkstationRun, bool, error)
+}
+
+type CcgoTerminalAttacher interface {
+	Attach(workspaceID int64, input io.Reader, output io.Writer) error
 }
 
 type CcgoRepository interface {

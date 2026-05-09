@@ -10,6 +10,8 @@ const (
 	MessageTypeRequest   = "request"
 	MessageTypeResponse  = "response"
 	MessageTypeHeartbeat = "heartbeat"
+	MessageTypeTerminalInput = "terminal.input"
+	MessageTypeTerminalOutput = "terminal.output"
 
 	MethodFileStat     = "file.stat"
 	MethodFileRead     = "file.read"

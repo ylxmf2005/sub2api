@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 
 	ccgocli "github.com/Wei-Shaw/sub2api/internal/ccgo/cli"
 )
@@ -33,6 +34,19 @@ func run(args []string) error {
 		return nil
 	case "status", "stop":
 		return fmt.Errorf("ccgo %s is not implemented yet", args[0])
+	case "attach":
+		if len(args) < 2 {
+			return fmt.Errorf("usage: ccgo attach <workspace_id>")
+		}
+		workspaceID, err := strconv.ParseInt(args[1], 10, 64)
+		if err != nil || workspaceID <= 0 {
+			return fmt.Errorf("workspace id is required")
+		}
+		return ccgocli.Attach(context.Background(), ccgocli.AttachOptions{
+			WorkspaceID: workspaceID,
+			Input:       os.Stdin,
+			Output:      os.Stdout,
+		})
 	default:
 		noAgent := false
 		localPath := args[0]

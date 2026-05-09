@@ -5,13 +5,13 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"io"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/ccgo/hub"
 	"github.com/Wei-Shaw/sub2api/internal/ccgo/protocol"
-	"github.com/google/uuid"
 )
 
 type CcgoService struct {
@@ -19,13 +19,14 @@ type CcgoService struct {
 	workspaceBase string
 	agentHub      *hub.ConnectionManager
 	runStarter    CcgoRunStarter
+	terminal      CcgoTerminalAttacher
 }
 
-func NewCcgoService(repo CcgoRepository, agentHub *hub.ConnectionManager) *CcgoService {
+func NewCcgoService(repo CcgoRepository, agentHub *hub.ConnectionManager, runStarter CcgoRunStarter, terminal CcgoTerminalAttacher) *CcgoService {
 	if agentHub == nil {
 		agentHub = hub.NewConnectionManager()
 	}
-	return &CcgoService{repo: repo, workspaceBase: "/var/lib/ccgo/workspaces", agentHub: agentHub}
+	return &CcgoService{repo: repo, workspaceBase: "/var/lib/ccgo/workspaces", agentHub: agentHub, runStarter: runStarter, terminal: terminal}
 }
 
 func (s *CcgoService) SetRunStarterForTest(starter CcgoRunStarter) {
@@ -33,6 +34,13 @@ func (s *CcgoService) SetRunStarterForTest(starter CcgoRunStarter) {
 		return
 	}
 	s.runStarter = starter
+}
+
+func (s *CcgoService) SetTerminalAttacherForTest(terminal CcgoTerminalAttacher) {
+	if s == nil {
+		return
+	}
+	s.terminal = terminal
 }
 
 func (s *CcgoService) SetWorkspaceBaseForTest(base string) {
@@ -177,33 +185,27 @@ func (s *CcgoService) StartWorkstation(ctx context.Context, input CcgoStartWorks
 		}
 		return &CcgoStartWorkstationResult{Workspace: workspace, Run: run, Agent: agent, Reused: reused}, nil
 	}
-	run, reused, err := s.startRepositoryBackedRun(ctx, workspace)
-	if err != nil {
-		return nil, err
-	}
-	return &CcgoStartWorkstationResult{Workspace: workspace, Run: run, Agent: agent, Reused: reused}, nil
+	return nil, ErrCcgoWorkspaceUnavailable.WithMetadata(map[string]string{"component": "runner"})
 }
 
-func (s *CcgoService) startRepositoryBackedRun(ctx context.Context, workspace *CcgoWorkspace) (*CcgoWorkstationRun, bool, error) {
-	existing, err := s.repo.FindActiveWorkstationRun(ctx, workspace.ID)
+func (s *CcgoService) AttachTerminal(ctx context.Context, userID int64, workspaceID int64, input io.Reader, output io.Writer) error {
+	if userID <= 0 {
+		return ErrCcgoInvalidUser
+	}
+	if workspaceID <= 0 {
+		return protocol.NewError(protocol.ErrorInvalidRequest, "workspace id is required")
+	}
+	if s == nil || s.repo == nil || s.terminal == nil {
+		return ErrCcgoWorkspaceUnavailable.WithMetadata(map[string]string{"component": "terminal"})
+	}
+	workspace, err := s.repo.GetWorkspace(ctx, workspaceID)
 	if err != nil {
-		return nil, false, err
+		return err
 	}
-	if existing != nil {
-		return existing, true, nil
+	if workspace.UserID != userID {
+		return ErrCcgoWorkspaceForbidden
 	}
-	now := time.Now()
-	runID := "run_" + uuid.NewString()
-	run, err := s.repo.CreateWorkstationRun(ctx, workspace, runID, now)
-	if err != nil {
-		return nil, false, err
-	}
-	updated, err := s.repo.MarkWorkstationRunRunning(ctx, run.RunID, "", now)
-	if err != nil {
-		_ = s.repo.MarkWorkstationRunFailed(ctx, run.RunID, err.Error(), time.Now())
-		return nil, false, err
-	}
-	return updated, false, nil
+	return s.terminal.Attach(workspaceID, input, output)
 }
 
 func isProtocolErrorCode(err error, code string) bool {

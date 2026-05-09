@@ -22,5 +22,6 @@ func RegisterCcgoRoutes(
 	{
 		authenticated.POST("/workspaces/resolve", h.Ccgo.ResolveWorkspace)
 		authenticated.POST("/workstations/start", h.Ccgo.StartWorkstation)
+		authenticated.GET("/workstations/:workspaceID/attach", h.Ccgo.AttachWorkstation)
 	}
 }

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"log"
 	"strings"
 
@@ -83,6 +84,33 @@ func (h *CcgoHandler) StartWorkstation(c *gin.Context) {
 	response.Success(c, result)
 }
 
+func (h *CcgoHandler) AttachWorkstation(c *gin.Context) {
+	subject, ok := middleware2.GetAuthSubjectFromContext(c)
+	if !ok || subject.UserID <= 0 {
+		response.Unauthorized(c, "User not authenticated")
+		return
+	}
+	workspaceID, err := service.ParseCcgoWorkspaceID(c.Param("workspaceID"))
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	wsConn, err := coderws.Accept(c.Writer, c.Request, &coderws.AcceptOptions{
+		CompressionMode: coderws.CompressionDisabled,
+	})
+	if err != nil {
+		return
+	}
+	defer wsConn.CloseNow()
+	wsConn.SetReadLimit(16 * 1024 * 1024)
+	transport := hub.NewWebSocketTransport(wsConn)
+	reader := hub.NewEnvelopeReader(c.Request.Context(), transport.Recv)
+	writer := hub.NewEnvelopeWriter(c.Request.Context(), transport.Send)
+	if err := h.ccgoService.AttachTerminal(c.Request.Context(), subject.UserID, workspaceID, reader, writer); err != nil {
+		_ = wsConn.Close(closeStatusForAttachError(err), err.Error())
+	}
+}
+
 func (h *CcgoHandler) ConnectAgent(c *gin.Context) {
 	if h == nil || h.ccgoService == nil {
 		response.ErrorFrom(c, service.ErrCcgoWorkspaceUnavailable)
@@ -114,6 +142,13 @@ func (h *CcgoHandler) ConnectAgent(c *gin.Context) {
 	}
 	log.Printf("[INFO] ccgo agent connected workspace_id=%d user_id=%d", connection.WorkspaceID, connection.UserID)
 	<-c.Request.Context().Done()
+}
+
+func closeStatusForAttachError(err error) coderws.StatusCode {
+	if err == nil || err == context.Canceled {
+		return coderws.StatusNormalClosure
+	}
+	return coderws.StatusInternalError
 }
 
 func bearerToken(header string) string {

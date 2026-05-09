@@ -77,8 +77,17 @@ func (noopTransport) Close() error {
 	return nil
 }
 
+type runStarterStub struct {
+	run    *CcgoWorkstationRun
+	reused bool
+}
+
+func (s runStarterStub) StartCcgoRun(context.Context, *CcgoWorkspace) (*CcgoWorkstationRun, bool, error) {
+	return s.run, s.reused, nil
+}
+
 func TestCcgoServiceStartWorkstationRequiresAgentConnection(t *testing.T) {
-	svc := NewCcgoService(&ccgoRepoStub{workspace: &CcgoWorkspace{ID: 42, UserID: 7}}, hub.NewConnectionManager())
+	svc := NewCcgoService(&ccgoRepoStub{workspace: &CcgoWorkspace{ID: 42, UserID: 7}}, hub.NewConnectionManager(), nil, nil)
 
 	_, err := svc.StartWorkstation(context.Background(), CcgoStartWorkstationInput{UserID: 7, WorkspaceID: 42})
 	require.ErrorIs(t, err, ErrCcgoAgentDisconnected)
@@ -88,7 +97,7 @@ func TestCcgoServiceStartWorkstationCreatesRunWhenAgentConnected(t *testing.T) {
 	manager := hub.NewConnectionManager()
 	manager.Register(42, noopTransport{})
 	repo := &ccgoRepoStub{workspace: &CcgoWorkspace{ID: 42, UserID: 7}}
-	svc := NewCcgoService(repo, manager)
+	svc := NewCcgoService(repo, manager, runStarterStub{run: &CcgoWorkstationRun{WorkspaceID: 42, UserID: 7, RunID: "run_created", Status: CcgoRunStatusRunning}}, nil)
 
 	result, err := svc.StartWorkstation(context.Background(), CcgoStartWorkstationInput{UserID: 7, WorkspaceID: 42})
 	require.NoError(t, err)
@@ -103,21 +112,22 @@ func TestCcgoServiceStartWorkstationReusesActiveRun(t *testing.T) {
 	manager.Register(42, noopTransport{})
 	repo := &ccgoRepoStub{
 		workspace: &CcgoWorkspace{ID: 42, UserID: 7},
-		activeRun: &CcgoWorkstationRun{WorkspaceID: 42, UserID: 7, RunID: "run_existing", Status: CcgoRunStatusRunning},
 	}
-	svc := NewCcgoService(repo, manager)
+	svc := NewCcgoService(repo, manager, runStarterStub{
+		run:    &CcgoWorkstationRun{WorkspaceID: 42, UserID: 7, RunID: "run_existing", Status: CcgoRunStatusRunning},
+		reused: true,
+	}, nil)
 
 	result, err := svc.StartWorkstation(context.Background(), CcgoStartWorkstationInput{UserID: 7, WorkspaceID: 42})
 	require.NoError(t, err)
 	require.True(t, result.Reused)
 	require.Equal(t, "run_existing", result.Run.RunID)
-	require.Nil(t, repo.created)
 }
 
 func TestCcgoServiceStartWorkstationRejectsOtherUserWorkspace(t *testing.T) {
 	manager := hub.NewConnectionManager()
 	manager.Register(42, noopTransport{})
-	svc := NewCcgoService(&ccgoRepoStub{workspace: &CcgoWorkspace{ID: 42, UserID: 99}}, manager)
+	svc := NewCcgoService(&ccgoRepoStub{workspace: &CcgoWorkspace{ID: 42, UserID: 99}}, manager, nil, nil)
 
 	_, err := svc.StartWorkstation(context.Background(), CcgoStartWorkstationInput{UserID: 7, WorkspaceID: 42})
 	require.ErrorIs(t, err, ErrCcgoWorkspaceForbidden)

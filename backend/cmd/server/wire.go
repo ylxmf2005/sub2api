@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/internal/ccgo/hub"
+	"github.com/Wei-Shaw/sub2api/internal/ccgo/runner"
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/handler"
 	"github.com/Wei-Shaw/sub2api/internal/payment"
@@ -36,6 +38,10 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 		// Business layer ProviderSets
 		repository.ProviderSet,
 		service.ProviderSet,
+		runner.ProvideManager,
+		wire.Bind(new(runner.WorkspaceRequester), new(*hub.ConnectionManager)),
+		wire.Bind(new(service.CcgoRunStarter), new(*runner.Manager)),
+		wire.Bind(new(service.CcgoTerminalAttacher), new(*runner.Manager)),
 		payment.ProviderSet,
 		middleware.ProviderSet,
 		handler.ProviderSet,

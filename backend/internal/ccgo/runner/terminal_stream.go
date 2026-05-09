@@ -1,7 +1,6 @@
 package runner
 
 import (
-	"context"
 	"io"
 	"sync"
 )
@@ -12,7 +11,7 @@ type TerminalStream struct {
 	PTY    io.ReadWriter
 }
 
-func (s TerminalStream) Attach(ctx context.Context) error {
+func (s TerminalStream) Attach() error {
 	var wg sync.WaitGroup
 	errCh := make(chan error, 2)
 	copyOne := func(dst io.Writer, src io.Reader) {
@@ -34,8 +33,6 @@ func (s TerminalStream) Attach(ctx context.Context) error {
 		close(done)
 	}()
 	select {
-	case <-ctx.Done():
-		return ctx.Err()
 	case err := <-errCh:
 		return err
 	case <-done:

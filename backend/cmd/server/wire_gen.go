@@ -10,6 +10,7 @@ import (
 	"context"
 	"github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/internal/ccgo/hub"
+	"github.com/Wei-Shaw/sub2api/internal/ccgo/runner"
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/handler"
 	"github.com/Wei-Shaw/sub2api/internal/handler/admin"
@@ -259,7 +260,8 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	handlerResourceSupplyHandler := handler.NewResourceSupplyHandler(resourceSupplyService)
 	ccgoRepository := repository.NewCcgoRepository(client)
 	connectionManager := hub.ProvideConnectionManager()
-	ccgoService := service.NewCcgoService(ccgoRepository, connectionManager)
+	manager := runner.ProvideManager(ccgoRepository, connectionManager)
+	ccgoService := service.NewCcgoService(ccgoRepository, connectionManager, manager, manager)
 	ccgoHandler := handler.NewCcgoHandler(ccgoService)
 	idempotencyCoordinator := service.ProvideIdempotencyCoordinator(idempotencyRepository, configConfig)
 	idempotencyCleanupService := service.ProvideIdempotencyCleanupService(idempotencyRepository, configConfig)
