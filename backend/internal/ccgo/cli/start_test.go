@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"path/filepath"
@@ -143,6 +144,9 @@ func TestStartResolvesWorkspaceAndConnectsAgent(t *testing.T) {
 		Resolver:               resolver,
 		AgentReadyTimeout:      time.Second,
 		AgentReadyPollInterval: time.Millisecond,
+		Preflight: func(context.Context, string) (*LocalPreflightResult, error) {
+			return &LocalPreflightResult{}, nil
+		},
 		Connector: func(ctx context.Context, opts agent.ConnectorOptions) error {
 			connected = opts
 			close(connectorReady)
@@ -189,4 +193,20 @@ func TestStartNoAgentOnlyResolvesWorkspace(t *testing.T) {
 	require.Equal(t, int64(42), result.WorkspaceID)
 	require.False(t, result.AgentConnected)
 	require.False(t, calledConnector)
+}
+
+func TestStartRunsLocalPreflightBeforeResolvingWorkspace(t *testing.T) {
+	resolverCalled := false
+	_, err := Start(context.Background(), StartOptions{
+		LocalPath: "/Users/alice/project",
+		Resolver: resolverFunc(func(context.Context, string) (*WorkspaceResolution, error) {
+			resolverCalled = true
+			return nil, errors.New("resolver should not run")
+		}),
+		Preflight: func(context.Context, string) (*LocalPreflightResult, error) {
+			return nil, errors.New("preflight failed")
+		},
+	})
+	require.ErrorContains(t, err, "preflight failed")
+	require.False(t, resolverCalled)
 }

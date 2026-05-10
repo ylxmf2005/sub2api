@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -88,4 +89,22 @@ func TestExecServiceTimesOut(t *testing.T) {
 	require.Error(t, err)
 	require.Contains(t, err.Error(), protocol.ErrorRequestTimeout)
 	require.NotEqual(t, 0, resp.ExitCode)
+}
+
+func TestExecServiceFailsClosedWhenBashIsMissing(t *testing.T) {
+	root := t.TempDir()
+	localRoot, err := NewLocalRoot(root)
+	require.NoError(t, err)
+	execSvc := NewExecService(localRoot)
+	execSvc.lookPath = func(string) (string, error) {
+		return "", errors.New("not found")
+	}
+
+	resp, err := execSvc.Run(context.Background(), protocol.ExecRequest{
+		Cwd:     root,
+		Command: "echo hello",
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), protocol.ErrorUnsupported)
+	require.Equal(t, 127, resp.ExitCode)
 }

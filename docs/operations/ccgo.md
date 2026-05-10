@@ -9,6 +9,7 @@ The product invariant is strict: the canonical workspace is the user's local pro
 ```bash
 ccgo login
 ccgo login <token>
+ccgo doctor [local_path]
 ccgo .
 ccgo status
 ccgo stop
@@ -16,9 +17,29 @@ ccgo stop
 
 - `ccgo login` starts the device-code login flow, opens or prints the approval URL, polls until approval, and stores the issued platform token in the user's OS config directory.
 - `ccgo login <token>` stores the platform token in the user's OS config directory.
+- `ccgo doctor [local_path]` verifies the stored login config and, when a path is provided, runs the same local Bash preflight used by `ccgo <local_path>` without starting an agent or server runner.
 - `ccgo <local_path>` resolves the canonical local path, creates or reuses the stable workspace mapping, starts the local agent, asks the server to start Claude Code, and records the last workspace id for `status` and `stop`.
 - `ccgo status [workspace_id]` reports the workspace mapping, local-agent connection, projection/runner health, and latest workstation run.
 - `ccgo stop [workspace_id]` stops the server runner, unmounts the projection, closes the exec bridge, disconnects the local agent connection, and preserves the stable workspace mapping.
+
+## Build Artifacts
+
+Build the MVP binaries from the repository root:
+
+```bash
+make build-ccgo
+```
+
+This writes:
+
+- `backend/bin/ccgo`: local user CLI and bundled local-agent runner.
+- `backend/bin/ccgo-wrapper`: server-side `CLAUDE_CODE_SHELL_PREFIX` wrapper.
+
+For a specific server architecture, run the backend target with normal Go cross-build variables, for example:
+
+```bash
+GOOS=linux GOARCH=amd64 make -C backend ccgo-binaries
+```
 
 ## Architecture
 
@@ -68,8 +89,9 @@ The approval page requires a normal authenticated browser session. If the user i
 
 ## Local Prerequisites
 
-- macOS/Linux: the bundled `ccgo` binary can start the local agent from the user's normal account.
-- Windows MVP: file/path metadata is modeled, but Bash command execution requires WSL or Git Bash. Native PowerShell semantics are deferred.
+- macOS/Linux: the bundled `ccgo` binary can start the local agent from the user's normal account. `bash` must be available on `PATH` because Claude Code shell commands are executed locally through `bash -lc`.
+- Windows MVP: file/path metadata is modeled, but Bash command execution requires WSL or Git Bash with `bash.exe` on `PATH`. Native PowerShell semantics are deferred.
+- `ccgo <local_path>` runs a local preflight before creating the workspace runner. It verifies the path is a directory and that the local Bash probe can execute inside that root. Failure stops startup before the server projection or Claude runner is started.
 
 ## Failure Semantics
 

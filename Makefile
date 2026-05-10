@@ -1,4 +1,4 @@
-.PHONY: build build-backend build-frontend build-datamanagementd test test-backend test-frontend test-frontend-critical test-datamanagementd secret-scan
+.PHONY: build build-backend build-frontend build-datamanagementd build-ccgo test test-backend test-frontend test-frontend-critical test-datamanagementd secret-scan
 
 FRONTEND_CRITICAL_VITEST := \
 	src/views/auth/__tests__/LinuxDoCallbackView.spec.ts \
@@ -22,6 +22,9 @@ build-frontend:
 # 编译 datamanagementd（宿主机数据管理进程）
 build-datamanagementd:
 	@cd datamanagement && go build -o datamanagementd ./cmd/datamanagementd
+
+build-ccgo:
+	@$(MAKE) -C backend ccgo-binaries
 
 # 运行测试（后端 + 前端）
 test: test-backend test-frontend

@@ -1,10 +1,15 @@
-.PHONY: build generate test test-unit test-integration test-e2e
+.PHONY: build ccgo-binaries generate test test-unit test-integration test-e2e
 
 VERSION ?= $(shell tr -d '\r\n' < ./cmd/server/VERSION)
 LDFLAGS ?= -s -w -X main.Version=$(VERSION)
+CCGO_BIN_DIR ?= bin
 
 build:
 	CGO_ENABLED=0 go build -ldflags="$(LDFLAGS)" -trimpath -o bin/server ./cmd/server
+
+ccgo-binaries:
+	go build -ldflags="$(LDFLAGS)" -trimpath -o $(CCGO_BIN_DIR)/ccgo ./cmd/ccgo
+	go build -ldflags="$(LDFLAGS)" -trimpath -o $(CCGO_BIN_DIR)/ccgo-wrapper ./cmd/ccgo-wrapper
 
 generate:
 	go generate ./ent

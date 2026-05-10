@@ -19,7 +19,7 @@ func main() {
 
 func run(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("usage: ccgo login <token> | ccgo [--no-agent] <local_path>")
+		return fmt.Errorf("usage: ccgo login [token] | ccgo doctor [local_path] | ccgo [--no-agent] <local_path>")
 	}
 	switch args[0] {
 	case "login":
@@ -39,6 +39,24 @@ func run(args []string) error {
 			return err
 		}
 		fmt.Printf("Logged in to %s with token %s\n", result.Server, result.RedactedToken)
+		return nil
+	case "doctor":
+		if len(args) > 2 {
+			return fmt.Errorf("usage: ccgo doctor [local_path]")
+		}
+		localPath := ""
+		if len(args) == 2 {
+			localPath = args[1]
+		}
+		result, err := ccgocli.Doctor(context.Background(), ccgocli.DoctorOptions{LocalPath: localPath})
+		if err != nil {
+			return err
+		}
+		encoded, err := json.MarshalIndent(result, "", "  ")
+		if err != nil {
+			return err
+		}
+		fmt.Println(string(encoded))
 		return nil
 	case "status":
 		workspaceID, err := optionalWorkspaceID(args[1:])

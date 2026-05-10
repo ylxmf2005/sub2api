@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 	"time"
 
@@ -13,11 +14,12 @@ import (
 )
 
 type ExecService struct {
-	root LocalRoot
+	root     LocalRoot
+	lookPath func(string) (string, error)
 }
 
 func NewExecService(root LocalRoot) *ExecService {
-	return &ExecService{root: root}
+	return &ExecService{root: root, lookPath: exec.LookPath}
 }
 
 func (s *ExecService) Run(ctx context.Context, req protocol.ExecRequest) (protocol.ExecResponse, error) {
@@ -40,7 +42,12 @@ func (s *ExecService) Run(ctx context.Context, req protocol.ExecRequest) (protoc
 		defer cancel()
 	}
 
-	cmd := exec.CommandContext(ctx, shellName(), shellArg(), command)
+	shellPath, err := s.shellPath()
+	if err != nil {
+		return protocol.ExecResponse{ExitCode: 127}, err
+	}
+
+	cmd := exec.CommandContext(ctx, shellPath, shellArg(), command)
 	cmd.Dir = resolvedCwd
 	cmd.Env = execEnv(req.Env)
 	var stdout bytes.Buffer
@@ -62,6 +69,21 @@ func (s *ExecService) Run(ctx context.Context, req protocol.ExecRequest) (protoc
 		return response, nil
 	}
 	return response, nil
+}
+
+func (s *ExecService) shellPath() (string, error) {
+	lookPath := s.lookPath
+	if lookPath == nil {
+		lookPath = exec.LookPath
+	}
+	shellPath, err := lookPath(shellName())
+	if err == nil {
+		return shellPath, nil
+	}
+	if runtime.GOOS == "windows" {
+		return "", protocol.NewError(protocol.ErrorUnsupported, "bash is required for MVP command execution on Windows; install Git Bash and put bash.exe on PATH, or run ccgo from WSL")
+	}
+	return "", protocol.NewError(protocol.ErrorUnsupported, "bash is required for local command execution")
 }
 
 func shellName() string {

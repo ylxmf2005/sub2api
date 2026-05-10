@@ -20,6 +20,7 @@ type StartOptions struct {
 	NoAgent                bool
 	AgentReadyTimeout      time.Duration
 	AgentReadyPollInterval time.Duration
+	Preflight              func(context.Context, string) (*LocalPreflightResult, error)
 	Resolver               interface {
 		Resolve(context.Context, string) (*WorkspaceResolution, error)
 		StartWorkstation(context.Context, int64) (*StartWorkstationResult, error)
@@ -50,6 +51,15 @@ func Start(ctx context.Context, opts StartOptions) (*StartResult, error) {
 	localPath := strings.TrimSpace(opts.LocalPath)
 	if localPath == "" {
 		return nil, fmt.Errorf("local path is required")
+	}
+	if !opts.NoAgent {
+		preflight := opts.Preflight
+		if preflight == nil {
+			preflight = CheckLocalPreflight
+		}
+		if _, err := preflight(ctx, localPath); err != nil {
+			return nil, err
+		}
 	}
 	resolver := opts.Resolver
 	if resolver == nil {
