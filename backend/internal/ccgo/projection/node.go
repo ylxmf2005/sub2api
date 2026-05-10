@@ -32,6 +32,7 @@ var _ fs.NodeCreater = (*Node)(nil)
 var _ fs.NodeUnlinker = (*Node)(nil)
 var _ fs.NodeRmdirer = (*Node)(nil)
 var _ fs.NodeRenamer = (*Node)(nil)
+var _ fs.NodeReadlinker = (*Node)(nil)
 
 func NewRootNode(backend Backend) *Node {
 	return &Node{backend: backend, relPath: ".", isDir: true}
@@ -188,6 +189,14 @@ func (n *Node) Rename(ctx context.Context, name string, newParent fs.InodeEmbedd
 		return errnoFromError(err)
 	}
 	return 0
+}
+
+func (n *Node) Readlink(ctx context.Context) ([]byte, syscall.Errno) {
+	resp, err := n.backend.Readlink(ctx, n.relPath)
+	if err != nil {
+		return nil, errnoFromError(err)
+	}
+	return []byte(resp.Target), 0
 }
 
 func joinProjectPath(base string, elem string) string {

@@ -51,6 +51,16 @@ func (r LocalRoot) ResolveProjectPath(requested string) (string, error) {
 	return protocol.ResolveInsideRoot(r.path, requested)
 }
 
+func (r LocalRoot) ResolveProjectPathNoFollow(requested string) (string, error) {
+	if r.path == "" {
+		return "", protocol.NewError(protocol.ErrorInvalidPath, "local root is not configured")
+	}
+	if runtime.GOOS == "windows" && looksLikeWindowsDriveEscape(requested) {
+		return "", protocol.NewError(protocol.ErrorPathOutsideRoot, "path escapes the ccgo workspace volume")
+	}
+	return protocol.ResolveInsideRootNoFollow(r.path, requested)
+}
+
 func (r LocalRoot) ResolveLocalCwd(cwd string) (string, error) {
 	if r.path == "" {
 		return "", protocol.NewError(protocol.ErrorInvalidPath, "local root is not configured")

@@ -132,6 +132,16 @@ func (a *Agent) Handle(ctx context.Context, env protocol.Envelope) (protocol.Env
 			return protocol.NewErrorResponse(env.RequestID, protocolError(err)), nil
 		}
 		payload = resp
+	case protocol.MethodFileReadlink:
+		req, err := protocol.DecodePayload[protocol.FileReadlinkRequest](env)
+		if err != nil {
+			return protocol.Envelope{}, err
+		}
+		resp, err := a.files.Readlink(ctx, req)
+		if err != nil {
+			return protocol.NewErrorResponse(env.RequestID, protocolError(err)), nil
+		}
+		payload = resp
 	case protocol.MethodExec:
 		req, err := protocol.DecodePayload[protocol.ExecRequest](env)
 		if err != nil {

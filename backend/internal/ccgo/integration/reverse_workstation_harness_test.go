@@ -151,6 +151,12 @@ func (r agentRequester) FileChmod(ctx context.Context, workspaceID int64, req pr
 	return out, err
 }
 
+func (r agentRequester) FileReadlink(ctx context.Context, workspaceID int64, req protocol.FileReadlinkRequest) (protocol.FileReadlinkResponse, error) {
+	var out protocol.FileReadlinkResponse
+	err := r.request(ctx, protocol.MethodFileReadlink, req, &out)
+	return out, err
+}
+
 func (r agentRequester) Exec(ctx context.Context, workspaceID int64, req protocol.ExecRequest) (protocol.ExecResponse, error) {
 	var out protocol.ExecResponse
 	err := r.request(ctx, protocol.MethodExec, req, &out)

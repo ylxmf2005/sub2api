@@ -430,6 +430,7 @@ type WorkspaceRequester interface {
 	FileRename(context.Context, int64, protocol.FileRenameRequest) error
 	FileTruncate(context.Context, int64, protocol.FileTruncateRequest) (protocol.FileStatResponse, error)
 	FileChmod(context.Context, int64, protocol.FileChmodRequest) (protocol.FileStatResponse, error)
+	FileReadlink(context.Context, int64, protocol.FileReadlinkRequest) (protocol.FileReadlinkResponse, error)
 }
 
 type execRequesterWithAudit struct {

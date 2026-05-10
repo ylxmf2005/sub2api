@@ -12,6 +12,44 @@ func ResolveInsideRoot(root, requested string) (string, error) {
 	return resolveInsideRoot(root, requested, false)
 }
 
+func ResolveInsideRootNoFollow(root, requested string) (string, error) {
+	root = strings.TrimSpace(root)
+	requested = strings.TrimSpace(requested)
+	if root == "" {
+		return "", fmt.Errorf("root is required")
+	}
+	if requested == "" {
+		requested = "."
+	}
+	if filepath.IsAbs(requested) {
+		return "", NewError(ErrorPathOutsideRoot, "absolute paths are not accepted by the ccgo file layer")
+	}
+	cleanRoot, err := filepath.Abs(root)
+	if err != nil {
+		return "", err
+	}
+	cleanRoot, err = filepath.EvalSymlinks(cleanRoot)
+	if err != nil {
+		return "", err
+	}
+	candidate, err := filepath.Abs(filepath.Join(cleanRoot, requested))
+	if err != nil {
+		return "", err
+	}
+	if err := ensureInsideRoot(cleanRoot, candidate); err != nil {
+		return "", err
+	}
+	parent := filepath.Dir(candidate)
+	resolvedParent, err := filepath.EvalSymlinks(parent)
+	if err != nil {
+		return "", err
+	}
+	if err := ensureInsideRoot(cleanRoot, resolvedParent); err != nil {
+		return "", err
+	}
+	return filepath.Join(resolvedParent, filepath.Base(candidate)), nil
+}
+
 func ResolveLocalPathInsideRoot(root, requested string) (string, error) {
 	return resolveInsideRoot(root, requested, true)
 }

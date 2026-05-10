@@ -99,6 +99,33 @@ func TestFileServiceRejectsSymlinkEscape(t *testing.T) {
 	require.Contains(t, err.Error(), protocol.ErrorPathOutsideRoot)
 }
 
+func TestFileServiceReadlinkReadsSymlinkNodeWithoutFollowingTarget(t *testing.T) {
+	root := t.TempDir()
+	outside := t.TempDir()
+	require.NoError(t, os.Symlink(outside, filepath.Join(root, "link")))
+	localRoot, err := NewLocalRoot(root)
+	require.NoError(t, err)
+	files := NewFileService(localRoot)
+
+	resp, err := files.Readlink(context.Background(), protocol.FileReadlinkRequest{Path: "link"})
+	require.NoError(t, err)
+	require.Equal(t, outside, resp.Target)
+}
+
+func TestFileServiceReadlinkRejectsParentSymlinkEscape(t *testing.T) {
+	root := t.TempDir()
+	outside := t.TempDir()
+	require.NoError(t, os.Mkdir(filepath.Join(outside, "nested"), 0o755))
+	require.NoError(t, os.Symlink(outside, filepath.Join(root, "link")))
+	localRoot, err := NewLocalRoot(root)
+	require.NoError(t, err)
+	files := NewFileService(localRoot)
+
+	_, err = files.Readlink(context.Background(), protocol.FileReadlinkRequest{Path: "link/nested"})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), protocol.ErrorPathOutsideRoot)
+}
+
 func TestAgentHandleReturnsProtocolErrorEnvelope(t *testing.T) {
 	root := t.TempDir()
 	a, err := New(root)

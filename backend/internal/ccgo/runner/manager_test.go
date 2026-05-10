@@ -123,6 +123,9 @@ func (runnerRequesterStub) FileTruncate(context.Context, int64, protocol.FileTru
 func (runnerRequesterStub) FileChmod(context.Context, int64, protocol.FileChmodRequest) (protocol.FileStatResponse, error) {
 	return protocol.FileStatResponse{}, nil
 }
+func (runnerRequesterStub) FileReadlink(context.Context, int64, protocol.FileReadlinkRequest) (protocol.FileReadlinkResponse, error) {
+	return protocol.FileReadlinkResponse{}, nil
+}
 
 type fakeMount struct {
 	unmounted bool

@@ -58,6 +58,10 @@ func (b *localBackend) Chmod(ctx context.Context, path string, mode uint32) (pro
 	return b.files.Chmod(ctx, protocol.FileChmodRequest{Path: path, Mode: mode})
 }
 
+func (b *localBackend) Readlink(ctx context.Context, path string) (protocol.FileReadlinkResponse, error) {
+	return b.files.Readlink(ctx, protocol.FileReadlinkRequest{Path: path})
+}
+
 func readAllDirStreamNames(stream fs.DirStream) ([]string, syscall.Errno) {
 	names := make([]string, 0)
 	defer stream.Close()

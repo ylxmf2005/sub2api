@@ -209,6 +209,18 @@ func (s *FileService) Chmod(ctx context.Context, req protocol.FileChmodRequest) 
 	return s.Stat(ctx, protocol.FileStatRequest{Path: req.Path})
 }
 
+func (s *FileService) Readlink(_ context.Context, req protocol.FileReadlinkRequest) (protocol.FileReadlinkResponse, error) {
+	path, err := s.root.ResolveProjectPathNoFollow(req.Path)
+	if err != nil {
+		return protocol.FileReadlinkResponse{}, err
+	}
+	target, err := os.Readlink(path)
+	if err != nil {
+		return protocol.FileReadlinkResponse{}, localPathError(err)
+	}
+	return protocol.FileReadlinkResponse{Target: target}, nil
+}
+
 func fileStatResponse(rel string, info os.FileInfo) protocol.FileStatResponse {
 	return protocol.FileStatResponse{
 		Path:    filepath.ToSlash(rel),

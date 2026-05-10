@@ -64,6 +64,12 @@ func (m *ConnectionManager) FileChmod(ctx context.Context, workspaceID int64, re
 	return out, err
 }
 
+func (m *ConnectionManager) FileReadlink(ctx context.Context, workspaceID int64, req protocol.FileReadlinkRequest) (protocol.FileReadlinkResponse, error) {
+	var out protocol.FileReadlinkResponse
+	err := m.Request(ctx, workspaceID, protocol.MethodFileReadlink, req, &out)
+	return out, err
+}
+
 func (m *ConnectionManager) Exec(ctx context.Context, workspaceID int64, req protocol.ExecRequest) (protocol.ExecResponse, error) {
 	var out protocol.ExecResponse
 	err := m.Request(ctx, workspaceID, protocol.MethodExec, req, &out)

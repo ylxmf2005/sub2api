@@ -87,3 +87,15 @@ func TestNodeNamespaceOpsProxyToLocalBackend(t *testing.T) {
 	require.Equal(t, syscall.Errno(0), errno)
 	require.NoDirExists(t, filepath.Join(root, "dir"))
 }
+
+func TestNodeReadlinkProxiesToLocalBackend(t *testing.T) {
+	root := t.TempDir()
+	require.NoError(t, os.Symlink("README.md", filepath.Join(root, "link")))
+	backend, err := newLocalBackend(root)
+	require.NoError(t, err)
+	linkNode := &Node{backend: backend, relPath: "link"}
+
+	target, errno := linkNode.Readlink(context.Background())
+	require.Equal(t, syscall.Errno(0), errno)
+	require.Equal(t, []byte("README.md"), target)
+}

@@ -7,10 +7,10 @@ import (
 )
 
 const (
-	MessageTypeRequest   = "request"
-	MessageTypeResponse  = "response"
-	MessageTypeHeartbeat = "heartbeat"
-	MessageTypeTerminalInput = "terminal.input"
+	MessageTypeRequest        = "request"
+	MessageTypeResponse       = "response"
+	MessageTypeHeartbeat      = "heartbeat"
+	MessageTypeTerminalInput  = "terminal.input"
 	MessageTypeTerminalOutput = "terminal.output"
 
 	MethodFileStat     = "file.stat"
@@ -22,6 +22,7 @@ const (
 	MethodFileRename   = "file.rename"
 	MethodFileTruncate = "file.truncate"
 	MethodFileChmod    = "file.chmod"
+	MethodFileReadlink = "file.readlink"
 	MethodExec         = "exec"
 )
 
@@ -106,6 +107,14 @@ type FileTruncateRequest struct {
 type FileChmodRequest struct {
 	Path string `json:"path"`
 	Mode uint32 `json:"mode"`
+}
+
+type FileReadlinkRequest struct {
+	Path string `json:"path"`
+}
+
+type FileReadlinkResponse struct {
+	Target string `json:"target"`
 }
 
 type ExecRequest struct {

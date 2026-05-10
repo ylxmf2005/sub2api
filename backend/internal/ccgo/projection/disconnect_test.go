@@ -43,6 +43,9 @@ func (b disconnectedBackend) Truncate(context.Context, string, int64) (protocol.
 func (b disconnectedBackend) Chmod(context.Context, string, uint32) (protocol.FileStatResponse, error) {
 	return protocol.FileStatResponse{}, b.err()
 }
+func (b disconnectedBackend) Readlink(context.Context, string) (protocol.FileReadlinkResponse, error) {
+	return protocol.FileReadlinkResponse{}, b.err()
+}
 
 func TestNodeDisconnectReturnsIOError(t *testing.T) {
 	node := NewRootNode(disconnectedBackend{})
@@ -51,5 +54,8 @@ func TestNodeDisconnectReturnsIOError(t *testing.T) {
 	require.Equal(t, syscall.EIO, errno)
 
 	_, errno = node.Readdir(context.Background())
+	require.Equal(t, syscall.EIO, errno)
+
+	_, errno = node.Readlink(context.Background())
 	require.Equal(t, syscall.EIO, errno)
 }

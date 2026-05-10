@@ -39,6 +39,30 @@ func TestResolveInsideRoot_RejectsSymlinkEscape(t *testing.T) {
 	require.Contains(t, err.Error(), ErrorPathOutsideRoot)
 }
 
+func TestResolveInsideRootNoFollow_AllowsSymlinkNodeInsideRoot(t *testing.T) {
+	root := t.TempDir()
+	outside := t.TempDir()
+	link := filepath.Join(root, "link")
+	require.NoError(t, os.Symlink(outside, link))
+
+	resolved, err := ResolveInsideRootNoFollow(root, "link")
+	require.NoError(t, err)
+	expectedRoot, err := filepath.EvalSymlinks(root)
+	require.NoError(t, err)
+	require.Equal(t, filepath.Join(expectedRoot, "link"), resolved)
+}
+
+func TestResolveInsideRootNoFollow_RejectsParentSymlinkEscape(t *testing.T) {
+	root := t.TempDir()
+	outside := t.TempDir()
+	link := filepath.Join(root, "link")
+	require.NoError(t, os.Symlink(outside, link))
+
+	_, err := ResolveInsideRootNoFollow(root, "link/child")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), ErrorPathOutsideRoot)
+}
+
 func TestResolveInsideRoot_AllowsMissingLeafInsideRoot(t *testing.T) {
 	root := t.TempDir()
 	require.NoError(t, os.Mkdir(filepath.Join(root, "dir"), 0o755))

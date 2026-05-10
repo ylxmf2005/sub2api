@@ -108,3 +108,24 @@ The approval page requires a normal authenticated browser session. If the user i
 Command audit records store metadata only: workspace, user, run, request id, command hash, redacted command text, mapped cwd, status, exit code, timing, and failure reason. Raw stdout and stderr are not stored by default.
 
 Tokens, environment values, and command output must not be written to normal logs.
+
+## MVP Completion Boundary
+
+Implemented for the productized MVP:
+
+- Token login and browser-approved device login.
+- Stable user plus canonical-local-root workspace mapping.
+- Outbound local agent over WebSocket; no system `sshd`, SSHFS, or manual tunnel.
+- Server FUSE projection backed by local file RPC, including stat, read, write, list, mkdir, remove, rename, truncate, chmod, and readlink.
+- Server-side Claude Code launch with isolated config and generated append-system-prompt guidance.
+- `CLAUDE_CODE_SHELL_PREFIX` wrapper that maps server projection paths back to local paths and executes through the local agent.
+- `status`, `stop`, local preflight, `doctor`, command audit metadata, and `make build-ccgo` artifacts.
+- A local integration harness that verifies projected file writes and wrapper-routed commands both affect the local project root.
+
+Deferred beyond MVP:
+
+- Native PowerShell command semantics for Windows. The MVP requires WSL or Git Bash for command execution.
+- Dangerous-command approval UI, policy authoring UI, and per-command human approval.
+- Multi-runner scheduling across non-sticky workers.
+- Large-repository performance tuning and any future sync-acceleration mode.
+- A full browser dashboard beyond login/device approval and basic lifecycle status.

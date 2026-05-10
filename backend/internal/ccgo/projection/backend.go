@@ -16,6 +16,7 @@ type Backend interface {
 	Rename(ctx context.Context, oldPath string, newPath string) error
 	Truncate(ctx context.Context, path string, size int64) (protocol.FileStatResponse, error)
 	Chmod(ctx context.Context, path string, mode uint32) (protocol.FileStatResponse, error)
+	Readlink(ctx context.Context, path string) (protocol.FileReadlinkResponse, error)
 }
 
 type HubBackend struct {
@@ -30,6 +31,7 @@ type HubBackend struct {
 		FileRename(context.Context, int64, protocol.FileRenameRequest) error
 		FileTruncate(context.Context, int64, protocol.FileTruncateRequest) (protocol.FileStatResponse, error)
 		FileChmod(context.Context, int64, protocol.FileChmodRequest) (protocol.FileStatResponse, error)
+		FileReadlink(context.Context, int64, protocol.FileReadlinkRequest) (protocol.FileReadlinkResponse, error)
 	}
 }
 
@@ -43,6 +45,7 @@ func NewHubBackend(workspaceID int64, requester interface {
 	FileRename(context.Context, int64, protocol.FileRenameRequest) error
 	FileTruncate(context.Context, int64, protocol.FileTruncateRequest) (protocol.FileStatResponse, error)
 	FileChmod(context.Context, int64, protocol.FileChmodRequest) (protocol.FileStatResponse, error)
+	FileReadlink(context.Context, int64, protocol.FileReadlinkRequest) (protocol.FileReadlinkResponse, error)
 }) *HubBackend {
 	return &HubBackend{workspaceID: workspaceID, requester: requester}
 }
@@ -81,4 +84,8 @@ func (b *HubBackend) Truncate(ctx context.Context, path string, size int64) (pro
 
 func (b *HubBackend) Chmod(ctx context.Context, path string, mode uint32) (protocol.FileStatResponse, error) {
 	return b.requester.FileChmod(ctx, b.workspaceID, protocol.FileChmodRequest{Path: path, Mode: mode})
+}
+
+func (b *HubBackend) Readlink(ctx context.Context, path string) (protocol.FileReadlinkResponse, error) {
+	return b.requester.FileReadlink(ctx, b.workspaceID, protocol.FileReadlinkRequest{Path: path})
 }
