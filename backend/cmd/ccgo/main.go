@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	ccgocli "github.com/Wei-Shaw/sub2api/internal/ccgo/cli"
 )
@@ -19,7 +20,14 @@ func main() {
 
 func run(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("usage: ccgo login [token] | ccgo doctor [local_path] | ccgo [--no-agent] <local_path>")
+		return fmt.Errorf("usage: ccgo [--server <url>] login [token] | ccgo doctor [local_path] | ccgo [--no-agent] <local_path>")
+	}
+	options, args, err := extractGlobalOptions(args)
+	if err != nil {
+		return err
+	}
+	if len(args) == 0 {
+		return fmt.Errorf("usage: ccgo [--server <url>] login [token] | ccgo doctor [local_path] | ccgo [--no-agent] <local_path>")
 	}
 	switch args[0] {
 	case "login":
@@ -27,14 +35,14 @@ func run(args []string) error {
 			return fmt.Errorf("usage: ccgo login [token]")
 		}
 		if len(args) == 1 {
-			result, err := ccgocli.Login(context.Background(), ccgocli.LoginOptions{Output: os.Stdout})
+			result, err := ccgocli.Login(context.Background(), ccgocli.LoginOptions{Server: options.Server, Output: os.Stdout})
 			if err != nil {
 				return err
 			}
 			fmt.Printf("Logged in to %s with token %s\n", result.Server, result.RedactedToken)
 			return nil
 		}
-		result, err := ccgocli.LoginWithToken(ccgocli.LoginOptions{Token: args[1]})
+		result, err := ccgocli.LoginWithToken(ccgocli.LoginOptions{Server: options.Server, Token: args[1]})
 		if err != nil {
 			return err
 		}
@@ -158,6 +166,36 @@ func run(args []string) error {
 		}
 		return nil
 	}
+}
+
+type globalOptions struct {
+	Server string
+}
+
+func extractGlobalOptions(args []string) (globalOptions, []string, error) {
+	options := globalOptions{}
+	rest := make([]string, 0, len(args))
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if arg == "--server" {
+			if i+1 >= len(args) || strings.TrimSpace(args[i+1]) == "" {
+				return options, nil, fmt.Errorf("--server requires a URL")
+			}
+			options.Server = args[i+1]
+			i++
+			continue
+		}
+		if strings.HasPrefix(arg, "--server=") {
+			value := strings.TrimSpace(strings.TrimPrefix(arg, "--server="))
+			if value == "" {
+				return options, nil, fmt.Errorf("--server requires a URL")
+			}
+			options.Server = value
+			continue
+		}
+		rest = append(rest, arg)
+	}
+	return options, rest, nil
 }
 
 func optionalWorkspaceID(args []string) (int64, error) {

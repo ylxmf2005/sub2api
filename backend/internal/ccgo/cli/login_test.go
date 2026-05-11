@@ -39,6 +39,18 @@ func TestLoginWithToken_RequiresToken(t *testing.T) {
 	require.ErrorContains(t, err, "token")
 }
 
+func TestLoginWithToken_UsesServerEnvironmentDefault(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.json")
+	t.Setenv(serverEnvName, "http://localhost:8080")
+
+	result, err := LoginWithToken(LoginOptions{Token: "ccgo_1234567890", ConfigPath: path})
+	require.NoError(t, err)
+	require.Equal(t, "http://localhost:8080", result.Server)
+	cfg, err := LoadConfig(path)
+	require.NoError(t, err)
+	require.Equal(t, "http://localhost:8080", cfg.Server)
+}
+
 func TestLoginDeviceFlowStoresApprovedToken(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "config.json")
 	var gotStart map[string]string

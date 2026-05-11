@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -16,6 +17,7 @@ import (
 )
 
 const defaultServerURL = "https://ccgo.example.com"
+const serverEnvName = "CCGO_SERVER"
 const deviceLoginStartPath = "/api/v1/ccgo/device-login/start"
 const deviceLoginPollPath = "/api/v1/ccgo/device-login/poll"
 
@@ -60,7 +62,7 @@ type deviceLoginPollResponse struct {
 func Login(ctx context.Context, opts LoginOptions) (*LoginResult, error) {
 	server := strings.TrimSpace(opts.Server)
 	if server == "" {
-		server = defaultServerURL
+		server = defaultServer()
 	}
 	deviceID := strings.TrimSpace(opts.DeviceID)
 	var err error
@@ -123,7 +125,7 @@ func LoginWithToken(opts LoginOptions) (*LoginResult, error) {
 	}
 	server := strings.TrimSpace(opts.Server)
 	if server == "" {
-		server = defaultServerURL
+		server = defaultServer()
 	}
 	deviceID, err := randomDeviceID()
 	if err != nil {
@@ -151,6 +153,13 @@ func LoginWithToken(opts LoginOptions) (*LoginResult, error) {
 		User:          cfg.User,
 		RedactedToken: RedactToken(token),
 	}, nil
+}
+
+func defaultServer() string {
+	if value := strings.TrimSpace(os.Getenv(serverEnvName)); value != "" {
+		return value
+	}
+	return defaultServerURL
 }
 
 func randomDeviceID() (string, error) {

@@ -9,6 +9,7 @@ The product invariant is strict: the canonical workspace is the user's local pro
 ```bash
 ccgo login
 ccgo login <token>
+ccgo --server http://localhost:8080 login <token>
 ccgo doctor [local_path]
 ccgo .
 ccgo status
@@ -17,6 +18,7 @@ ccgo stop
 
 - `ccgo login` starts the device-code login flow, opens or prints the approval URL, polls until approval, and stores the issued platform token in the user's OS config directory.
 - `ccgo login <token>` stores the platform token in the user's OS config directory.
+- `ccgo --server <url> login <token>` or `CCGO_SERVER=<url> ccgo login <token>` stores a token for a non-default platform URL, which is the easiest local-development path.
 - `ccgo doctor [local_path]` verifies the stored login config and, when a path is provided, runs the same local Bash preflight used by `ccgo <local_path>` without starting an agent or server runner.
 - `ccgo <local_path>` resolves the canonical local path, creates or reuses the stable workspace mapping, starts the local agent, asks the server to start Claude Code, and records the last workspace id for `status` and `stop`.
 - `ccgo status [workspace_id]` reports the workspace mapping, local-agent connection, projection/runner health, and latest workstation run.
