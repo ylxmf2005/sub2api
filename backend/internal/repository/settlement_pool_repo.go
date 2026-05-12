@@ -787,6 +787,36 @@ func (r *settlementPoolRepository) ListManualUsageAdjustments(ctx context.Contex
 }
 
 func (r *settlementPoolRepository) ListEnabledAccountUsage(ctx context.Context, groupID int64, startedAt time.Time, endedAt *time.Time) ([]service.SettlementPoolAccountUsage, error) {
+	return r.listAccountUsage(ctx, accountUsageQueryOptions{
+		groupID:       groupID,
+		startedAt:     startedAt,
+		endedAt:       endedAt,
+		includeUsed:   false,
+		includeManual: false,
+	})
+}
+
+func (r *settlementPoolRepository) ListSettlementAccountUsage(ctx context.Context, groupID, cycleID int64, startedAt time.Time, endedAt *time.Time) ([]service.SettlementPoolAccountUsage, error) {
+	return r.listAccountUsage(ctx, accountUsageQueryOptions{
+		groupID:       groupID,
+		cycleID:       cycleID,
+		startedAt:     startedAt,
+		endedAt:       endedAt,
+		includeUsed:   true,
+		includeManual: true,
+	})
+}
+
+type accountUsageQueryOptions struct {
+	groupID       int64
+	cycleID       int64
+	startedAt     time.Time
+	endedAt       *time.Time
+	includeUsed   bool
+	includeManual bool
+}
+
+func (r *settlementPoolRepository) listAccountUsage(ctx context.Context, opts accountUsageQueryOptions) ([]service.SettlementPoolAccountUsage, error) {
 	weeklyStartedAt := timezone.StartOfWeek(time.Now())
 	rows, err := r.db.QueryContext(ctx, `
 		WITH enabled_accounts AS (
@@ -883,14 +913,78 @@ func (r *settlementPoolRepository) ListEnabledAccountUsage(ctx context.Context, 
 				SELECT * FROM weekly_legacy_usage
 			) usage_source
 			GROUP BY account_id
+		),
+		manual_usage_totals AS (
+			SELECT
+				account_id,
+				COALESCE(SUM(usage_amount), 0) AS total_usage
+			FROM settlement_pool_manual_usage_adjustments
+			WHERE group_id = $1
+				AND cycle_id = $7
+			GROUP BY account_id
+		),
+		usage_accounts AS (
+			SELECT DISTINCT ON (a.id)
+				a.id,
+				a.name,
+				a.platform,
+				a.type,
+				a.status,
+				a.schedulable,
+				ag.priority AS group_priority,
+				a.priority AS account_priority
+			FROM (
+				SELECT account_id
+				FROM usage_totals
+				WHERE $8::boolean
+				UNION
+				SELECT account_id
+				FROM manual_usage_totals
+				WHERE $8::boolean AND $9::boolean
+			) used
+			JOIN accounts a ON a.id = used.account_id
+			LEFT JOIN account_groups ag
+				ON ag.account_id = a.id
+				AND ag.group_id = $1
+			ORDER BY a.id, (ag.group_id IS NULL), ag.priority ASC
+		),
+		account_scope AS (
+			SELECT
+				id,
+				name,
+				platform,
+				type,
+				status,
+				schedulable,
+				group_priority,
+				account_priority,
+				0 AS source_priority
+			FROM enabled_accounts
+			UNION ALL
+			SELECT
+				ua.id,
+				ua.name,
+				ua.platform,
+				ua.type,
+				ua.status,
+				ua.schedulable,
+				ua.group_priority,
+				ua.account_priority,
+				1 AS source_priority
+			FROM usage_accounts ua
+			WHERE NOT EXISTS (
+				SELECT 1
+				FROM enabled_accounts ea
+				WHERE ea.id = ua.id
+			)
 		)
 		SELECT
-			ea.id,
-			ea.name,
-			ea.platform,
-			ea.type,
-			ea.status,
-			ea.schedulable,
+			account_scope.id,
+			account_scope.name,
+			account_scope.platform,
+			account_scope.type,
+			account_scope.status,
+			account_scope.schedulable,
 			COALESCE(ut.requests, 0),
 			COALESCE(ut.input_tokens, 0),
 			COALESCE(ut.output_tokens, 0),
@@ -899,11 +993,11 @@ func (r *settlementPoolRepository) ListEnabledAccountUsage(ctx context.Context, 
 			COALESCE(ut.input_tokens + ut.output_tokens + ut.cache_creation_tokens + ut.cache_read_tokens, 0) AS total_tokens,
 			COALESCE(ut.total_usage, 0),
 			COALESCE(wut.total_usage, 0)
-		FROM enabled_accounts ea
-		LEFT JOIN usage_totals ut ON ut.account_id = ea.id
-		LEFT JOIN weekly_usage_totals wut ON wut.account_id = ea.id
-		ORDER BY COALESCE(ut.total_usage, 0) DESC, ea.group_priority ASC, ea.account_priority ASC, ea.id ASC
-	`, groupID, startedAt, endedAt, service.BillingTypeSettlementPool, service.StatusActive, weeklyStartedAt)
+		FROM account_scope
+		LEFT JOIN usage_totals ut ON ut.account_id = account_scope.id
+		LEFT JOIN weekly_usage_totals wut ON wut.account_id = account_scope.id
+		ORDER BY COALESCE(ut.total_usage, 0) DESC, account_scope.source_priority ASC, account_scope.group_priority ASC, account_scope.account_priority ASC, account_scope.id ASC
+	`, opts.groupID, opts.startedAt, opts.endedAt, service.BillingTypeSettlementPool, service.StatusActive, weeklyStartedAt, opts.cycleID, opts.includeUsed, opts.includeManual)
 	if err != nil {
 		return nil, err
 	}

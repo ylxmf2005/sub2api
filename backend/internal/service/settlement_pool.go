@@ -200,6 +200,7 @@ type SettlementPoolRepository interface {
 	CreateManualUsageAdjustment(ctx context.Context, adjustment *SettlementPoolManualUsageAdjustment) error
 	ListManualUsageAdjustments(ctx context.Context, cycleID int64) ([]SettlementPoolManualUsageAdjustment, error)
 	ListEnabledAccountUsage(ctx context.Context, groupID int64, startedAt time.Time, endedAt *time.Time) ([]SettlementPoolAccountUsage, error)
+	ListSettlementAccountUsage(ctx context.Context, groupID, cycleID int64, startedAt time.Time, endedAt *time.Time) ([]SettlementPoolAccountUsage, error)
 }
 
 type SettlementPoolService struct {
@@ -627,7 +628,7 @@ func (s *SettlementPoolService) CalculateEstimate(ctx context.Context, cycle *Se
 	if err != nil {
 		return nil, fmt.Errorf("list settlement manual usage adjustments: %w", err)
 	}
-	accountUsage, err := s.repo.ListEnabledAccountUsage(ctx, cycle.GroupID, cycle.StartedAt, cycle.EndedAt)
+	accountUsage, err := s.repo.ListSettlementAccountUsage(ctx, cycle.GroupID, cycle.ID, cycle.StartedAt, cycle.EndedAt)
 	if err != nil {
 		return nil, fmt.Errorf("list settlement account usage: %w", err)
 	}

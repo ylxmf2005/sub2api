@@ -257,6 +257,59 @@ func TestSettlementPoolCreateManualUsageAdjustment_RejectsNegativeTotals(t *test
 	require.Zero(t, repo.createManualUsageCalls)
 }
 
+func TestSettlementPoolCreateManualUsageAdjustment_RejectsHistoricalAccountOutsideEnabledPool(t *testing.T) {
+	userID := int64(7)
+	groupID := int64(11)
+	historicalAccountID := int64(101)
+	repo := &settlementPoolRepoStub{
+		config: &SettlementPoolConfig{
+			GroupID:   groupID,
+			BaseRatio: 0.2,
+			MarketCap: 0.35,
+			Tiers:     DefaultSettlementPoolTiers(),
+		},
+		active: &SettlementPoolCycle{
+			ID:        2,
+			GroupID:   groupID,
+			Status:    SettlementPoolCycleStatusActive,
+			StartedAt: time.Date(2026, 4, 20, 0, 0, 0, 0, time.UTC),
+			TotalCost: 100,
+			BaseRatio: 0.2,
+			MarketCap: 0.35,
+			Tiers:     DefaultSettlementPoolTiers(),
+		},
+		currentParticipants: map[int64]bool{
+			groupID: true,
+		},
+		participants: []SettlementPoolParticipant{
+			{UserID: userID, Email: "user@example.com", Status: StatusActive},
+		},
+		rawUsage: map[int64]float64{
+			userID: 40,
+		},
+		enabledAccountUsage: []SettlementPoolAccountUsage{},
+		accountUsage: []SettlementPoolAccountUsage{
+			{AccountID: historicalAccountID, Name: "deleted historical account", Status: StatusError, Schedulable: false, TotalUsage: 40},
+		},
+	}
+	svc := NewSettlementPoolService(repo, &settlementGroupRepoStub{
+		groups: map[int64]*Group{
+			groupID: {ID: groupID, Name: "pool", Status: StatusActive, SubscriptionType: SubscriptionTypeSettlementPool},
+		},
+	}, nil)
+
+	_, err := svc.CreateManualUsageAdjustment(context.Background(), groupID, SettlementPoolManualUsageAdjustmentInput{
+		UserID:      userID,
+		AccountID:   historicalAccountID,
+		UsageAmount: 5,
+		Reason:      "outside proxy",
+		CreatedBy:   1,
+	})
+
+	require.ErrorIs(t, err, ErrSettlementPoolInvalidAdjustment)
+	require.Zero(t, repo.createManualUsageCalls)
+}
+
 func TestSettlementPoolUserSummary_CandidateOnlyIncludesActiveEstimate(t *testing.T) {
 	userID := int64(7)
 	groupID := int64(11)
@@ -597,39 +650,41 @@ func TestSettlementPoolRemoveCurrentParticipant_DoesNotCheckUsage(t *testing.T) 
 }
 
 type settlementPoolRepoStub struct {
-	config                  *SettlementPoolConfig
-	active                  *SettlementPoolCycle
-	candidateGroupIDs       []int64
-	currentGroupIDs         []int64
-	candidates              map[int64]bool
-	currentParticipants     map[int64]bool
-	cycles                  []SettlementPoolCycle
-	userCycles              []SettlementPoolCycle
-	participants            []SettlementPoolParticipant
-	candidateRows           []SettlementPoolParticipant
-	rawUsage                map[int64]float64
-	manualUsage             map[int64]float64
-	manualAccountUsage      map[int64]float64
-	manualAdjustments       []SettlementPoolManualUsageAdjustment
-	accountUsage            []SettlementPoolAccountUsage
-	sumUsageEndedAt         *time.Time
-	listAccountUsageEndedAt *time.Time
-	listParticipantsCalls   int
-	sumUsageCalls           int
-	listAccountUsageCalls   int
-	rotateCalls             int
-	joinCurrentCalls        int
-	removeCurrentCalls      int
-	forceJoinCalls          int
-	createManualUsageCalls  int
-	rotatedActiveID         int64
-	rotatedSnapshot         *SettlementPoolEstimate
-	rotatedNext             *SettlementPoolCycle
-	joinedGroupID           int64
-	joinedUserID            int64
-	removedGroupID          int64
-	removedUserID           int64
-	createdManualAdjustment *SettlementPoolManualUsageAdjustment
+	config                       *SettlementPoolConfig
+	active                       *SettlementPoolCycle
+	candidateGroupIDs            []int64
+	currentGroupIDs              []int64
+	candidates                   map[int64]bool
+	currentParticipants          map[int64]bool
+	cycles                       []SettlementPoolCycle
+	userCycles                   []SettlementPoolCycle
+	participants                 []SettlementPoolParticipant
+	candidateRows                []SettlementPoolParticipant
+	rawUsage                     map[int64]float64
+	manualUsage                  map[int64]float64
+	manualAccountUsage           map[int64]float64
+	manualAdjustments            []SettlementPoolManualUsageAdjustment
+	accountUsage                 []SettlementPoolAccountUsage
+	enabledAccountUsage          []SettlementPoolAccountUsage
+	sumUsageEndedAt              *time.Time
+	listAccountUsageEndedAt      *time.Time
+	listParticipantsCalls        int
+	sumUsageCalls                int
+	listAccountUsageCalls        int
+	listEnabledAccountUsageCalls int
+	rotateCalls                  int
+	joinCurrentCalls             int
+	removeCurrentCalls           int
+	forceJoinCalls               int
+	createManualUsageCalls       int
+	rotatedActiveID              int64
+	rotatedSnapshot              *SettlementPoolEstimate
+	rotatedNext                  *SettlementPoolCycle
+	joinedGroupID                int64
+	joinedUserID                 int64
+	removedGroupID               int64
+	removedUserID                int64
+	createdManualAdjustment      *SettlementPoolManualUsageAdjustment
 }
 
 func (s *settlementPoolRepoStub) GetConfig(context.Context, int64) (*SettlementPoolConfig, error) {
@@ -807,6 +862,18 @@ func (s *settlementPoolRepoStub) ListManualUsageAdjustments(context.Context, int
 }
 
 func (s *settlementPoolRepoStub) ListEnabledAccountUsage(_ context.Context, _ int64, _ time.Time, endedAt *time.Time) ([]SettlementPoolAccountUsage, error) {
+	s.listEnabledAccountUsageCalls++
+	if endedAt != nil {
+		capturedEndedAt := *endedAt
+		s.listAccountUsageEndedAt = &capturedEndedAt
+	}
+	if s.enabledAccountUsage != nil {
+		return s.enabledAccountUsage, nil
+	}
+	return s.accountUsage, nil
+}
+
+func (s *settlementPoolRepoStub) ListSettlementAccountUsage(_ context.Context, _, _ int64, _ time.Time, endedAt *time.Time) ([]SettlementPoolAccountUsage, error) {
 	s.listAccountUsageCalls++
 	if endedAt != nil {
 		capturedEndedAt := *endedAt

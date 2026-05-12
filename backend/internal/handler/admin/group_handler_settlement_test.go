@@ -182,6 +182,10 @@ func (r *createGroupSettlementPoolRepo) ListEnabledAccountUsage(context.Context,
 	return []service.SettlementPoolAccountUsage{}, nil
 }
 
+func (r *createGroupSettlementPoolRepo) ListSettlementAccountUsage(context.Context, int64, int64, time.Time, *time.Time) ([]service.SettlementPoolAccountUsage, error) {
+	return []service.SettlementPoolAccountUsage{}, nil
+}
+
 type createGroupSettlementGroupRepo struct {
 	group *service.Group
 }
