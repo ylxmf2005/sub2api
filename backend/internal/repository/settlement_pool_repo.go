@@ -9,6 +9,7 @@ import (
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/lib/pq"
 )
@@ -654,7 +655,139 @@ func (r *settlementPoolRepository) SumUsageByUsers(ctx context.Context, groupID 
 	return out, rows.Err()
 }
 
+func (r *settlementPoolRepository) SumManualUsageByUsers(ctx context.Context, cycleID int64, userIDs []int64) (map[int64]float64, error) {
+	out := make(map[int64]float64, len(userIDs))
+	if len(userIDs) == 0 {
+		return out, nil
+	}
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT user_id, COALESCE(SUM(usage_amount), 0)
+		FROM settlement_pool_manual_usage_adjustments
+		WHERE cycle_id = $1
+			AND user_id = ANY($2)
+		GROUP BY user_id
+	`, cycleID, pq.Array(userIDs))
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var userID int64
+		var usage float64
+		if err := rows.Scan(&userID, &usage); err != nil {
+			return nil, err
+		}
+		out[userID] = usage
+	}
+	return out, rows.Err()
+}
+
+func (r *settlementPoolRepository) SumManualUsageByAccounts(ctx context.Context, cycleID int64, accountIDs []int64) (map[int64]float64, error) {
+	out := make(map[int64]float64, len(accountIDs))
+	if len(accountIDs) == 0 {
+		return out, nil
+	}
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT account_id, COALESCE(SUM(usage_amount), 0)
+		FROM settlement_pool_manual_usage_adjustments
+		WHERE cycle_id = $1
+			AND account_id = ANY($2)
+		GROUP BY account_id
+	`, cycleID, pq.Array(accountIDs))
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var accountID int64
+		var usage float64
+		if err := rows.Scan(&accountID, &usage); err != nil {
+			return nil, err
+		}
+		out[accountID] = usage
+	}
+	return out, rows.Err()
+}
+
+func (r *settlementPoolRepository) CreateManualUsageAdjustment(ctx context.Context, adjustment *service.SettlementPoolManualUsageAdjustment) error {
+	if adjustment == nil {
+		return service.ErrSettlementPoolInvalidAdjustment
+	}
+	return r.db.QueryRowContext(ctx, `
+		INSERT INTO settlement_pool_manual_usage_adjustments (
+			group_id,
+			cycle_id,
+			user_id,
+			account_id,
+			usage_amount,
+			reason,
+			created_by
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		RETURNING id, created_at
+	`,
+		adjustment.GroupID,
+		adjustment.CycleID,
+		adjustment.UserID,
+		adjustment.AccountID,
+		adjustment.UsageAmount,
+		adjustment.Reason,
+		adjustment.CreatedBy,
+	).Scan(&adjustment.ID, &adjustment.CreatedAt)
+}
+
+func (r *settlementPoolRepository) ListManualUsageAdjustments(ctx context.Context, cycleID int64) ([]service.SettlementPoolManualUsageAdjustment, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT
+			a.id,
+			a.group_id,
+			a.cycle_id,
+			a.user_id,
+			COALESCE(u.email, ''),
+			COALESCE(u.username, ''),
+			a.account_id,
+			COALESCE(acc.name, ''),
+			a.usage_amount,
+			a.reason,
+			a.created_by,
+			a.created_at
+		FROM settlement_pool_manual_usage_adjustments a
+		JOIN users u ON u.id = a.user_id
+		JOIN accounts acc ON acc.id = a.account_id
+		WHERE a.cycle_id = $1
+		ORDER BY a.created_at DESC, a.id DESC
+	`, cycleID)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+
+	out := make([]service.SettlementPoolManualUsageAdjustment, 0)
+	for rows.Next() {
+		var item service.SettlementPoolManualUsageAdjustment
+		if err := rows.Scan(
+			&item.ID,
+			&item.GroupID,
+			&item.CycleID,
+			&item.UserID,
+			&item.Email,
+			&item.Username,
+			&item.AccountID,
+			&item.AccountName,
+			&item.UsageAmount,
+			&item.Reason,
+			&item.CreatedBy,
+			&item.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		out = append(out, item)
+	}
+	return out, rows.Err()
+}
+
 func (r *settlementPoolRepository) ListEnabledAccountUsage(ctx context.Context, groupID int64, startedAt time.Time, endedAt *time.Time) ([]service.SettlementPoolAccountUsage, error) {
+	weeklyStartedAt := timezone.StartOfWeek(time.Now())
 	rows, err := r.db.QueryContext(ctx, `
 		WITH enabled_accounts AS (
 			SELECT DISTINCT a.id, a.name, a.platform, a.type, a.status, a.schedulable, ag.priority AS group_priority, a.priority AS account_priority
@@ -715,6 +848,41 @@ func (r *settlementPoolRepository) ListEnabledAccountUsage(ctx context.Context, 
 				SELECT * FROM legacy_usage
 			) usage_source
 			GROUP BY account_id
+		),
+		weekly_durable_usage AS (
+			SELECT
+				account_id,
+				COALESCE(SUM(total_cost), 0) AS total_usage
+			FROM usage_billing_events
+			WHERE group_id = $1
+				AND created_at >= $6
+				AND billing_type = $4
+			GROUP BY account_id
+		),
+		weekly_legacy_usage AS (
+			SELECT
+				ul.account_id,
+				COALESCE(SUM(ul.total_cost), 0) AS total_usage
+			FROM usage_logs ul
+			LEFT JOIN usage_billing_events e
+				ON e.request_id = ul.request_id
+				AND e.api_key_id = ul.api_key_id
+			WHERE ul.group_id = $1
+				AND ul.created_at >= $6
+				AND ul.billing_type = $4
+				AND e.id IS NULL
+			GROUP BY ul.account_id
+		),
+		weekly_usage_totals AS (
+			SELECT
+				account_id,
+				COALESCE(SUM(total_usage), 0) AS total_usage
+			FROM (
+				SELECT * FROM weekly_durable_usage
+				UNION ALL
+				SELECT * FROM weekly_legacy_usage
+			) usage_source
+			GROUP BY account_id
 		)
 		SELECT
 			ea.id,
@@ -729,11 +897,13 @@ func (r *settlementPoolRepository) ListEnabledAccountUsage(ctx context.Context, 
 			COALESCE(ut.cache_creation_tokens, 0),
 			COALESCE(ut.cache_read_tokens, 0),
 			COALESCE(ut.input_tokens + ut.output_tokens + ut.cache_creation_tokens + ut.cache_read_tokens, 0) AS total_tokens,
-			COALESCE(ut.total_usage, 0)
+			COALESCE(ut.total_usage, 0),
+			COALESCE(wut.total_usage, 0)
 		FROM enabled_accounts ea
 		LEFT JOIN usage_totals ut ON ut.account_id = ea.id
+		LEFT JOIN weekly_usage_totals wut ON wut.account_id = ea.id
 		ORDER BY COALESCE(ut.total_usage, 0) DESC, ea.group_priority ASC, ea.account_priority ASC, ea.id ASC
-	`, groupID, startedAt, endedAt, service.BillingTypeSettlementPool, service.StatusActive)
+	`, groupID, startedAt, endedAt, service.BillingTypeSettlementPool, service.StatusActive, weeklyStartedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -756,6 +926,7 @@ func (r *settlementPoolRepository) ListEnabledAccountUsage(ctx context.Context, 
 			&item.CacheReadTokens,
 			&item.TotalTokens,
 			&item.TotalUsage,
+			&item.WeeklyTotalUsage,
 		); err != nil {
 			return nil, err
 		}

@@ -278,8 +278,9 @@ describe('EditAccountModal', () => {
 
     await wrapper.get('[data-testid="select-supply-owner"]').trigger('click')
 
-    expect((wrapper.get('[data-testid="supply-owner-search"]').element as HTMLInputElement).value)
-      .toBe('319126768@qq.com (#2)')
+    expect(wrapper.find('[data-testid="supply-owner-search"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('319126768@qq.com (#2)')
+    expect(wrapper.text()).toContain('admin.accounts.form.supplyOwnerSelectedHint')
 
     await wrapper.get('form#edit-account-form').trigger('submit.prevent')
 

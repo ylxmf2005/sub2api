@@ -56,6 +56,8 @@
           label="7d"
           :utilization="usageInfo.seven_day.utilization"
           :resets-at="usageInfo.seven_day.resets_at"
+          :window-stats="usageInfo.seven_day.window_stats"
+          :show-estimated-total="true"
           color="emerald"
         />
 
@@ -124,6 +126,7 @@
           :resets-at="usageInfo.seven_day.resets_at"
           :window-stats="usageInfo.seven_day.window_stats"
           :show-now-when-idle="true"
+          :show-estimated-total="true"
           color="emerald"
         />
       </div>

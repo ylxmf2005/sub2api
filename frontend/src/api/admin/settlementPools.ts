@@ -1,11 +1,22 @@
 import { apiClient } from '../client'
 import type { SettlementPoolSummary, SettlementPoolTier } from '@/types'
 
+function idempotencyHeaders(): { 'Idempotency-Key': string } {
+  return { 'Idempotency-Key': crypto.randomUUID() }
+}
+
 export interface UpdateSettlementPoolConfigRequest {
   total_cost: number
   base_ratio: number
   market_cap: number
   tiers: SettlementPoolTier[]
+}
+
+export interface CreateSettlementPoolManualUsageAdjustmentRequest {
+  user_id: number
+  account_id: number
+  usage_amount: number
+  reason: string
 }
 
 export async function getSummary(groupId: number): Promise<SettlementPoolSummary> {
@@ -56,6 +67,18 @@ export async function removeCurrentParticipant(
   return data
 }
 
+export async function createManualUsageAdjustment(
+  groupId: number,
+  payload: CreateSettlementPoolManualUsageAdjustmentRequest
+): Promise<SettlementPoolSummary> {
+  const { data } = await apiClient.post<SettlementPoolSummary>(
+    `/admin/settlement-pools/groups/${groupId}/manual-usage-adjustments`,
+    payload,
+    { headers: idempotencyHeaders() }
+  )
+  return data
+}
+
 export async function startNextCycle(groupId: number): Promise<SettlementPoolSummary> {
   const { data } = await apiClient.post<SettlementPoolSummary>(
     `/admin/settlement-pools/groups/${groupId}/start-cycle`
@@ -69,5 +92,6 @@ export default {
   syncCandidates,
   forceJoinCurrentCycle,
   removeCurrentParticipant,
+  createManualUsageAdjustment,
   startNextCycle
 }

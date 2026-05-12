@@ -162,6 +162,22 @@ func (r *createGroupSettlementPoolRepo) SumUsageByUsers(context.Context, int64, 
 	return map[int64]float64{}, nil
 }
 
+func (r *createGroupSettlementPoolRepo) SumManualUsageByUsers(context.Context, int64, []int64) (map[int64]float64, error) {
+	return map[int64]float64{}, nil
+}
+
+func (r *createGroupSettlementPoolRepo) SumManualUsageByAccounts(context.Context, int64, []int64) (map[int64]float64, error) {
+	return map[int64]float64{}, nil
+}
+
+func (r *createGroupSettlementPoolRepo) CreateManualUsageAdjustment(context.Context, *service.SettlementPoolManualUsageAdjustment) error {
+	panic("unexpected CreateManualUsageAdjustment")
+}
+
+func (r *createGroupSettlementPoolRepo) ListManualUsageAdjustments(context.Context, int64) ([]service.SettlementPoolManualUsageAdjustment, error) {
+	return []service.SettlementPoolManualUsageAdjustment{}, nil
+}
+
 func (r *createGroupSettlementPoolRepo) ListEnabledAccountUsage(context.Context, int64, time.Time, *time.Time) ([]service.SettlementPoolAccountUsage, error) {
 	return []service.SettlementPoolAccountUsage{}, nil
 }

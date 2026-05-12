@@ -2125,31 +2125,53 @@
       <!-- Resource Supply -->
       <div>
         <label class="input-label">{{ t('admin.accounts.form.supplyOwnerUserId') }}</label>
-        <UserSearchCombobox
-          v-model="supplyOwnerSearchText"
-          :placeholder="t('admin.accounts.form.supplyOwnerPlaceholder')"
-          @select="handleSupplyOwnerSelect"
-          @search-error="handleSupplyOwnerSearchError"
-        />
         <div
           v-if="form.supply_owner_user_id"
-          class="mt-2 flex items-center justify-between gap-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 dark:border-dark-600 dark:bg-dark-800"
+          class="flex items-start justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5 dark:border-emerald-900/50 dark:bg-emerald-900/20"
         >
-          <span class="min-w-0 truncate text-sm text-gray-700 dark:text-gray-200">{{ supplyOwnerLabel }}</span>
+          <div class="min-w-0">
+            <p class="truncate text-sm font-medium text-emerald-900 dark:text-emerald-100">{{ supplyOwnerLabel }}</p>
+            <p class="mt-0.5 text-xs text-emerald-700 dark:text-emerald-300">
+              {{ t('admin.accounts.form.supplyOwnerSelectedHint') }}
+            </p>
+          </div>
           <button
             type="button"
-            class="shrink-0 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200"
+            class="shrink-0 rounded p-1 text-emerald-600 transition-colors hover:bg-emerald-100 hover:text-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-900/40 dark:hover:text-emerald-100"
             :title="t('common.clear')"
             @click="clearSupplyOwner"
           >
             <Icon name="x" size="sm" />
           </button>
         </div>
+        <UserSearchCombobox
+          v-else
+          v-model="supplyOwnerSearchText"
+          :placeholder="t('admin.accounts.form.supplyOwnerPlaceholder')"
+          clear-on-select
+          @select="handleSupplyOwnerSelect"
+          @search-error="handleSupplyOwnerSearchError"
+        />
         <p class="mt-1 text-xs text-gray-500">{{ t('admin.accounts.form.supplyOwnerHint') }}</p>
       </div>
       <div v-if="account?.supply_status && account.supply_status !== 'none'">
         <label class="input-label">{{ t('admin.accounts.form.supplyStatus') }}</label>
-        <p class="text-sm text-gray-700 dark:text-gray-300">{{ account.supply_status }}</p>
+        <div class="rounded-md border border-gray-200 bg-gray-50 px-3 py-2.5 dark:border-dark-600 dark:bg-dark-800">
+          <div class="flex flex-wrap items-center gap-2">
+            <span
+              class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+              :class="resourceSupplyStatusBadgeClass(account.supply_status)"
+            >
+              {{ formatResourceSupplyStatus(account.supply_status, t) }}
+            </span>
+            <span v-if="account.supply_status_reason" class="text-xs text-gray-500 dark:text-gray-400">
+              {{ account.supply_status_reason }}
+            </span>
+          </div>
+          <p class="mt-1.5 text-xs leading-5 text-gray-500 dark:text-gray-400">
+            {{ resourceSupplyStatusDescription(account.supply_status, t) }}
+          </p>
+        </div>
       </div>
 
     </form>
@@ -2226,6 +2248,11 @@ import type { SimpleUser } from '@/api/admin/usage'
 import { applyInterceptWarmup } from '@/components/account/credentialsBuilder'
 import { formatDateTime, formatDateTimeLocalInput, parseDateTimeLocalInput } from '@/utils/format'
 import { createStableObjectKeyResolver } from '@/utils/stableObjectKey'
+import {
+  formatResourceSupplyStatus,
+  resourceSupplyStatusBadgeClass,
+  resourceSupplyStatusDescription
+} from '@/utils/resourceSupplyStatus'
 import { VERTEX_LOCATION_OPTIONS } from '@/constants/account'
 import {
   OPENAI_WS_MODE_CTX_POOL,
@@ -2560,7 +2587,7 @@ const supplyOwnerLabel = computed(() => {
 const handleSupplyOwnerSelect = (user: SimpleUser) => {
   form.supply_owner_user_id = user.id
   supplyOwnerUser.value = user
-  supplyOwnerSearchText.value = formatSupplyOwnerLabel(user)
+  supplyOwnerSearchText.value = ''
 }
 
 const clearSupplyOwner = () => {
@@ -2585,7 +2612,7 @@ const loadSupplyOwnerUser = async (userID: number | null) => {
     const user = await adminAPI.users.getById(userID)
     if (version === supplyOwnerLoadVersion) {
       supplyOwnerUser.value = { id: user.id, email: user.email, username: user.username }
-      supplyOwnerSearchText.value = formatSupplyOwnerLabel(supplyOwnerUser.value)
+      supplyOwnerSearchText.value = ''
     }
   } catch (error) {
     if (version === supplyOwnerLoadVersion) {
@@ -2599,6 +2626,7 @@ const loadSupplyOwnerUser = async (userID: number | null) => {
 watch(supplyOwnerSearchText, (value) => {
   const searchText = value.trim()
   if (!searchText) {
+    if (form.supply_owner_user_id && supplyOwnerUser.value) return
     form.supply_owner_user_id = null
     supplyOwnerUser.value = null
     return

@@ -411,6 +411,7 @@ export default {
     currentParticipants: 'Current-cycle Participants',
     participants: 'Participants',
     accountUsage: 'Current-cycle Account Usage',
+    accountUsagePeriod: 'Settlement cycle: {period}',
     joinCurrentCycle: 'Join Current Cycle',
     joiningCurrentCycle: 'Joining...',
     joinedCurrentCycle: 'Joined Current Cycle',
@@ -421,7 +422,21 @@ export default {
     requests: 'Requests',
     totalTokens: 'Total Tokens',
     cycleUsage: 'Cycle Usage',
+    weeklyUsage: 'This Week',
     rawUsage: 'Raw Usage',
+    manualUsage: 'Manual Usage',
+    manualUsageUser: 'User',
+    manualUsageUserPlaceholder: 'Select a current-cycle participant',
+    manualUsageAccount: 'Account',
+    manualUsageAccountPlaceholder: 'Select a settlement-pool account',
+    manualUsageAmount: 'Usage Adjustment',
+    manualUsageReason: 'Note',
+    manualUsageReasonPlaceholder: 'For example: used account outside the proxy / correction',
+    manualUsageAdjustments: 'Manual Usage Adjustments',
+    addManualUsage: 'Adjust Usage',
+    manualUsageAdded: 'Usage adjustment saved',
+    failedToAddManualUsage: 'Failed to save usage adjustment',
+    noManualUsageAdjustments: 'No manual usage adjustments yet',
     weightedUsage: 'Weighted Usage',
     currentTier: 'Current Tier',
     fixedShare: 'Fixed Share',
@@ -442,6 +457,7 @@ export default {
     noAccountUsage: 'No enabled accounts in this cycle.',
     cycles: 'Cycles',
     period: 'Period',
+    createdAt: 'Created At',
     searchUser: 'Search users',
     unlimited: 'Unlimited',
     startNextCycle: 'Start Next Cycle',
@@ -1113,6 +1129,30 @@ export default {
     title: 'Resource Supply',
     description: 'Manage resource supply accounts, view earnings and ledger',
     loadFailed: 'Failed to load resource supply data',
+    statuses: {
+      none: 'Not supplied',
+      testing: 'Testing',
+      pending_review: 'Pending review',
+      schedulable: 'Supplying',
+      paused: 'Paused',
+      rejected: 'Rejected',
+      revoked: 'Revoked',
+      unknown: 'Unknown status'
+    },
+    statusDescriptions: {
+      none: 'This account is not bound to a supply owner and will not generate supply earnings.',
+      testing: 'The system is verifying the account before it can move to review or supply.',
+      pending_review: 'The account is submitted and waiting for admin approval before scheduling and earnings begin.',
+      schedulable: 'The account is approved for scheduling. Usage is credited to the bound supply owner.',
+      paused: 'Supply is paused. The account will not be scheduled or earn new supply credit until resumed.',
+      rejected: 'The account did not pass review and will not be scheduled for supply earnings.',
+      revoked: 'The supply relationship was revoked and will no longer accrue earnings.',
+      unknown: 'The system returned an unrecognized supply status. Refresh or check with an admin.'
+    },
+    sources: {
+      admin: 'Admin bound',
+      self_service: 'User submitted'
+    },
     stats: {
       available: 'Available Earnings',
       lifetimeEarned: 'Lifetime Earned',
@@ -3967,7 +4007,9 @@ export default {
         gemini3Image: 'G31FI',
         claude: 'Claude',
         passiveSampled: 'Passive',
-        activeQuery: 'Query'
+        activeQuery: 'Query',
+        estimatedTotal: 'Est. weekly available quota',
+        estimatedTotalHint: 'Estimated as this week\'s cost divided by the upstream usage percentage'
       },
       tier: {
         free: 'Free',
@@ -3995,6 +4037,7 @@ export default {
       supplyOwnerUserId: 'Supply Owner',
       supplyOwnerPlaceholder: 'Search email, username, or user ID',
       supplyOwnerHint: 'When bound to an owner, scheduling this account generates supply earnings',
+      supplyOwnerSelectedHint: 'Usage from this account will be credited to this user',
       supplyOwnerSelectionRequired: 'Select a supply owner from the search results',
       supplyStatus: 'Supply Status'
     },

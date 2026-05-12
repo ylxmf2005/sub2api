@@ -23,7 +23,11 @@ describe('User SettlementPoolsView history selection', () => {
 
   it('shows current-cycle account usage for eligible users', () => {
     expect(viewSource).toContain('settlementPools.accountUsage')
+    expect(viewSource).toContain('settlementPools.accountUsagePeriod')
+    expect(viewSource).toContain('{ key: \'weekly_total_usage\', label: t(\'settlementPools.weeklyUsage\'), class: rightAlignedColumnClass }')
+    expect(viewSource).toContain('{ key: \'manual_usage\', label: t(\'settlementPools.manualUsage\'), class: rightAlignedColumnClass }')
     expect(viewSource).toContain('function accountUsageRows(summary: SettlementPoolSummary): SettlementPoolAccountUsage[]')
     expect(viewSource).toContain('return displayEstimate(summary)?.account_usage || []')
+    expect(viewSource).toContain('function settlementCyclePeriod(summary: SettlementPoolSummary): string')
   })
 })

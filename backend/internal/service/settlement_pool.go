@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"strings"
 	"time"
 
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
@@ -22,6 +23,7 @@ var (
 	ErrSettlementPoolForbidden          = infraerrors.Forbidden("SETTLEMENT_POOL_FORBIDDEN", "not allowed to access settlement pool")
 	ErrSettlementPoolCandidateMissing   = infraerrors.Forbidden("SETTLEMENT_POOL_CANDIDATE_MISSING", "user is not a settlement pool candidate")
 	ErrSettlementPoolParticipantMissing = infraerrors.Forbidden("SETTLEMENT_POOL_PARTICIPANT_MISSING", "user is not a current settlement pool participant")
+	ErrSettlementPoolInvalidAdjustment  = infraerrors.BadRequest("SETTLEMENT_POOL_INVALID_ADJUSTMENT", "invalid settlement pool manual usage adjustment")
 )
 
 type SettlementPoolTier struct {
@@ -68,6 +70,7 @@ type SettlementPoolParticipantEstimate struct {
 	Username      string  `json:"username"`
 	Status        string  `json:"status"`
 	RawUsage      float64 `json:"raw_usage"`
+	ManualUsage   float64 `json:"manual_usage"`
 	WeightedUsage float64 `json:"weighted_usage"`
 	CurrentTier   int     `json:"current_tier"`
 	FixedShare    float64 `json:"fixed_share"`
@@ -82,6 +85,7 @@ type SettlementPoolAccountUsage struct {
 	Type                string  `json:"type"`
 	Status              string  `json:"status"`
 	Schedulable         bool    `json:"schedulable"`
+	ManualUsage         float64 `json:"manual_usage"`
 	Requests            int64   `json:"requests"`
 	InputTokens         int64   `json:"input_tokens"`
 	OutputTokens        int64   `json:"output_tokens"`
@@ -89,6 +93,22 @@ type SettlementPoolAccountUsage struct {
 	CacheReadTokens     int64   `json:"cache_read_tokens"`
 	TotalTokens         int64   `json:"total_tokens"`
 	TotalUsage          float64 `json:"total_usage"`
+	WeeklyTotalUsage    float64 `json:"weekly_total_usage"`
+}
+
+type SettlementPoolManualUsageAdjustment struct {
+	ID          int64     `json:"id"`
+	GroupID     int64     `json:"group_id"`
+	CycleID     int64     `json:"cycle_id"`
+	UserID      int64     `json:"user_id"`
+	Email       string    `json:"email"`
+	Username    string    `json:"username"`
+	AccountID   int64     `json:"account_id"`
+	AccountName string    `json:"account_name"`
+	UsageAmount float64   `json:"usage_amount"`
+	Reason      string    `json:"reason"`
+	CreatedBy   int64     `json:"created_by"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 type SettlementPoolGroup struct {
@@ -102,26 +122,27 @@ type SettlementPoolGroup struct {
 }
 
 type SettlementPoolEstimate struct {
-	GroupID              int64                               `json:"group_id"`
-	CycleID              int64                               `json:"cycle_id"`
-	Status               string                              `json:"status"`
-	StartedAt            time.Time                           `json:"started_at"`
-	EndedAt              *time.Time                          `json:"ended_at,omitempty"`
-	LockedAt             *time.Time                          `json:"locked_at,omitempty"`
-	TotalCost            float64                             `json:"total_cost"`
-	BaseRatio            float64                             `json:"base_ratio"`
-	MarketCap            float64                             `json:"market_cap"`
-	Tiers                []SettlementPoolTier                `json:"tiers"`
-	ParticipantCount     int                                 `json:"participant_count"`
-	FixedPool            float64                             `json:"fixed_pool"`
-	DynamicPool          float64                             `json:"dynamic_pool"`
-	TotalRawUsage        float64                             `json:"total_raw_usage"`
-	TotalWeightedUsage   float64                             `json:"total_weighted_usage"`
-	UncappedDynamicRate  float64                             `json:"uncapped_dynamic_rate"`
-	EffectiveDynamicRate float64                             `json:"effective_dynamic_rate"`
-	OwnerCoveredLoss     float64                             `json:"owner_covered_loss"`
-	Participants         []SettlementPoolParticipantEstimate `json:"participants"`
-	AccountUsage         []SettlementPoolAccountUsage        `json:"account_usage"`
+	GroupID              int64                                 `json:"group_id"`
+	CycleID              int64                                 `json:"cycle_id"`
+	Status               string                                `json:"status"`
+	StartedAt            time.Time                             `json:"started_at"`
+	EndedAt              *time.Time                            `json:"ended_at,omitempty"`
+	LockedAt             *time.Time                            `json:"locked_at,omitempty"`
+	TotalCost            float64                               `json:"total_cost"`
+	BaseRatio            float64                               `json:"base_ratio"`
+	MarketCap            float64                               `json:"market_cap"`
+	Tiers                []SettlementPoolTier                  `json:"tiers"`
+	ParticipantCount     int                                   `json:"participant_count"`
+	FixedPool            float64                               `json:"fixed_pool"`
+	DynamicPool          float64                               `json:"dynamic_pool"`
+	TotalRawUsage        float64                               `json:"total_raw_usage"`
+	TotalWeightedUsage   float64                               `json:"total_weighted_usage"`
+	UncappedDynamicRate  float64                               `json:"uncapped_dynamic_rate"`
+	EffectiveDynamicRate float64                               `json:"effective_dynamic_rate"`
+	OwnerCoveredLoss     float64                               `json:"owner_covered_loss"`
+	Participants         []SettlementPoolParticipantEstimate   `json:"participants"`
+	AccountUsage         []SettlementPoolAccountUsage          `json:"account_usage"`
+	ManualAdjustments    []SettlementPoolManualUsageAdjustment `json:"manual_adjustments"`
 }
 
 type SettlementPoolSummary struct {
@@ -141,6 +162,14 @@ type SettlementPoolConfigInput struct {
 	BaseRatio float64              `json:"base_ratio"`
 	MarketCap float64              `json:"market_cap"`
 	Tiers     []SettlementPoolTier `json:"tiers"`
+}
+
+type SettlementPoolManualUsageAdjustmentInput struct {
+	UserID      int64
+	AccountID   int64
+	UsageAmount float64
+	Reason      string
+	CreatedBy   int64
 }
 
 type SettlementPoolRepository interface {
@@ -166,6 +195,10 @@ type SettlementPoolRepository interface {
 	IsCurrentParticipant(ctx context.Context, userID, groupID int64) (bool, error)
 	ListCurrentParticipantGroupIDs(ctx context.Context, userID int64) ([]int64, error)
 	SumUsageByUsers(ctx context.Context, groupID int64, userIDs []int64, startedAt time.Time, endedAt *time.Time) (map[int64]float64, error)
+	SumManualUsageByUsers(ctx context.Context, cycleID int64, userIDs []int64) (map[int64]float64, error)
+	SumManualUsageByAccounts(ctx context.Context, cycleID int64, accountIDs []int64) (map[int64]float64, error)
+	CreateManualUsageAdjustment(ctx context.Context, adjustment *SettlementPoolManualUsageAdjustment) error
+	ListManualUsageAdjustments(ctx context.Context, cycleID int64) ([]SettlementPoolManualUsageAdjustment, error)
 	ListEnabledAccountUsage(ctx context.Context, groupID int64, startedAt time.Time, endedAt *time.Time) ([]SettlementPoolAccountUsage, error)
 }
 
@@ -347,6 +380,75 @@ func (s *SettlementPoolService) RemoveCurrentParticipant(ctx context.Context, gr
 	return s.GetAdminSummary(ctx, groupID)
 }
 
+func (s *SettlementPoolService) CreateManualUsageAdjustment(ctx context.Context, groupID int64, input SettlementPoolManualUsageAdjustmentInput) (*SettlementPoolSummary, error) {
+	if _, err := s.requireSettlementPoolGroup(ctx, groupID); err != nil {
+		return nil, err
+	}
+	if input.UserID <= 0 || input.AccountID <= 0 || input.CreatedBy <= 0 || input.UsageAmount == 0 || math.IsNaN(input.UsageAmount) || math.IsInf(input.UsageAmount, 0) {
+		return nil, ErrSettlementPoolInvalidAdjustment
+	}
+	reason := strings.TrimSpace(input.Reason)
+	if reason == "" {
+		return nil, ErrSettlementPoolInvalidAdjustment
+	}
+	active, err := s.repo.GetActiveCycle(ctx, groupID)
+	if err != nil {
+		return nil, err
+	}
+	if active == nil || active.Status != SettlementPoolCycleStatusActive {
+		return nil, ErrSettlementPoolNotFound
+	}
+	joined, err := s.repo.IsCurrentParticipant(ctx, input.UserID, groupID)
+	if err != nil {
+		return nil, fmt.Errorf("check settlement participant: %w", err)
+	}
+	if !joined {
+		return nil, ErrSettlementPoolParticipantMissing
+	}
+	participants, err := s.repo.ListCycleParticipants(ctx, active.ID)
+	if err != nil {
+		return nil, fmt.Errorf("list settlement participants: %w", err)
+	}
+	userIDs := settlementParticipantUserIDs(participants)
+	rawByUser, err := s.repo.SumUsageByUsers(ctx, groupID, userIDs, active.StartedAt, active.EndedAt)
+	if err != nil {
+		return nil, fmt.Errorf("sum settlement usage: %w", err)
+	}
+	manualByUser, err := s.repo.SumManualUsageByUsers(ctx, active.ID, userIDs)
+	if err != nil {
+		return nil, fmt.Errorf("sum settlement manual usage: %w", err)
+	}
+	accountUsage, err := s.repo.ListEnabledAccountUsage(ctx, groupID, active.StartedAt, active.EndedAt)
+	if err != nil {
+		return nil, fmt.Errorf("list settlement account usage: %w", err)
+	}
+	accountIDs := settlementAccountUsageIDs(accountUsage)
+	manualByAccount, err := s.repo.SumManualUsageByAccounts(ctx, active.ID, accountIDs)
+	if err != nil {
+		return nil, fmt.Errorf("sum settlement manual account usage: %w", err)
+	}
+	if !settlementAccountUsageContains(accountUsage, input.AccountID) {
+		return nil, ErrSettlementPoolInvalidAdjustment
+	}
+	userTotal := math.Max(rawByUser[input.UserID], 0) + manualByUser[input.UserID] + input.UsageAmount
+	accountTotal := settlementAccountUsageTotal(accountUsage, input.AccountID) + manualByAccount[input.AccountID] + input.UsageAmount
+	if userTotal < -1e-9 || accountTotal < -1e-9 {
+		return nil, ErrSettlementPoolInvalidAdjustment
+	}
+	if err := s.repo.CreateManualUsageAdjustment(ctx, &SettlementPoolManualUsageAdjustment{
+		GroupID:     groupID,
+		CycleID:     active.ID,
+		UserID:      input.UserID,
+		AccountID:   input.AccountID,
+		UsageAmount: input.UsageAmount,
+		Reason:      reason,
+		CreatedBy:   input.CreatedBy,
+	}); err != nil {
+		return nil, fmt.Errorf("create settlement manual usage adjustment: %w", err)
+	}
+	return s.GetAdminSummary(ctx, groupID)
+}
+
 func (s *SettlementPoolService) StartNextCycle(ctx context.Context, groupID int64) (*SettlementPoolSummary, error) {
 	if _, err := s.requireSettlementPoolGroup(ctx, groupID); err != nil {
 		return nil, err
@@ -512,24 +614,38 @@ func (s *SettlementPoolService) CalculateEstimate(ctx context.Context, cycle *Se
 	if err != nil {
 		return nil, fmt.Errorf("list settlement participants: %w", err)
 	}
-	userIDs := make([]int64, 0, len(participants))
-	for _, participant := range participants {
-		userIDs = append(userIDs, participant.UserID)
-	}
+	userIDs := settlementParticipantUserIDs(participants)
 	rawByUser, err := s.repo.SumUsageByUsers(ctx, cycle.GroupID, userIDs, cycle.StartedAt, cycle.EndedAt)
 	if err != nil {
 		return nil, fmt.Errorf("sum settlement usage: %w", err)
+	}
+	manualByUser, err := s.repo.SumManualUsageByUsers(ctx, cycle.ID, userIDs)
+	if err != nil {
+		return nil, fmt.Errorf("sum settlement manual usage: %w", err)
+	}
+	manualAdjustments, err := s.repo.ListManualUsageAdjustments(ctx, cycle.ID)
+	if err != nil {
+		return nil, fmt.Errorf("list settlement manual usage adjustments: %w", err)
 	}
 	accountUsage, err := s.repo.ListEnabledAccountUsage(ctx, cycle.GroupID, cycle.StartedAt, cycle.EndedAt)
 	if err != nil {
 		return nil, fmt.Errorf("list settlement account usage: %w", err)
 	}
-	estimate := CalculateSettlementPoolEstimate(cycle, participants, rawByUser, tiers)
-	estimate.AccountUsage = nonNilSettlementAccountUsage(accountUsage)
+	manualByAccount, err := s.repo.SumManualUsageByAccounts(ctx, cycle.ID, settlementAccountUsageIDs(accountUsage))
+	if err != nil {
+		return nil, fmt.Errorf("sum settlement manual account usage: %w", err)
+	}
+	estimate := CalculateSettlementPoolEstimateWithManualUsage(cycle, participants, rawByUser, manualByUser, tiers)
+	estimate.AccountUsage = nonNilSettlementAccountUsage(accountUsage, manualByAccount)
+	estimate.ManualAdjustments = nonNilSettlementManualUsageAdjustments(manualAdjustments)
 	return estimate, nil
 }
 
 func CalculateSettlementPoolEstimate(cycle *SettlementPoolCycle, participants []SettlementPoolParticipant, rawByUser map[int64]float64, tiers []SettlementPoolTier) *SettlementPoolEstimate {
+	return CalculateSettlementPoolEstimateWithManualUsage(cycle, participants, rawByUser, nil, tiers)
+}
+
+func CalculateSettlementPoolEstimateWithManualUsage(cycle *SettlementPoolCycle, participants []SettlementPoolParticipant, rawByUser map[int64]float64, manualByUser map[int64]float64, tiers []SettlementPoolTier) *SettlementPoolEstimate {
 	if cycle == nil {
 		return nil
 	}
@@ -545,7 +661,8 @@ func CalculateSettlementPoolEstimate(cycle *SettlementPoolCycle, participants []
 	totalRawUsage := 0.0
 	totalWeightedUsage := 0.0
 	for _, participant := range participants {
-		raw := math.Max(rawByUser[participant.UserID], 0)
+		manual := manualByUser[participant.UserID]
+		raw := math.Max(math.Max(rawByUser[participant.UserID], 0)+manual, 0)
 		weighted := WeightedSettlementUsage(raw, tiers)
 		totalRawUsage += raw
 		totalWeightedUsage += weighted
@@ -555,6 +672,7 @@ func CalculateSettlementPoolEstimate(cycle *SettlementPoolCycle, participants []
 			Username:      participant.Username,
 			Status:        participant.Status,
 			RawUsage:      roundMoney(raw),
+			ManualUsage:   roundMoney(manual),
 			WeightedUsage: roundMoney(weighted),
 			CurrentTier:   CurrentSettlementTier(raw, tiers),
 		})
@@ -714,12 +832,59 @@ func nonNilSettlementParticipants(participants []SettlementPoolParticipant) []Se
 	return participants
 }
 
-func nonNilSettlementAccountUsage(rows []SettlementPoolAccountUsage) []SettlementPoolAccountUsage {
+func settlementParticipantUserIDs(participants []SettlementPoolParticipant) []int64 {
+	userIDs := make([]int64, 0, len(participants))
+	for _, participant := range participants {
+		userIDs = append(userIDs, participant.UserID)
+	}
+	return userIDs
+}
+
+func settlementAccountUsageIDs(rows []SettlementPoolAccountUsage) []int64 {
+	accountIDs := make([]int64, 0, len(rows))
+	for _, row := range rows {
+		accountIDs = append(accountIDs, row.AccountID)
+	}
+	return accountIDs
+}
+
+func settlementAccountUsageContains(rows []SettlementPoolAccountUsage, accountID int64) bool {
+	for _, row := range rows {
+		if row.AccountID == accountID {
+			return true
+		}
+	}
+	return false
+}
+
+func settlementAccountUsageTotal(rows []SettlementPoolAccountUsage, accountID int64) float64 {
+	for _, row := range rows {
+		if row.AccountID == accountID {
+			return math.Max(row.TotalUsage, 0)
+		}
+	}
+	return 0
+}
+
+func nonNilSettlementAccountUsage(rows []SettlementPoolAccountUsage, manualByAccount map[int64]float64) []SettlementPoolAccountUsage {
 	if rows == nil {
 		return []SettlementPoolAccountUsage{}
 	}
 	for i := range rows {
-		rows[i].TotalUsage = roundMoney(rows[i].TotalUsage)
+		manualUsage := manualByAccount[rows[i].AccountID]
+		rows[i].ManualUsage = roundMoney(manualUsage)
+		rows[i].TotalUsage = roundMoney(math.Max(rows[i].TotalUsage+manualUsage, 0))
+		rows[i].WeeklyTotalUsage = roundMoney(rows[i].WeeklyTotalUsage)
+	}
+	return rows
+}
+
+func nonNilSettlementManualUsageAdjustments(rows []SettlementPoolManualUsageAdjustment) []SettlementPoolManualUsageAdjustment {
+	if rows == nil {
+		return []SettlementPoolManualUsageAdjustment{}
+	}
+	for i := range rows {
+		rows[i].UsageAmount = roundMoney(rows[i].UsageAmount)
 	}
 	return rows
 }

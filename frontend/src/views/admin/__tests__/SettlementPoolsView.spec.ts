@@ -31,7 +31,23 @@ describe('Admin SettlementPoolsView history selection', () => {
 
   it('shows current-cycle account usage', () => {
     expect(viewSource).toContain('settlementPools.accountUsage')
+    expect(viewSource).toContain('settlementPools.accountUsagePeriod')
+    expect(viewSource).toContain('{ key: \'weekly_total_usage\', label: t(\'settlementPools.weeklyUsage\'), class: rightAlignedColumnClass }')
+    expect(viewSource).toContain('{ key: \'manual_usage\', label: t(\'settlementPools.manualUsage\'), class: rightAlignedColumnClass }')
     expect(viewSource).toContain('const accountUsageRows = computed<SettlementPoolAccountUsage[]>')
     expect(viewSource).toContain('return displayEstimate.value?.account_usage || []')
+    expect(viewSource).toContain('function settlementCyclePeriod(estimate: SettlementPoolEstimate): string')
+  })
+
+  it('supports manual usage adjustments for the active settlement cycle', () => {
+    expect(viewSource).toContain('@submit.prevent="createManualUsageAdjustment"')
+    expect(viewSource).toContain('settlementPoolsAPI.createManualUsageAdjustment')
+    expect(viewSource).toContain('manualUsageForm.account_id')
+    expect(viewSource).toContain('account_id: Number(manualUsageForm.account_id)')
+    expect(viewSource).toContain('Number(manualUsageForm.usage_amount || 0) !== 0')
+    expect(viewSource).toContain('{ key: \'manual_usage\', label: t(\'settlementPools.manualUsage\'), class: rightAlignedColumnClass }')
+    expect(viewSource).toContain('const manualAdjustmentRows = computed<SettlementPoolManualUsageAdjustment[]>')
+    expect(viewSource).toContain('return displayEstimate.value?.manual_adjustments || []')
+    expect(viewSource).toContain('settlementPools.manualUsageAdjustments')
   })
 })

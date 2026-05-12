@@ -299,7 +299,7 @@
                 class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
                 :class="supplyStatusBadgeClass(row.supply_status)"
               >
-                {{ row.supply_status }}
+                {{ formatResourceSupplyStatus(row.supply_status, t) }}
               </span>
               <span v-else class="text-sm text-gray-400 dark:text-dark-500">-</span>
               <div v-if="row.supply_status === 'pending_review'" class="flex gap-1">
@@ -406,6 +406,10 @@ import ErrorPassthroughRulesModal from '@/components/admin/ErrorPassthroughRules
 import TLSFingerprintProfilesModal from '@/components/admin/TLSFingerprintProfilesModal.vue'
 import { buildOpenAIUsageRefreshKey } from '@/utils/accountUsageRefresh'
 import { formatDateTime, formatRelativeTime } from '@/utils/format'
+import {
+  formatResourceSupplyStatus,
+  resourceSupplyStatusBadgeClass
+} from '@/utils/resourceSupplyStatus'
 import type { Account, AccountPlatform, AccountType, Proxy as AccountProxy, AdminGroup, WindowStats, ClaudeModel } from '@/types'
 
 const { t } = useI18n()
@@ -1554,15 +1558,7 @@ const handleSetPrivacy = async (a: Account) => {
 }
 // Resource supply status badge classes
 function supplyStatusBadgeClass(status: string): string {
-  switch (status) {
-    case 'schedulable': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
-    case 'pending_review': return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
-    case 'testing': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-    case 'paused': return 'bg-gray-100 text-gray-800 dark:bg-gray-700/30 dark:text-gray-400'
-    case 'rejected': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-    case 'revoked': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-    default: return 'bg-gray-100 text-gray-600 dark:bg-gray-700/30 dark:text-gray-400'
-  }
+  return resourceSupplyStatusBadgeClass(status)
 }
 
 // Resource supply action handlers

@@ -109,13 +109,13 @@
                   <td class="px-3 py-3 text-gray-700 dark:text-gray-300">{{ (acct.group_names || []).join(', ') || '-' }}</td>
                   <td class="px-3 py-3">
                     <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium" :class="statusBadgeClass(acct.supply_status)">
-                      {{ acct.supply_status }}
+                      {{ formatResourceSupplyStatus(acct.supply_status, t) }}
                     </span>
                     <p v-if="acct.supply_status_reason" class="mt-0.5 text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]" :title="acct.supply_status_reason">
                       {{ acct.supply_status_reason }}
                     </p>
                   </td>
-                  <td class="px-3 py-3 text-gray-700 dark:text-gray-300">{{ acct.supply_source }}</td>
+                  <td class="px-3 py-3 text-gray-700 dark:text-gray-300">{{ formatResourceSupplySource(acct.supply_source, t) }}</td>
                   <td class="px-3 py-3">
                     <div v-if="acct.supply_source === 'self_service' && (acct.supply_status === 'schedulable' || acct.supply_status === 'paused')" class="flex gap-1">
                       <button v-if="acct.supply_status === 'schedulable'" class="btn btn-sm btn-secondary" @click="pauseAccount(acct.id)">
@@ -208,6 +208,11 @@ import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 import { formatCurrency, formatDateTime } from '@/utils/format'
 import { extractApiErrorMessage } from '@/utils/apiError'
+import {
+  formatResourceSupplySource,
+  formatResourceSupplyStatus,
+  resourceSupplyStatusBadgeClass
+} from '@/utils/resourceSupplyStatus'
 import resourceSupplyAPI from '@/api/resourceSupply'
 import userGroupsAPI from '@/api/groups'
 import type { Group, ResourceSupplySummary, ResourceSupplyLedgerEntry } from '@/types'
@@ -241,15 +246,7 @@ const ledgerTotal = ref(0)
 const ledgerPages = ref(0)
 
 function statusBadgeClass(status: string): string {
-  switch (status) {
-    case 'schedulable': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
-    case 'pending_review': return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
-    case 'testing': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-    case 'paused': return 'bg-gray-100 text-gray-800 dark:bg-gray-700/30 dark:text-gray-400'
-    case 'rejected': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-    case 'revoked': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-    default: return 'bg-gray-100 text-gray-600 dark:bg-gray-700/30 dark:text-gray-400'
-  }
+  return resourceSupplyStatusBadgeClass(status)
 }
 
 function ledgerTypeBadgeClass(type: string): string {

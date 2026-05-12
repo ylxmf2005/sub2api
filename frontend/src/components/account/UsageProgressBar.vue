@@ -52,6 +52,14 @@
         {{ formatResetTime }}
       </span>
     </div>
+
+    <div
+      v-if="estimatedTotalCost !== null"
+      class="mt-0.5 text-[9px] leading-tight text-gray-400 dark:text-gray-500"
+      :title="t('admin.accounts.usageWindow.estimatedTotalHint')"
+    >
+      {{ t('admin.accounts.usageWindow.estimatedTotal') }}: ${{ formatEstimatedTotalCost }}
+    </div>
   </div>
 </template>
 
@@ -69,6 +77,7 @@ const props = defineProps<{
   color: 'indigo' | 'emerald' | 'purple' | 'amber'
   windowStats?: WindowStats | null
   showNowWhenIdle?: boolean
+  showEstimatedTotal?: boolean
 }>()
 
 const { t } = useI18n()
@@ -138,6 +147,31 @@ const barWidth = computed(() => {
 const displayPercent = computed(() => {
   const percent = Math.round(props.utilization)
   return percent > 999 ? '>999%' : `${percent}%`
+})
+
+const estimatedTotalCost = computed(() => {
+  if (!props.showEstimatedTotal || !props.windowStats) return null
+
+  const cost = Number(props.windowStats.cost)
+  const utilization = Number(props.utilization)
+  if (!Number.isFinite(cost) || cost <= 0 || !Number.isFinite(utilization) || utilization <= 0) {
+    return null
+  }
+  if (props.resetsAt) {
+    const resetAt = new Date(props.resetsAt)
+    if (Number.isNaN(resetAt.getTime()) || resetAt.getTime() <= now.value.getTime()) {
+      return null
+    }
+  }
+
+  return cost / (utilization / 100)
+})
+
+const formatEstimatedTotalCost = computed(() => {
+  if (estimatedTotalCost.value === null) return ''
+  if (estimatedTotalCost.value >= 1000) return estimatedTotalCost.value.toFixed(0)
+  if (estimatedTotalCost.value >= 100) return estimatedTotalCost.value.toFixed(1)
+  return estimatedTotalCost.value.toFixed(2)
 })
 
 const shouldShowResetTime = computed(() => {

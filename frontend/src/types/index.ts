@@ -722,6 +722,7 @@ export interface SettlementPoolParticipantEstimate {
   username: string
   status: string
   raw_usage: number
+  manual_usage: number
   weighted_usage: number
   current_tier: number
   fixed_share: number
@@ -736,6 +737,7 @@ export interface SettlementPoolAccountUsage {
   type: AccountType
   status: string
   schedulable: boolean
+  manual_usage: number
   requests: number
   input_tokens: number
   output_tokens: number
@@ -743,6 +745,22 @@ export interface SettlementPoolAccountUsage {
   cache_read_tokens: number
   total_tokens: number
   total_usage: number
+  weekly_total_usage: number
+}
+
+export interface SettlementPoolManualUsageAdjustment {
+  id: number
+  group_id: number
+  cycle_id: number
+  user_id: number
+  email: string
+  username: string
+  account_id: number
+  account_name: string
+  usage_amount: number
+  reason: string
+  created_by: number
+  created_at: string
 }
 
 export interface SettlementPoolParticipant {
@@ -774,6 +792,7 @@ export interface SettlementPoolEstimate {
   owner_covered_loss: number
   participants: SettlementPoolParticipantEstimate[]
   account_usage: SettlementPoolAccountUsage[]
+  manual_adjustments: SettlementPoolManualUsageAdjustment[]
 }
 
 export interface SettlementPoolSummary {

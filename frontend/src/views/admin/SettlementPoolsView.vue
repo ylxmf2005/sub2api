@@ -153,6 +153,41 @@
               </div>
             </div>
 
+            <form v-if="!viewingHistory" class="mb-4 grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-dark-700 dark:bg-dark-800/60 lg:grid-cols-[minmax(200px,1fr)_minmax(220px,1fr)_150px_minmax(220px,1.2fr)_auto] lg:items-end" @submit.prevent="createManualUsageAdjustment">
+              <div>
+                <label class="input-label">{{ t('settlementPools.manualUsageUser') }}</label>
+                <Select
+                  v-model="manualUsageForm.user_id"
+                  :options="participantOptions"
+                  :placeholder="t('settlementPools.manualUsageUserPlaceholder')"
+                  searchable
+                  :disabled="saving || participantOptions.length === 0"
+                />
+              </div>
+              <div>
+                <label class="input-label">{{ t('settlementPools.manualUsageAccount') }}</label>
+                <Select
+                  v-model="manualUsageForm.account_id"
+                  :options="accountOptions"
+                  :placeholder="t('settlementPools.manualUsageAccountPlaceholder')"
+                  searchable
+                  :disabled="saving || accountOptions.length === 0"
+                />
+              </div>
+              <div>
+                <label class="input-label">{{ t('settlementPools.manualUsageAmount') }}</label>
+                <input v-model.number="manualUsageForm.usage_amount" class="input" type="number" step="0.0001" :disabled="saving" />
+              </div>
+              <div>
+                <label class="input-label">{{ t('settlementPools.manualUsageReason') }}</label>
+                <input v-model.trim="manualUsageForm.reason" class="input" type="text" :placeholder="t('settlementPools.manualUsageReasonPlaceholder')" :disabled="saving" />
+              </div>
+              <button class="btn btn-secondary" type="submit" :disabled="saving || !canSubmitManualUsage">
+                <Icon name="plus" size="sm" />
+                {{ t('settlementPools.addManualUsage') }}
+              </button>
+            </form>
+
             <DataTable
               :columns="participantColumns"
               :data="participantRows"
@@ -166,6 +201,9 @@
                 </div>
               </template>
               <template #cell-raw_usage="{ value }">
+                <span class="tabular-nums">{{ usdMoney(value) }}</span>
+              </template>
+              <template #cell-manual_usage="{ value }">
                 <span class="tabular-nums">{{ usdMoney(value) }}</span>
               </template>
               <template #cell-weighted_usage="{ value }">
@@ -202,7 +240,12 @@
           </section>
 
           <section class="card p-4">
-            <h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">{{ t('settlementPools.accountUsage') }}</h2>
+            <div class="mb-4">
+              <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ t('settlementPools.accountUsage') }}</h2>
+              <p v-if="displayEstimate" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('settlementPools.accountUsagePeriod', { period: settlementCyclePeriod(displayEstimate) }) }}
+              </p>
+            </div>
             <DataTable
               :columns="accountUsageColumns"
               :data="accountUsageRows"
@@ -215,17 +258,52 @@
                   #{{ row.account_id }} · {{ row.platform }} / {{ row.type }}
                 </div>
               </template>
-              <template #cell-requests="{ value }">
-                <span class="tabular-nums">{{ integer(value) }}</span>
-              </template>
-              <template #cell-total_tokens="{ value }">
-                <span class="tabular-nums">{{ integer(value) }}</span>
-              </template>
               <template #cell-total_usage="{ value }">
                 <span class="font-medium tabular-nums text-gray-900 dark:text-white">{{ usdMoney(value) }}</span>
               </template>
+              <template #cell-manual_usage="{ value }">
+                <span class="tabular-nums" :class="signedClass(value)">{{ signedUsdMoney(value) }}</span>
+              </template>
+              <template #cell-weekly_total_usage="{ value }">
+                <span class="tabular-nums">{{ usdMoney(value) }}</span>
+              </template>
               <template #empty>
                 <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('settlementPools.noAccountUsage') }}</p>
+              </template>
+            </DataTable>
+          </section>
+
+          <section class="card p-4">
+            <div class="mb-4">
+              <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ t('settlementPools.manualUsageAdjustments') }}</h2>
+              <p v-if="displayEstimate" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('settlementPools.accountUsagePeriod', { period: settlementCyclePeriod(displayEstimate) }) }}
+              </p>
+            </div>
+            <DataTable
+              :columns="manualAdjustmentColumns"
+              :data="manualAdjustmentRows"
+              row-key="id"
+              :loading="loading && !!summary"
+            >
+              <template #cell-user="{ row }">
+                <div class="font-medium text-gray-900 dark:text-white">{{ row.email }}</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  #{{ row.user_id }} <span v-if="row.username">{{ row.username }}</span>
+                </div>
+              </template>
+              <template #cell-account="{ row }">
+                <div class="font-medium text-gray-900 dark:text-white">{{ row.account_name }}</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">#{{ row.account_id }}</div>
+              </template>
+              <template #cell-usage_amount="{ value }">
+                <span class="font-medium tabular-nums" :class="signedClass(value)">{{ signedUsdMoney(value) }}</span>
+              </template>
+              <template #cell-created_at="{ value }">
+                <span class="text-gray-700 dark:text-gray-200">{{ date(value) }}</span>
+              </template>
+              <template #empty>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('settlementPools.noManualUsageAdjustments') }}</p>
               </template>
             </DataTable>
           </section>
@@ -303,7 +381,7 @@ import * as groupsAPI from '@/api/admin/groups'
 import settlementPoolsAPI from '@/api/admin/settlementPools'
 import type { SimpleUser } from '@/api/admin/usage'
 import type { Column } from '@/components/common/types'
-import type { AdminGroup, SettlementPoolAccountUsage, SettlementPoolEstimate, SettlementPoolParticipant, SettlementPoolSummary, SettlementPoolTier } from '@/types'
+import type { AdminGroup, SettlementPoolAccountUsage, SettlementPoolEstimate, SettlementPoolManualUsageAdjustment, SettlementPoolParticipant, SettlementPoolSummary, SettlementPoolTier } from '@/types'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -319,6 +397,12 @@ const showStartCycleDialog = ref(false)
 const manualCandidates = ref<SettlementPoolParticipant[]>([])
 const removedCandidateIds = ref<Set<number>>(new Set())
 const actioningUserIds = ref<Set<number>>(new Set())
+const manualUsageForm = reactive({
+  user_id: null as number | null,
+  account_id: null as number | null,
+  usage_amount: null as number | null,
+  reason: ''
+})
 
 const configForm = reactive({
   total_cost: 0,
@@ -345,8 +429,25 @@ const displayEstimate = computed<SettlementPoolEstimate | null>(() => {
 const participantRows = computed(() => {
   return displayEstimate.value?.participants || []
 })
+const participantOptions = computed(() => participantRows.value.map(row => ({
+  value: row.user_id,
+  label: `${row.email || row.username || `#${row.user_id}`} #${row.user_id}`
+})))
+const canSubmitManualUsage = computed(() => {
+  return Number(manualUsageForm.user_id || 0) > 0 &&
+    Number(manualUsageForm.account_id || 0) > 0 &&
+    Number(manualUsageForm.usage_amount || 0) !== 0 &&
+    manualUsageForm.reason.trim().length > 0
+})
 const accountUsageRows = computed<SettlementPoolAccountUsage[]>(() => {
   return displayEstimate.value?.account_usage || []
+})
+const accountOptions = computed(() => accountUsageRows.value.map(row => ({
+  value: row.account_id,
+  label: `${row.name || `#${row.account_id}`} #${row.account_id}`
+})))
+const manualAdjustmentRows = computed<SettlementPoolManualUsageAdjustment[]>(() => {
+  return displayEstimate.value?.manual_adjustments || []
 })
 const candidateRows = computed<SettlementPoolParticipant[]>(() => {
   const byID = new Map<number, SettlementPoolParticipant>()
@@ -363,6 +464,7 @@ const candidateColumns = computed<Column[]>(() => [
 const participantColumns = computed<Column[]>(() => [
   { key: 'user', label: t('settlementPools.user'), class: 'min-w-[220px]' },
   { key: 'raw_usage', label: t('settlementPools.rawUsage'), class: rightAlignedColumnClass },
+  { key: 'manual_usage', label: t('settlementPools.manualUsage'), class: rightAlignedColumnClass },
   { key: 'weighted_usage', label: t('settlementPools.weightedUsage'), class: rightAlignedColumnClass },
   { key: 'current_tier', label: t('settlementPools.currentTier'), class: rightAlignedColumnClass },
   { key: 'fixed_share', label: t('settlementPools.fixedShare'), class: rightAlignedColumnClass },
@@ -379,9 +481,16 @@ const cycleColumns = computed<Column[]>(() => [
 ])
 const accountUsageColumns = computed<Column[]>(() => [
   { key: 'account', label: t('settlementPools.account'), class: 'min-w-[220px]' },
-  { key: 'requests', label: t('settlementPools.requests'), class: rightAlignedColumnClass },
-  { key: 'total_tokens', label: t('settlementPools.totalTokens'), class: rightAlignedColumnClass },
-  { key: 'total_usage', label: t('settlementPools.cycleUsage'), class: rightAlignedColumnClass }
+  { key: 'total_usage', label: t('settlementPools.cycleUsage'), class: rightAlignedColumnClass },
+  { key: 'manual_usage', label: t('settlementPools.manualUsage'), class: rightAlignedColumnClass },
+  { key: 'weekly_total_usage', label: t('settlementPools.weeklyUsage'), class: rightAlignedColumnClass }
+])
+const manualAdjustmentColumns = computed<Column[]>(() => [
+  { key: 'user', label: t('settlementPools.user'), class: 'min-w-[220px]' },
+  { key: 'account', label: t('settlementPools.account'), class: 'min-w-[200px]' },
+  { key: 'usage_amount', label: t('settlementPools.manualUsageAmount'), class: rightAlignedColumnClass },
+  { key: 'reason', label: t('settlementPools.manualUsageReason'), class: 'min-w-[240px]' },
+  { key: 'created_at', label: t('settlementPools.createdAt'), class: 'min-w-[180px]' }
 ])
 
 type CycleRow = {
@@ -452,6 +561,7 @@ function syncForm(next: SettlementPoolSummary | null) {
   manualCandidates.value = []
   removedCandidateIds.value = new Set()
   actioningUserIds.value = new Set()
+  resetManualUsageForm()
 }
 
 function roundedInputNumber(value: number) {
@@ -614,6 +724,32 @@ async function removeCurrentParticipant(userId: number) {
   }
 }
 
+async function createManualUsageAdjustment() {
+  if (!selectedGroupId.value || !canSubmitManualUsage.value) return
+  saving.value = true
+  try {
+    summary.value = await settlementPoolsAPI.createManualUsageAdjustment(selectedGroupId.value, {
+      user_id: Number(manualUsageForm.user_id),
+      account_id: Number(manualUsageForm.account_id),
+      usage_amount: finiteNumber(manualUsageForm.usage_amount),
+      reason: manualUsageForm.reason.trim()
+    })
+    syncForm(summary.value)
+    appStore.showSuccess(t('settlementPools.manualUsageAdded'))
+  } catch (error: any) {
+    appStore.showError(error?.message || t('settlementPools.failedToAddManualUsage'))
+  } finally {
+    saving.value = false
+  }
+}
+
+function resetManualUsageForm() {
+  manualUsageForm.user_id = null
+  manualUsageForm.account_id = null
+  manualUsageForm.usage_amount = null
+  manualUsageForm.reason = ''
+}
+
 function addTier() {
   configForm.tiers.push({ up_to: null, weight: 1 })
 }
@@ -630,17 +766,30 @@ function usdMoney(value: number | null | undefined) {
   return `$${Number(value || 0).toFixed(4)}`
 }
 
-function cnyMoney(value: number | null | undefined) {
-  return `¥${Number(value || 0).toFixed(4)}`
+function signedUsdMoney(value: number | null | undefined) {
+  const numberValue = Number(value || 0)
+  const sign = numberValue > 0 ? '+' : ''
+  return `${sign}$${numberValue.toFixed(4)}`
 }
 
-function integer(value: number | null | undefined) {
-  return Number(value || 0).toLocaleString()
+function signedClass(value: number | null | undefined) {
+  const numberValue = Number(value || 0)
+  if (numberValue > 0) return 'text-green-600 dark:text-green-400'
+  if (numberValue < 0) return 'text-red-600 dark:text-red-400'
+  return 'text-gray-700 dark:text-gray-200'
+}
+
+function cnyMoney(value: number | null | undefined) {
+  return `¥${Number(value || 0).toFixed(4)}`
 }
 
 function date(value?: string | null) {
   if (!value) return ''
   return new Date(value).toLocaleString()
+}
+
+function settlementCyclePeriod(estimate: SettlementPoolEstimate): string {
+  return `${date(estimate.started_at)} - ${estimate.ended_at ? date(estimate.ended_at) : t('settlementPools.status.active')}`
 }
 
 function tierLabel(tiers: SettlementPoolTier[], index: number) {

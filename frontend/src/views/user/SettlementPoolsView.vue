@@ -88,7 +88,12 @@
           </section>
 
           <section class="card p-4">
-            <h3 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">{{ t('settlementPools.accountUsage') }}</h3>
+            <div class="mb-4">
+              <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ t('settlementPools.accountUsage') }}</h3>
+              <p v-if="displayEstimate(summary)" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('settlementPools.accountUsagePeriod', { period: settlementCyclePeriod(summary) }) }}
+              </p>
+            </div>
             <DataTable
               :columns="accountUsageColumns"
               :data="accountUsageRows(summary)"
@@ -101,14 +106,14 @@
                   #{{ row.account_id }} · {{ row.platform }} / {{ row.type }}
                 </div>
               </template>
-              <template #cell-requests="{ value }">
-                <span class="tabular-nums">{{ integer(value) }}</span>
-              </template>
-              <template #cell-total_tokens="{ value }">
-                <span class="tabular-nums">{{ integer(value) }}</span>
-              </template>
               <template #cell-total_usage="{ value }">
                 <span class="font-medium tabular-nums text-gray-900 dark:text-white">{{ usdMoney(value) }}</span>
+              </template>
+              <template #cell-manual_usage="{ value }">
+                <span class="tabular-nums" :class="signedClass(value)">{{ signedUsdMoney(value) }}</span>
+              </template>
+              <template #cell-weekly_total_usage="{ value }">
+                <span class="tabular-nums">{{ usdMoney(value) }}</span>
               </template>
               <template #empty>
                 <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('settlementPools.noAccountUsage') }}</p>
@@ -198,9 +203,9 @@ const cycleColumns = computed<Column[]>(() => [
 ])
 const accountUsageColumns = computed<Column[]>(() => [
   { key: 'account', label: t('settlementPools.account'), class: 'min-w-[220px]' },
-  { key: 'requests', label: t('settlementPools.requests'), class: rightAlignedColumnClass },
-  { key: 'total_tokens', label: t('settlementPools.totalTokens'), class: rightAlignedColumnClass },
-  { key: 'total_usage', label: t('settlementPools.cycleUsage'), class: rightAlignedColumnClass }
+  { key: 'total_usage', label: t('settlementPools.cycleUsage'), class: rightAlignedColumnClass },
+  { key: 'manual_usage', label: t('settlementPools.manualUsage'), class: rightAlignedColumnClass },
+  { key: 'weekly_total_usage', label: t('settlementPools.weeklyUsage'), class: rightAlignedColumnClass }
 ])
 
 type CycleRow = {
@@ -241,6 +246,12 @@ function accountUsageRows(summary: SettlementPoolSummary): SettlementPoolAccount
   return displayEstimate(summary)?.account_usage || []
 }
 
+function settlementCyclePeriod(summary: SettlementPoolSummary): string {
+  const estimate = displayEstimate(summary)
+  if (!estimate) return ''
+  return `${date(estimate.started_at)} - ${estimate.ended_at ? date(estimate.ended_at) : t('settlementPools.status.active')}`
+}
+
 function cycleRows(summary: SettlementPoolSummary): CycleRow[] {
   const rows: CycleRow[] = []
   if (summary.estimate) {
@@ -274,12 +285,21 @@ function usdMoney(value: number | null | undefined) {
   return `$${Number(value || 0).toFixed(4)}`
 }
 
-function cnyMoney(value: number | null | undefined) {
-  return `¥${Number(value || 0).toFixed(4)}`
+function signedUsdMoney(value: number | null | undefined) {
+  const numberValue = Number(value || 0)
+  const sign = numberValue > 0 ? '+' : ''
+  return `${sign}$${numberValue.toFixed(4)}`
 }
 
-function integer(value: number | null | undefined) {
-  return Number(value || 0).toLocaleString()
+function signedClass(value: number | null | undefined) {
+  const numberValue = Number(value || 0)
+  if (numberValue > 0) return 'text-green-600 dark:text-green-400'
+  if (numberValue < 0) return 'text-red-600 dark:text-red-400'
+  return 'text-gray-700 dark:text-gray-200'
+}
+
+function cnyMoney(value: number | null | undefined) {
+  return `¥${Number(value || 0).toFixed(4)}`
 }
 
 function date(value?: string | null) {

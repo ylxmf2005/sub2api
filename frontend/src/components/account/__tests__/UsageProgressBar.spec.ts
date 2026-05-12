@@ -66,4 +66,66 @@ describe('UsageProgressBar', () => {
     expect(wrapper.text()).toContain('2h 30m')
     expect(wrapper.text()).not.toContain('现在')
   })
+
+  it('按窗口成本除以使用率显示本周预估可用额度', () => {
+    const wrapper = mount(UsageProgressBar, {
+      props: {
+        label: '7d',
+        utilization: 20,
+        color: 'emerald',
+        showEstimatedTotal: true,
+        windowStats: {
+          requests: 10,
+          tokens: 1000,
+          cost: 4,
+          standard_cost: 4,
+          user_cost: 4
+        }
+      }
+    })
+
+    expect(wrapper.text()).toContain('admin.accounts.usageWindow.estimatedTotal')
+    expect(wrapper.text()).toContain('$20.00')
+  })
+
+  it('没有有效百分比或成本时不显示本周预估可用额度', () => {
+    const wrapper = mount(UsageProgressBar, {
+      props: {
+        label: '7d',
+        utilization: 0,
+        color: 'emerald',
+        showEstimatedTotal: true,
+        windowStats: {
+          requests: 0,
+          tokens: 0,
+          cost: 4,
+          standard_cost: 4,
+          user_cost: 4
+        }
+      }
+    })
+
+    expect(wrapper.text()).not.toContain('admin.accounts.usageWindow.estimatedTotal')
+  })
+
+  it('重置时间已经过期时不显示本周期预估总用量', () => {
+    const wrapper = mount(UsageProgressBar, {
+      props: {
+        label: '7d',
+        utilization: 20,
+        resetsAt: '2026-03-16T23:00:00Z',
+        color: 'emerald',
+        showEstimatedTotal: true,
+        windowStats: {
+          requests: 10,
+          tokens: 1000,
+          cost: 4,
+          standard_cost: 4,
+          user_cost: 4
+        }
+      }
+    })
+
+    expect(wrapper.text()).not.toContain('admin.accounts.usageWindow.estimatedTotal')
+  })
 })
